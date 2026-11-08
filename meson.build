@@ -12,6 +12,12 @@ project(
 	],
 )
 
+# tidesway's releases are v<version>-tide.<N>, version padded to three parts
+# and N the commits on top of sway's release commit, RELEASE_BASE. The release
+# workflow tags each push to main so (.github/release-tag). A rebase onto a
+# new sway release takes its version above and sets RELEASE_BASE to its commit.
+RELEASE_BASE = '88869399f421d9180dd8b6ed0b5a1f4a3585d252'
+
 add_project_arguments(
 	[
 		'-DWLR_USE_UNSTABLE',
