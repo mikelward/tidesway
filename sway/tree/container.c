@@ -16,6 +16,7 @@
 #include "sway/sway_text_node.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
@@ -981,7 +982,9 @@ void container_set_floating(struct sway_container *container, bool enable) {
 		container_detach(container);
 		struct sway_container *reference =
 			seat_get_focus_inactive_tiling(seat, workspace);
-		if (reference) {
+		if (tide_add_new(workspace, container, reference)) {
+			// tide: tiled again, it's placed as a new window
+		} else if (reference) {
 			if (reference->view) {
 				container_add_sibling(reference, container, 1);
 			} else {

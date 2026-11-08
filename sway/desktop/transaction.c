@@ -108,6 +108,7 @@ static void copy_workspace_state(struct sway_workspace *ws,
 	state->width = ws->width;
 	state->height = ws->height;
 	state->layout = ws->layout;
+	state->tide_layout = tide_workspace_layout(ws); // tide
 
 	state->output = ws->output;
 	if (state->floating) {
@@ -549,8 +550,45 @@ static void arrange_workspace_floating(struct sway_workspace *ws) {
 	}
 }
 
+/* tide: a tide layout's windows, each where its geometry says, relative to
+ * x, y, the workspace's corner; split containers cover the workspace, so
+ * their windows are too. The focused one is on top, for monocle. */
+static void arrange_tide_children(list_t *children,
+		struct sway_container *active, struct wlr_scene_tree *content,
+		double x, double y) {
+	for (int i = 0; i < children->length; i++) {
+		struct sway_container *child = children->items[i];
+		int width = child->current.width, height = child->current.height;
+
+		wlr_scene_node_set_enabled(&child->border.tree->node, true);
+		wlr_scene_node_set_position(&child->scene_tree->node,
+			round(child->current.x - x), round(child->current.y - y));
+		wlr_scene_node_reparent(&child->scene_tree->node, content);
+		if (width <= 0 || height <= 0) {
+			disable_container(child);
+		} else if (child->view) {
+			arrange_container(child, width, height, true, 0);
+		} else {
+			wlr_scene_node_set_enabled(&child->scene_tree->node, true);
+			wlr_scene_node_set_enabled(&child->title_bar.tree->node, false);
+			arrange_tide_children(child->current.children,
+				child->current.focused_inactive_child, child->content_tree,
+				child->current.x, child->current.y);
+		}
+	}
+	if (active) {
+		wlr_scene_node_raise_to_top(&active->scene_tree->node);
+	}
+}
+
 static void arrange_workspace_tiling(struct sway_workspace *ws,
 		int width, int height) {
+	if (ws->current.tide_layout != TIDE_NONE) { // tide
+		arrange_tide_children(ws->current.tiling,
+			ws->current.focused_inactive_child, ws->layers.tiling,
+			ws->current.x, ws->current.y);
+		return;
+	}
 	arrange_children(ws->current.layout, ws->current.tiling,
 		ws->current.focused_inactive_child, ws->layers.tiling,
 		width, height, ws->gaps_inner);

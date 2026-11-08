@@ -1507,6 +1507,10 @@ available:
 |- 0x80000015
 :  input
 :  Sent when something related to input devices changes
+|- 0x8000001e
+:  layout
+:  tidesway's: sent when a workspace's tide layout changes, or a workspace is
+   shown (*sway*(5), TIDE'S LAYOUTS)
 
 
 ## 0x80000000. WORKSPACE

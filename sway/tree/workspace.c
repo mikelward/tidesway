@@ -15,6 +15,7 @@
 #include "sway/ipc-server.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/node.h"
@@ -217,6 +218,7 @@ struct sway_workspace *workspace_create(struct sway_output *output,
 	ws->name = strdup(name);
 	ws->prev_split_layout = L_NONE;
 	ws->layout = output_get_default_layout(output);
+	tide_workspace_init(ws); // tide
 	ws->floating = create_list();
 	ws->tiling = create_list();
 	ws->output_priority = create_list();
@@ -739,6 +741,7 @@ bool workspace_switch(struct sway_workspace *workspace) {
 	}
 	seat_set_focus(seat, next);
 	arrange_workspace(workspace);
+	ipc_event_layout(workspace); // tide
 	return true;
 }
 
@@ -945,7 +948,9 @@ struct sway_container *workspace_add_tiling(struct sway_workspace *workspace,
 			container_reap_empty(old_parent);
 		}
 	}
-	if (config->default_layout != L_NONE) {
+	// tide: a tide layout keeps its windows direct children, unwrapped
+	if (config->default_layout != L_NONE
+			&& tide_workspace_layout(workspace) == TIDE_NONE) {
 		con = container_split(con, config->default_layout);
 	}
 	list_add(workspace->tiling, con);
@@ -987,7 +992,9 @@ struct sway_container *workspace_insert_tiling(struct sway_workspace *workspace,
 	if (con->pending.workspace) {
 		container_detach(con);
 	}
-	if (config->default_layout != L_NONE) {
+	// tide: a tide layout keeps its windows direct children, unwrapped
+	if (config->default_layout != L_NONE
+			&& tide_workspace_layout(workspace) == TIDE_NONE) {
 		con = container_split(con, config->default_layout);
 	}
 	workspace_insert_tiling_direct(workspace, con, index);

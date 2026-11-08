@@ -13,6 +13,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/scene_descriptor.h"
+#include "sway/tide/split.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
 #include "log.h"
@@ -369,6 +370,12 @@ static void handle_button(struct sway_seat *seat, uint32_t time_msec,
 		return;
 	}
 
+	// tide: a plain left press on a tide layout's edge drags it
+	if (state == WL_POINTER_BUTTON_STATE_PRESSED && button == BTN_LEFT
+			&& !mod_pressed && tide_split_press(seat, node, surface)) {
+		return;
+	}
+
 	// Handle clicking an empty workspace
 	if (node && node->type == N_WORKSPACE) {
 		if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
@@ -407,6 +414,13 @@ static void handle_button(struct sway_seat *seat, uint32_t time_msec,
 
 		seat_set_focus_container(seat, cont_to_focus);
 		seatop_begin_resize_tiling(seat, cont, edge);
+		return;
+	}
+
+	// tide: floating_modifier's resize on a tile drags its layout's edge
+	if (cont && !is_floating_or_child && mod_resize_btn_pressed &&
+			state == WL_POINTER_BUTTON_STATE_PRESSED &&
+			tide_split_press_tile(seat, cont)) {
 		return;
 	}
 

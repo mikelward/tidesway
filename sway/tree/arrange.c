@@ -7,6 +7,7 @@
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/output.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/workspace.h"
 #include "sway/tree/view.h"
 #include "list.h"
@@ -255,6 +256,9 @@ void arrange_container(struct sway_container *container) {
 		node_set_dirty(&container->node);
 		return;
 	}
+	if (tide_arrange_container(container)) { // tide: arranged with its workspace
+		return;
+	}
 	struct wlr_box box;
 	container_get_box(container, &box);
 	arrange_children(container->pending.children, container->pending.layout, &box);
@@ -317,7 +321,9 @@ void arrange_workspace(struct sway_workspace *workspace) {
 	} else {
 		struct wlr_box box;
 		workspace_get_box(workspace, &box);
-		arrange_children(workspace->tiling, workspace->layout, &box);
+		if (!tide_arrange_workspace(workspace)) { // tide: its layouts, if it's in one
+			arrange_children(workspace->tiling, workspace->layout, &box);
+		}
 		arrange_floating(workspace->floating);
 	}
 }

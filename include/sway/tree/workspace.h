@@ -5,6 +5,7 @@
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_ext_workspace_v1.h>
 #include "sway/config.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/container.h"
 #include "sway/tree/node.h"
 
@@ -21,6 +22,7 @@ struct sway_workspace_state {
 
 	struct sway_container *focused_inactive_child;
 	bool focused;
+	enum tide_layout tide_layout; // tide: its layout, or TIDE_NONE for sway's
 };
 
 struct sway_workspace {
@@ -50,6 +52,7 @@ struct sway_workspace {
 	list_t *tiling;             // struct sway_container
 	list_t *output_priority;
 	bool urgent;
+	struct tide_workspace tide; // tide: its layouts
 
 	struct sway_workspace_state current;
 	struct wlr_ext_workspace_handle_v1 *ext_workspace; // Always set.

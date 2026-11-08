@@ -3,6 +3,8 @@
 #include <strings.h>
 #include "sway/commands.h"
 #include "sway/output.h"
+#include "sway/tide/commands.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/workspace.h"
@@ -123,6 +125,10 @@ struct cmd_results *cmd_layout(int argc, char **argv) {
 		return cmd_results_new(CMD_INVALID,
 				"Can't run this command while there's no outputs connected.");
 	}
+	// tide: its layouts, or back to sway's
+	if ((error = tide_cmd_layout(argc, argv))) {
+		return error;
+	}
 	struct sway_container *container = config->handler_context.container;
 	struct sway_workspace *workspace = config->handler_context.workspace;
 
@@ -168,6 +174,8 @@ struct cmd_results *cmd_layout(int argc, char **argv) {
 	if (new_layout == L_NONE) {
 		return cmd_results_new(CMD_INVALID, "%s", expected_syntax);
 	}
+	tide_leave(workspace); // tide: a valid sway layout leaves tide's
+
 	if (new_layout != old_layout) {
 		if (container) {
 			if (old_layout != L_TABBED && old_layout != L_STACKED) {

@@ -151,6 +151,18 @@ sway_cmd cmd_seat;
 sway_cmd cmd_ipc;
 sway_cmd cmd_kill;
 sway_cmd cmd_layout;
+// tide: its layout commands and config lines (sway/tide/commands.c)
+sway_cmd cmd_default_layout;
+sway_cmd cmd_layout_cycle;
+sway_cmd cmd_layout_defaults;
+sway_cmd cmd_mfact;
+sway_cmd cmd_movestack;
+sway_cmd cmd_nmaster;
+sway_cmd cmd_resize_grab;
+sway_cmd cmd_single_width;
+sway_cmd cmd_single_window;
+sway_cmd cmd_ultrawide_aspect;
+sway_cmd cmd_zoom;
 sway_cmd cmd_log_colors;
 sway_cmd cmd_mark;
 sway_cmd cmd_max_render_time;

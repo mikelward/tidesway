@@ -1,11 +1,16 @@
 # tidesway
 
-tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl. It's sway
-1.12 for now, and nothing more: the plan is to add what tide needs from a
-compositor, then measure it against tidewm ([why][SWAY.md]):
+tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
+1.12 with what tide needs from a compositor, to measure against tidewm
+([why][SWAY.md]). It has:
 
-* tide's layouts (`tile`, `threecol`, `twocol`, `monocle`), placed before a new
-  window is first shown;
+* tide's layouts (`tile`, `threecol`, `twocol`, `monocle`), with `mfact`,
+  `nmaster`, `single_width`, `zoom` and `movestack`, placed before a new
+  window is first shown, and tidewm's layout lines and IPC (`man 5 sway`,
+  "TIDE'S LAYOUTS").
+
+Still to come:
+
 * a focus guard, so a window you didn't ask for never takes focus;
 * `dim_inactive`, darkening the windows you're not in;
 * workspaces that span every monitor, by grouping each output's workspaces.
