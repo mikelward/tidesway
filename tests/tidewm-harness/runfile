@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Runs one of tidewm's test files for suite and records each outcome:
+
+  cd TIDEWM_CHECKOUT/tests && runfile MODULE OUT.jsonl
+
+unittest's usual -v report goes to stderr, for the log. OUT.jsonl gets one
+JSON object per line, flushed as it happens, so a file that times out
+still has what it reported:
+
+  {"ids": [...]}                              every test, before any runs
+  {"load_error": "..."}                       instead, if the file didn't load
+  {"test": ID, "outcome": KIND}               KIND: pass, fail, error, skip
+  {"test": ID, "subtest": DESC, "outcome": KIND}
+  {"finished": true}                          last, once the whole file ran,
+                                              teardowns included
+  {"done": ID}                                the test finished, whatever its
+                                              outcome (a test whose subtest
+                                              failed reports nothing else)
+  {"fixture": DESC, "outcome": "error"}       setUpClass, setUpModule and the
+                                              like raising; DESC is unittest's,
+                                              such as "setUpClass (mod.Class)"
+"""
+
+import json
+import os
+import sys
+import unittest
+
+
+def ids(suite):
+    for t in suite:
+        if isinstance(t, unittest.TestSuite):
+            yield from ids(t)
+        else:
+            yield t.id()
+
+
+def main(argv):
+    if len(argv) != 2:
+        sys.exit(__doc__)
+    module, path = argv
+    # The test files import harness.py beside them
+    sys.path.insert(0, os.getcwd())
+    out = open(path, "w")
+
+    def write(**record):
+        out.write(json.dumps(record) + "\n")
+        out.flush()
+
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromName(module)
+    found = list(ids(suite))
+    # A file that doesn't import loads as one _FailedTest
+    if loader.errors or any(".loader._FailedTest." in t for t in found):
+        write(load_error="\n".join(loader.errors) or "a test failed to load")
+        return 3
+    write(ids=found)
+
+    class Result(unittest.TextTestResult):
+        def record(self, test, outcome):
+            if isinstance(test, unittest.case._SubTest):
+                # A subtest skipped
+                write(test=test.test_case.id(), subtest=test._subDescription(), outcome=outcome)
+            elif isinstance(test, unittest.case.TestCase):
+                write(test=test.id(), outcome=outcome)
+            else:
+                # unittest's _ErrorHolder, for a class or module fixture
+                write(fixture=str(test), outcome=outcome)
+
+        def addSuccess(self, test):
+            super().addSuccess(test)
+            self.record(test, "pass")
+
+        def addFailure(self, test, err):
+            super().addFailure(test, err)
+            self.record(test, "fail")
+
+        def addError(self, test, err):
+            super().addError(test, err)
+            self.record(test, "error")
+
+        def addSkip(self, test, reason):
+            super().addSkip(test, reason)
+            self.record(test, "skip")
+
+        def addExpectedFailure(self, test, err):
+            super().addExpectedFailure(test, err)
+            self.record(test, "pass")
+
+        def addUnexpectedSuccess(self, test):
+            super().addUnexpectedSuccess(test)
+            self.record(test, "fail")
+
+        def stopTest(self, test):
+            super().stopTest(test)
+            if isinstance(test, unittest.case.TestCase):
+                write(done=test.id())
+
+        def addSubTest(self, test, subtest, err):
+            super().addSubTest(test, subtest, err)
+            if err is None:
+                outcome = "pass"
+            elif issubclass(err[0], test.failureException):
+                outcome = "fail"
+            else:
+                outcome = "error"
+            write(test=test.id(), subtest=subtest._subDescription(), outcome=outcome)
+
+    unittest.TextTestRunner(stream=sys.stderr, verbosity=2, resultclass=Result).run(suite)
+    write(finished=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

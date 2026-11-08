@@ -1,0 +1,154 @@
+name: ci
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# tidewm's shape (mikelward/tidewm ci.yml, which says why each half is so). A
+# pull request shares one group and cancels the run in progress when a newer
+# event on it starts one. A push to main, or a dispatch aimed at it, gets a
+# group of its own keyed by commit, so no main run is canceled. An `edited`
+# run never cancels: it queues behind the run in progress instead.
+concurrency:
+  group: ci-${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && format('main-{0}', github.sha) || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && github.event.action != 'edited' }}
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.lane.outputs.docs_only }}
+      base_sha: ${{ steps.lane.outputs.base_sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: mikelward/lanes@main
+        id: lane
+        with:
+          mode: classify
+          pr: ${{ github.event.pull_request.number }}
+
+  # sway 1.12 builds against wlroots 0.20, which Ubuntu runners don't ship,
+  # so the build runs in an Arch Linux container. Every optional feature is
+  # on and meson's warnings are fatal, as sway's own .builds/ do.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: classify
+    if: needs.classify.outputs.docs_only != 'true'
+    container:
+      image: archlinux:base-devel
+    steps:
+      - run: >-
+          pacman -Syu --noconfirm --needed
+          meson wlroots0.20 wayland wayland-protocols libinput libxkbcommon
+          libxcb xcb-util-wm json-c pcre2 pango cairo gdk-pixbuf2 pixman
+          libevdev libdrm systemd-libs scdoc pkgconf
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - run: meson setup build --fatal-meson-warnings -Dauto_features=enabled -Dsd-bus-provider=libsystemd
+      - run: ninja -C build
+
+  # Debian testing is where tide runs, from apt's wlroots 0.20 and GCC, so
+  # tidesway builds there too.
+  build-debian:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: classify
+    if: needs.classify.outputs.docs_only != 'true'
+    container:
+      image: debian:testing
+    steps:
+      - run: apt-get update
+      - run: >-
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends
+          build-essential meson ninja-build pkgconf libwlroots-0.20-dev libwayland-dev
+          wayland-protocols libinput-dev libudev-dev libxkbcommon-dev libxcb1-dev
+          libxcb-icccm4-dev libjson-c-dev libpcre2-dev libpango1.0-dev libcairo2-dev
+          libgdk-pixbuf-2.0-dev libpixman-1-dev libevdev-dev libdrm-dev libsystemd-dev
+          scdoc
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - run: meson setup build --fatal-meson-warnings -Dauto_features=enabled -Dsd-bus-provider=libsystemd
+      - run: ninja -C build
+
+  # tidewm's own suite (mikelward/tidewm tests/), run against tidesway on
+  # wlroots' headless backend through tests/tidewm-harness/run. For now the
+  # failures are the baseline, not an error: the job fails only if the suite
+  # can't run, and reports what passed in its summary and an artifact.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: classify
+    if: needs.classify.outputs.docs_only != 'true'
+    container:
+      image: debian:testing
+    steps:
+      - run: apt-get update
+      - run: >-
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends
+          build-essential meson ninja-build pkgconf libwlroots-0.20-dev libwayland-dev
+          wayland-protocols libinput-dev libudev-dev libxkbcommon-dev libxcb1-dev
+          libxcb-icccm4-dev libjson-c-dev libpcre2-dev libpango1.0-dev libcairo2-dev
+          libgdk-pixbuf-2.0-dev libpixman-1-dev libevdev-dev libdrm-dev
+          python3 xwayland wtype wlr-randr swaybg grim
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s tests/tidewm-harness -v
+      - run: meson setup build -Dman-pages=disabled
+      - run: ninja -C build
+      - run: build/sway/sway --version
+      - uses: actions/checkout@v5
+        with:
+          repository: mikelward/tidewm
+          ref: main
+          path: tidewm
+          persist-credentials: false
+      # The test clients, as tidewm's own test target builds them
+      - run: >-
+          make -C tidewm XWAYLAND=-DXWAYLAND XLIBS="xcb xcb-icccm"
+          tests/client tests/workspaces tests/locker tests/power tests/ime
+          tests/pointer tests/launcher tests/keyboard tests/capture tests/x11client
+      - name: Suite
+        timeout-minutes: 80
+        run: tests/tidewm-harness/suite tidewm results
+        env:
+          JOBS: "4"
+          FILE_TIMEOUT: "1500"
+      - if: always()
+        run: if test -f results/summary.md; then cat results/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidewm-suite
+          path: results
+          if-no-files-found: warn
+
+  lanes:
+    name: lanes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [classify, build, build-debian, test]
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: mikelward/lanes@main
+        with:
+          mode: gate
+          pr: ${{ github.event.pull_request.number }}
+          classify-result: ${{ needs.classify.result }}
+          base-sha: ${{ needs.classify.outputs.base_sha }}
+          results: build=${{ needs.build.result }} build-debian=${{ needs.build-debian.result }} test=${{ needs.test.result }}

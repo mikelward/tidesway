@@ -1,3 +1,23 @@
+# tidesway
+
+tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl. It's sway
+1.12 for now, and nothing more: the plan is to add what tide needs from a
+compositor, then measure it against tidewm ([why][SWAY.md]):
+
+* tide's layouts (`tile`, `threecol`, `twocol`, `monocle`), placed before a new
+  window is first shown;
+* a focus guard, so a window you didn't ask for never takes focus;
+* `dim_inactive`, darkening the windows you're not in;
+* workspaces that span every monitor, by grouping each output's workspaces.
+
+Everything else is sway's, as described below. tidesway builds the same way, with
+meson against wlroots 0.20, and releases as `v1.12.0-tide.N`. Report its bugs
+here, not to sway.
+
+[tide]: https://github.com/mikelward/tide
+[tidewm]: https://github.com/mikelward/tidewm
+[SWAY.md]: https://github.com/mikelward/tidewm/blob/main/SWAY.md
+
 # sway
 
 **[English][en]** - [عربي][ar] - [Azərbaycanca][az] - [Česky][cs] - [Deutsch][de] - [Dansk][dk] - [Español][es] - [Français][fr] - [ქართული][ge] - [Ελληνικά][gr] - [हिन्दी][hi] - [Magyar][hu] - [فارسی][ir] - [Italiano][it] - [日本語][ja] - [한국어][ko] - [Nederlands][nl] - [Norsk][no] - [Polski][pl] - [Português][pt] - [Română][ro] - [Русский][ru] - [Српски][sr] - [Svenska][sv] - [Türkçe][tr] - [Українська][uk] - [中文-简体][zh-CN] - [中文-繁體][zh-TW]

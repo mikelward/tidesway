@@ -1,0 +1,298 @@
+"""Tests for run and suite, with a stand-in for tidesway: python3 -m unittest
+discover -s tests/tidewm-harness"""
+
+import importlib.machinery
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+
+sys.dont_write_bytecode = True
+HERE = os.path.dirname(os.path.abspath(__file__))
+RUN = os.path.join(HERE, "run")
+
+
+def load(name):
+    loader = importlib.machinery.SourceFileLoader(name, os.path.join(HERE, name))
+    spec = importlib.util.spec_from_loader(name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+class RunTest(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        # Stands in for tidesway: writes its arguments and its config's text
+        self.fake = os.path.join(self.dir.name, "fake-sway")
+        self.out = os.path.join(self.dir.name, "out")
+        with open(self.fake, "w") as f:
+            f.write("#!/bin/sh\n"
+                    f'printf "%s\\n" "$@" > "{self.out}"\n'
+                    f'cat "$2" >> "{self.out}"\n')
+        os.chmod(self.fake, 0o755)
+        self.env = dict(os.environ, TIDESWAY=self.fake, XDG_RUNTIME_DIR=self.dir.name,
+                        XDG_CONFIG_HOME=os.path.join(self.dir.name, "xdg"))
+
+    def run_harness(self, *args):
+        proc = subprocess.run([RUN, *args], env=self.env, capture_output=True, text=True,
+                              timeout=10)
+        return proc
+
+    def written(self):
+        with open(self.out) as f:
+            return f.read()
+
+    def test_runs_tidesway_on_look_then_the_config_then_startup(self):
+        config = os.path.join(self.dir.name, "config")
+        self.assertEqual(self.run_harness("-c", config, "-s", "echo up").returncode, 0)
+        text = self.written()
+        self.assertTrue(text.startswith("-c\n"))
+        self.assertIn("default_border none", text)
+        look = text.index("default_border none")
+        include = text.index(f"include {config}\n")
+        startup = text.index("exec sh ")
+        self.assertLess(look, include)
+        self.assertLess(include, startup)
+        script = text[startup:].split()[2]
+        with open(script) as f:
+            self.assertEqual(f.read(), "echo up\n")
+
+    def test_without_c_includes_tidewms_own_config_path(self):
+        self.assertEqual(self.run_harness("-s", "true").returncode, 0)
+        path = os.path.join(self.dir.name, "xdg", "tidewm", "config")
+        self.assertIn(f"include {path}\n", self.written())
+
+    def test_refuses_an_unknown_argument(self):
+        proc = self.run_harness("-x")
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("-x", proc.stderr)
+        self.assertFalse(os.path.exists(self.out))
+
+    def test_says_when_tidesway_is_missing(self):
+        self.env["TIDESWAY"] = os.path.join(self.dir.name, "nowhere")
+        proc = self.run_harness("-s", "true")
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("nowhere", proc.stderr)
+
+
+class SuiteTest(unittest.TestCase):
+    def suite_on(self, files, **env):
+        """Runs suite on a stand-in tidewm checkout with these test files"""
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        tests = os.path.join(d.name, "tidewm", "tests")
+        os.makedirs(tests)
+        files = dict(files, **{"harness.py": ""})
+        for name, text in files.items():
+            with open(os.path.join(tests, name), "w") as f:
+                f.write(text)
+        out = os.path.join(d.name, "out")
+        self.dir = d.name
+        proc = subprocess.run([os.path.join(HERE, "suite"), os.path.join(d.name, "tidewm"), out],
+                              capture_output=True, text=True, timeout=60,
+                              env=dict(os.environ, **env))
+        return proc, out
+
+    def assert_gone(self, pid):
+        """The process has exited (a zombie no one has reaped yet counts)"""
+        try:
+            with open(f"/proc/{pid}/stat") as f:
+                state = f.read().rsplit(")", 1)[1].split()[0]
+        except FileNotFoundError:
+            return
+        self.assertEqual(state, "Z", f"process {pid} is still running")
+
+    def child_pid(self):
+        with open(os.path.join(self.dir, "child")) as f:
+            return int(f.read())
+
+    # A test file that starts a long-lived child, as a test starts tidesway,
+    # writes its pid where the test can find it, then SLEEPS seconds.
+    LEAVES_A_CHILD = (
+        "import os, subprocess, time, unittest\n"
+        "class LeakTest(unittest.TestCase):\n"
+        "    def test_leaves_a_child(self):\n"
+        "        child = subprocess.Popen(['sleep', '300'])\n"
+        "        with open(os.path.join(os.path.dirname(os.getcwd()), '..', 'child'), 'w') as f:\n"
+        "            f.write(str(child.pid))\n"
+        "        time.sleep(SLEEPS)\n")
+
+    def test_a_file_that_times_out_leaves_nothing_running(self):
+        proc, _ = self.suite_on({"test_leak.py": self.LEAVES_A_CHILD.replace("SLEEPS", "300")},
+                                FILE_TIMEOUT="1")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("'timeout': 1", proc.stdout)
+        self.assert_gone(self.child_pid())
+
+    def test_a_file_that_finishes_leaves_nothing_running(self):
+        proc, _ = self.suite_on({"test_leak.py": self.LEAVES_A_CHILD.replace("SLEEPS", "0")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("1 of 1 pass", proc.stdout)
+        self.assert_gone(self.child_pid())
+
+    def test_a_failing_test_is_a_result_not_an_error(self):
+        proc, out = self.suite_on({"test_x.py": (
+            "import unittest\n"
+            "class XTest(unittest.TestCase):\n"
+            "    def test_passes(self): pass\n"
+            "    def test_fails(self): self.fail()\n")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("1 of 2 pass", proc.stdout)
+        self.assertTrue(os.path.exists(os.path.join(out, "results.json")))
+
+    def test_a_file_that_doesnt_import_fails_the_run(self):
+        proc, _ = self.suite_on({
+            "test_ok.py": ("import unittest\n"
+                           "class OkTest(unittest.TestCase):\n"
+                           "    def test_passes(self): pass\n"),
+            "test_broken.py": "import no_such_module\n"})
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("test_broken", proc.stderr)
+        self.assertIn("1 of 1 pass", proc.stdout)
+
+    def results(self, out, module):
+        with open(os.path.join(out, "results.json")) as f:
+            return json.load(f)[module]["tests"]
+
+    def test_a_class_fixtures_error_errors_its_tests(self):
+        proc, out = self.suite_on({"test_fix.py": (
+            "import unittest\n"
+            "class BadTest(unittest.TestCase):\n"
+            "    @classmethod\n"
+            "    def setUpClass(cls): raise RuntimeError('no compositor')\n"
+            "    def test_a(self): pass\n"
+            "    def test_b(self): pass\n"
+            "class GoodTest(unittest.TestCase):\n"
+            "    def test_c(self): pass\n")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_fix"), {
+            "test_fix.BadTest.test_a": "error",
+            "test_fix.BadTest.test_b": "error",
+            "test_fix.GoodTest.test_c": "pass",
+        })
+
+    def test_a_module_fixtures_error_errors_every_test(self):
+        proc, out = self.suite_on({"test_mod.py": (
+            "import unittest\n"
+            "def setUpModule(): raise RuntimeError('no compositor')\n"
+            "class ATest(unittest.TestCase):\n"
+            "    def test_a(self): pass\n")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_mod"), {"test_mod.ATest.test_a": "error"})
+
+    def test_counts_each_outcome_and_subtest(self):
+        proc, out = self.suite_on({"test_kinds.py": (
+            "import unittest\n"
+            "class KindsTest(unittest.TestCase):\n"
+            "    def test_fails(self): self.fail()\n"
+            "    def test_errs(self): raise RuntimeError\n"
+            "    def test_skips(self): self.skipTest('no X11')\n"
+            "    @unittest.expectedFailure\n"
+            "    def test_expected(self): self.fail()\n"
+            "    def test_subs(self):\n"
+            "        for i in range(3):\n"
+            "            with self.subTest(i=i):\n"
+            "                self.assertNotEqual(i, 1)\n")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_kinds"), {
+            "test_kinds.KindsTest.test_fails": "fail",
+            "test_kinds.KindsTest.test_errs": "error",
+            "test_kinds.KindsTest.test_skips": "skip",
+            "test_kinds.KindsTest.test_expected": "pass",
+            "test_kinds.KindsTest.test_subs (i=0)": "pass",
+            "test_kinds.KindsTest.test_subs (i=1)": "fail",
+            "test_kinds.KindsTest.test_subs (i=2)": "pass",
+        })
+
+    def test_an_unreported_test_is_a_timeout_only_if_its_file_timed_out(self):
+        suite = load("suite")
+        records = [{"ids": ["m.T.test_a", "m.T.test_b"]},
+                   {"test": "m.T.test_a", "outcome": "pass"}]
+        self.assertEqual(suite.outcomes(records, True),
+                         {"m.T.test_a": "pass", "m.T.test_b": "timeout"})
+        self.assertEqual(suite.outcomes(records, False),
+                         {"m.T.test_a": "pass", "m.T.test_b": "error"})
+        self.assertIsNone(suite.outcomes([{"load_error": "no module"}], False))
+
+    def test_a_skipped_class_fixture_skips_its_tests(self):
+        proc, out = self.suite_on({"test_skipfix.py": (
+            "import unittest\n"
+            "class X11Test(unittest.TestCase):\n"
+            "    @classmethod\n"
+            "    def setUpClass(cls): raise unittest.SkipTest('no Xwayland')\n"
+            "    def test_a(self): pass\n")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_skipfix"), {"test_skipfix.X11Test.test_a": "skip"})
+
+    def test_repeated_subtest_descriptions_each_count(self):
+        proc, out = self.suite_on({"test_same.py": (
+            "import unittest\n"
+            "class SameTest(unittest.TestCase):\n"
+            "    def test_twice(self):\n"
+            "        with self.subTest():\n"
+            "            self.fail()\n"
+            "        with self.subTest():\n"
+            "            pass\n")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_same"), {
+            "test_same.SameTest.test_twice (<subtest>)": "fail",
+            "test_same.SameTest.test_twice (<subtest>) #2": "pass",
+        })
+
+    def test_a_teardown_that_hangs_is_a_timeout(self):
+        proc, out = self.suite_on({"test_stuck.py": (
+            "import time, unittest\n"
+            "class StuckTest(unittest.TestCase):\n"
+            "    @classmethod\n"
+            "    def tearDownClass(cls): time.sleep(300)\n"
+            "    def test_a(self): pass\n")}, FILE_TIMEOUT="1")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_stuck"), {
+            "test_stuck.StuckTest.test_a": "pass",
+            "(the rest of the file)": "timeout",
+        })
+
+    def test_a_teardown_fixtures_error_counts_as_an_error(self):
+        proc, out = self.suite_on({"test_down.py": (
+            "import unittest\n"
+            "class DownTest(unittest.TestCase):\n"
+            "    @classmethod\n"
+            "    def tearDownClass(cls): raise RuntimeError('compositor left running')\n"
+            "    def test_a(self): pass\n")})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_down"), {
+            "test_down.DownTest.test_a": "pass",
+            "tearDownClass (test_down.DownTest)": "error",
+        })
+
+    def test_a_test_that_hangs_after_its_subtests_is_a_timeout(self):
+        proc, out = self.suite_on({"test_hang.py": (
+            "import time, unittest\n"
+            "class HangTest(unittest.TestCase):\n"
+            "    def test_subs_then_hangs(self):\n"
+            "        with self.subTest(i=0):\n"
+            "            pass\n"
+            "        time.sleep(300)\n")}, FILE_TIMEOUT="1")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.results(out, "test_hang"), {
+            "test_hang.HangTest.test_subs_then_hangs (i=0)": "pass",
+            "test_hang.HangTest.test_subs_then_hangs": "timeout",
+        })
+
+    def test_summary_totals_every_file(self):
+        suite = load("suite")
+        counts = lambda p, f: {"pass": p, "fail": f, "error": 0, "skip": 0, "timeout": 0}
+        head, table, totals = suite.summary({"test_a": {"counts": counts(2, 1)},
+                                             "test_b": {"counts": counts(1, 3)}})
+        self.assertEqual(head, "tidewm's suite on tidesway: 3 of 7 pass")
+        self.assertEqual(totals["fail"], 4)
+        self.assertIn("| test_b | 4 | 1 | 3 |", table)
+
+
+if __name__ == "__main__":
+    unittest.main()

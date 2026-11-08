@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""Runs tidewm's whole test suite against tidesway and says how much passed:
+
+  suite TIDEWM_CHECKOUT OUTDIR [MODULE,...]
+
+TIDEWM_CHECKOUT is a mikelward/tidewm checkout with its test clients built
+(`make tests/client ...`). Each test file runs in its own process group,
+through `runfile` beside this script, JOBS at a time, with TIDEWM pointing
+at `run`. OUTDIR gets results.json (per file and per test), summary.md (a
+table per file), and logs/FILE.txt and logs/FILE.jsonl (runfile's).
+
+Test failures are the result, not an error: it exits 0 whatever passes.
+It exits nonzero if the suite couldn't run, such as a test file that
+doesn't import, since then the counts would leave its tests out. Taken
+from tidewm's experiments/sway/run-suite.py.
+"""
+
+import concurrent.futures
+import glob
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+GRACE = 5  # seconds a file's processes get to exit on SIGTERM
+KINDS = ("pass", "fail", "error", "skip", "timeout")
+
+
+FIXTURE = re.compile(r"^\w+ \(([\w.]+)\)$")
+
+
+def outcomes(records, timed_out):
+    """Each test's outcome from runfile's records, or None if the file
+    didn't load. A test with subtests counts once per subtest, and once
+    more if it failed outside them or never finished; a description a test
+    repeats gets " #2", " #3" and so on. A test a class or module fixture
+    kept from running takes the fixture's outcome: error, or skip for a
+    SkipTest. One that never
+    reported, or never finished after its subtests did, is a timeout if
+    its file timed out, and an error if its file died. A teardown
+    fixture's error (tearDownClass, tearDownModule) counts on its own,
+    since the tests before it already reported. A file that stopped
+    after its last test reported, as in a hanging teardown, adds one
+    more outcome for the file itself, "(the rest of the file)"."""
+    if not records or "ids" not in records[0]:
+        return None
+    ids = records[0]["ids"]
+    unfinished = "timeout" if timed_out else "error"
+    tests, subtests, fixtures, teardowns, done = {}, {}, [], [], set()
+    finished = counted = False
+    for r in records[1:]:
+        if "finished" in r:
+            finished = True
+        elif "done" in r:
+            done.add(r["done"])
+        elif "fixture" in r and r["fixture"].startswith("tearDown"):
+            teardowns.append((r["fixture"], r["outcome"]))
+        elif "fixture" in r:
+            m = FIXTURE.match(r["fixture"])
+            # "setUpClass (mod.Class)" covers mod.Class.*; "setUpModule (mod)", mod.*
+            if m:
+                fixtures.append((m.group(1) + ".", r["outcome"]))
+        elif "subtest" in r:
+            seen = subtests.setdefault(r["test"], {})
+            desc, n = r["subtest"], 1
+            while desc in seen:
+                n += 1
+                desc = f"{r['subtest']} #{n}"
+            seen[desc] = r["outcome"]
+        else:
+            tests[r["test"]] = r["outcome"]
+    status = {}
+    for t in ids:
+        if t in subtests:
+            for desc, outcome in subtests[t].items():
+                status[f"{t} {desc}"] = outcome
+            if tests.get(t) in ("fail", "error"):
+                status[t] = tests[t]
+            elif t not in done:
+                # Its subtests reported, but it never finished
+                status[t] = unfinished
+                counted = True
+        elif t in tests:
+            status[t] = tests[t]
+        elif any(t.startswith(prefix) for prefix, _ in fixtures):
+            status[t] = next(outcome for prefix, outcome in fixtures if t.startswith(prefix))
+        else:
+            status[t] = unfinished
+            counted = True
+    for desc, outcome in teardowns:
+        status[desc] = outcome
+    if not finished and not counted:
+        # Every test reported, but the file never got to the end
+        status["(the rest of the file)"] = unfinished
+    return status
+
+
+def stop_group(proc, module):
+    """Ends everything the file started (compositors, clients), which it
+    leaves behind when it times out or a test forgets one: SIGTERM to its
+    process group, a moment to exit, then SIGKILL."""
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(proc.pid, sig)
+        except ProcessLookupError:
+            # Nothing left in the group: everything has exited.
+            return
+        if sig == signal.SIGTERM:
+            try:
+                proc.wait(GRACE)
+            except subprocess.TimeoutExpired:
+                print(f"suite: {module} didn't exit on SIGTERM; killing it", file=sys.stderr,
+                      flush=True)
+
+
+def run(tests, module, outdir):
+    env = dict(os.environ, TIDEWM=os.path.join(HERE, "run"))
+    log = os.path.join(outdir, "logs", module + ".txt")
+    jsonl = os.path.join(outdir, "logs", module + ".jsonl")
+    # Output goes to a file, not a pipe, so a process the file leaves
+    # behind can't hold the run open by holding the pipe.
+    with open(log, "w") as out:
+        proc = subprocess.Popen([sys.executable, os.path.join(HERE, "runfile"), module, jsonl],
+                                cwd=tests, env=env, stdout=out, stderr=subprocess.STDOUT,
+                                start_new_session=True)
+        timed_out = False
+        try:
+            proc.wait(int(os.environ.get("FILE_TIMEOUT", "1500")))
+        except subprocess.TimeoutExpired:
+            timed_out = True
+        stop_group(proc, module)
+        proc.wait()
+    if timed_out:
+        with open(log, "a") as out:
+            out.write("\n*** the file timed out\n")
+    records = []
+    try:
+        with open(jsonl) as f:
+            records = [json.loads(line) for line in f if line.strip()]
+    except (OSError, ValueError) as e:
+        print(f"suite: couldn't read {module}'s outcomes: {e}", file=sys.stderr, flush=True)
+    status = outcomes(records, timed_out)
+    if status is None:
+        with open(log) as f:
+            print(f"suite: couldn't load {module}:\n{f.read()}", file=sys.stderr, flush=True)
+    return module, status
+
+
+def summary(results):
+    lines = ["| File | Tests | Pass | Fail | Error | Skip | Timeout |",
+             "|---|---|---|---|---|---|---|"]
+    totals = {k: 0 for k in KINDS}
+    for module in sorted(results):
+        c = results[module]["counts"]
+        for k in KINDS:
+            totals[k] += c[k]
+        lines.append(f"| {module} | {sum(c.values())} | " + " | ".join(str(c[k]) for k in KINDS) + " |")
+    lines.append(f"| **all** | **{sum(totals.values())}** | " +
+                 " | ".join(f"**{totals[k]}**" for k in KINDS) + " |")
+    head = f"tidewm's suite on tidesway: {totals['pass']} of {sum(totals.values())} pass"
+    return head, "\n".join(lines), totals
+
+
+def main(argv):
+    if len(argv) not in (2, 3):
+        sys.exit(__doc__)
+    tests = os.path.join(os.path.abspath(argv[0]), "tests")
+    outdir = os.path.abspath(argv[1])
+    if not os.path.exists(os.path.join(tests, "harness.py")):
+        sys.exit(f"suite: no tests/harness.py in {argv[0]}")
+    os.makedirs(os.path.join(outdir, "logs"), exist_ok=True)
+    modules = sorted(os.path.basename(p)[:-3] for p in glob.glob(os.path.join(tests, "test_*.py")))
+    if len(argv) == 3:
+        modules = argv[2].split(",")
+    results = {}
+    broken = []
+    with concurrent.futures.ThreadPoolExecutor(int(os.environ.get("JOBS", "4"))) as pool:
+        for module, status in pool.map(lambda m: run(tests, m, outdir), modules):
+            if status is None:
+                broken.append(module)
+                continue
+            counts = {k: 0 for k in KINDS}
+            for s in status.values():
+                counts[s] += 1
+            results[module] = {"counts": counts, "tests": status}
+            print(module, counts, flush=True)
+    with open(os.path.join(outdir, "results.json"), "w") as f:
+        json.dump(results, f, indent=1, sort_keys=True)
+    head, table, _ = summary(results)
+    with open(os.path.join(outdir, "summary.md"), "w") as f:
+        f.write(f"## {head}\n\n{table}\n")
+    print(f"\n{head}\n\n{table}")
+    if broken:
+        sys.exit(f"suite: these didn't load, so the counts leave them out: {', '.join(broken)}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
