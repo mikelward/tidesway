@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-11-07
+last_modified: 2026-11-08
 ---
 
 # tidesway
@@ -123,7 +123,10 @@ Shared by every mikelward repo and the user-level agent config; canonical in mik
   a mikelward/tidewm checkout's `tests/` against `build/sway/sway`, with
   `tests/tidewm-harness/run` standing in for tidewm (its `-c` and `-s`). Build its
   clients first (`make tests/client ...`, as `ci.yml` does). The harness's own tests
-  run with `python3 -m unittest discover -s tests/tidewm-harness`.
+  run with `python3 -m unittest discover -s tests/tidewm-harness`. tidesway's own
+  tests, for what tidewm's suite can't express (sway's split tree, say), are
+  `tests/tidesway/test_*.py`, on tidewm's `tests/harness.py`: `TIDEWM_CHECKOUT=DIR
+  python3 -m unittest discover -s tests/tidesway`. They fail CI's `test` job.
 - **CI**. Builds on Arch (`build`) and Debian testing (`build-debian`), the two places
   a packaged wlroots 0.20 exists; tidewm's suite runs on Debian testing (`test`). Until
   a PR turns it on, a test failure doesn't fail `test`: its summary gives the pass
