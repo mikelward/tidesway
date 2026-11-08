@@ -1083,6 +1083,82 @@ workspace is shown: _change_ ("layout"), _workspace_, _output_, _layout_ (null
 for sway's layouts) and _symbol_ (tidewm's: "[]=", "|M|", "||=", or
 monocle's "[n]", n its windows). See *sway-ipc*(7).
 
+# TIDE'S FOCUS GUARD
+
+With the focus guard on, as tidewm has it, nothing takes the keyboard unless
+you asked for it. A new window takes focus when a grant names its app or a
+process it descends from; when it's from the app you're in, by app ID or
+process; when it's a portal's dialog, such as a file chooser, while a window
+has focus; or when it's a polkit agent's prompt right after a key press. Any
+other opens where it would, held from focus and marked urgent, even the lone
+window on an empty workspace, until you go to it: by the pointer, a click,
+*focus next*, its workspace, or *[con_id=N] focus*. When the window you're in
+closes, focus never goes to a held window. A window with neither an app ID nor
+a title is a status popup: it floats, guard or no guard, and with the guard
+it's held but not marked, and *focus next|prev* and the arrow keys pass it
+by. With nothing focused, *focus next|prev* goes to the workspace's most
+recent window, or one the guard holds, in sway's layouts too.
+
+A grant is used once, by the first new window that matches, or by an
+activation of a window its app already had; one naming an app is used before
+_\*_. A granted window takes focus even behind a fullscreen window
+on its workspace, which leaves fullscreen. A key press, a click, or focus moving to another window by any means
+cancels its focus: a new window taking focus with no grant, or a workspace
+switch, among them, but not focus coming back to the window you were in, as
+when a launcher closes, nor focus moving as an output goes. A canceled grant
+still places its window: if you've left the workspace it was made on, the
+window opens there, or on its _--workspace_, held and marked, as Hyprland's
+initial_workspace_tracking does; a dialog goes with its parent, and _\*_
+without _--pid_, or a notification's grant, places nothing. A grant lapses
+after _grant\_seconds_.
+
+A held window that asks to go fullscreen, as it opens or later, or that a
+*fullscreen* command or rule makes fullscreen, goes fullscreen once you go to
+it, unless the request is taken back first; until then it leaves the window
+you're in as it is.
+
+A grant naming its app lets an activation focus a window, with the guard on
+or off. With the guard on, any other activation marks the window urgent,
+whatever *focus_on_window_activation* says; with it off, that setting
+decides. With the guard off, a new window still uses its grant, and goes to
+its _--workspace_.
+
+*grant* [--pid <pid>] [--key <key>] [--workspace <name>] [<app>...]
+	A one-shot grant: the first new window of one of the apps takes focus,
+	or of any app's for _\*_, which stands alone. Apps match ignoring case
+	and a ".desktop", and a bare name matches a qualified ID's last part.
+	With _--pid_, a window whose process descends from _pid_ takes it too.
+	_--workspace_ takes the window to that workspace, made if it's new, with
+	focus. _--key_ names the grant for *grant extend*. Options take _--opt
+	value_ or _--opt=value_.
+
+*grant* --or-recent <app>...
+	A notification's click: the same grant, which, if it lapses unused and
+	you've done nothing else, brings up the most recently focused window of
+	any of the apps.
+
+*grant extend* --key <key> [--pid <pid>] <app> <id>...
+	Adds the ids to the grant made with that _key_, _pid_ and first _app_, if it
+	still holds.
+
+*focus recent* <app>...
+	Brings up the most recently focused window of any of the apps. It's you
+	moving on, so it cancels every grant. It fails for an app with no window.
+
+This may only be used in the configuration file:
+
+*focus_guard* enable|disable|grant_seconds <S>|prompt_seconds <S>
+	Turns the guard on or off; it's off without the line. _grant\_seconds_
+	is how long a grant holds, 10 without it, and _prompt\_seconds_ how soon
+	after a key press a polkit prompt may take focus, 2 without it, each more
+	than 0 and at most a day.
+
+In IPC, a window has tidewm's _workspace_ and _output_, its workspace's and
+output's names, and *GET_SEATS* gives tidewm's _last\_input_, your last key
+press or click as _type_ ("key" or "button"), _window_ (the id of the window
+it went to, or null) and _msec\_ago_, or null before any, and
+_prompt\_may\_focus_, whether a polkit prompt opening now may take focus.
+
 # CRITERIA
 
 A criteria is a string in the form of, for example:

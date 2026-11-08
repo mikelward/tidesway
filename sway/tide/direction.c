@@ -11,6 +11,7 @@
 #include "sway/ipc-server.h"
 #include "sway/output.h"
 #include "sway/tide/direction.h"
+#include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
@@ -138,7 +139,8 @@ static list_t *candidates(struct sway_workspace *ws, bool tiled) {
 	add_leaves(ws->tiling, out);
 	for (int i = 0; !tiled && i < ws->floating->length; i++) {
 		struct sway_container *f = ws->floating->items[i];
-		if (f->view) {
+		// tide: never a status popup, which only the pointer focuses
+		if (f->view && !tide_focus_passed_by(f)) {
 			list_add(out, f);
 		}
 	}
@@ -255,9 +257,15 @@ const char *tide_move_in_direction(struct sway_container *con, enum wlr_directio
 	return NULL;
 }
 
-struct sway_container *tide_focus_next(struct sway_container *con, int step,
-		bool *handled) {
-	struct sway_workspace *ws = con ? con->pending.workspace : NULL;
+struct sway_container *tide_focus_next(struct sway_workspace *ws,
+		struct sway_container *con, int step, bool *handled) {
+	if (!con) {
+		/* No window focused, in tide's layouts or sway's: its most recent,
+		 * or one the focus guard holds */
+		*handled = ws != NULL;
+		return ws ? tide_focus_go(ws) : NULL;
+	}
+	ws = con->pending.workspace;
 	*handled = ws && con->view && tide_workspace_layout(ws) != TIDE_NONE;
 	if (!*handled || con->pending.fullscreen_mode != FULLSCREEN_NONE) {
 		return NULL;

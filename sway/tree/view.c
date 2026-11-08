@@ -30,6 +30,7 @@
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
 #include "sway/sway_text_node.h"
+#include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
@@ -661,6 +662,9 @@ static struct sway_workspace *select_workspace(struct sway_view *view) {
 		}
 	}
 	list_free(criterias);
+	if (!ws) {
+		ws = tide_focus_placed(view); // tide: where a grant sends it
+	}
 	if (ws) {
 		view_assign_ctx(view, NULL);
 		return ws;
@@ -700,6 +704,11 @@ static bool should_focus(struct sway_view *view) {
 	struct sway_container *prev_con = seat_get_focused_container(seat);
 	struct sway_workspace *prev_ws = seat_get_focused_workspace(seat);
 	struct sway_workspace *map_ws = view->container->pending.workspace;
+
+	// tide: one the focus guard holds doesn't, even alone on its workspace
+	if (tide_focus_held(view)) {
+		return false;
+	}
 
 	if (view->container->pending.fullscreen_mode == FULLSCREEN_GLOBAL) {
 		return true;
@@ -819,6 +828,7 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	view->surface = wlr_surface;
 	view_populate_pid(view);
 	view->container = container_create(view);
+	tide_focus_open(view); // tide: held or granted, before it's placed
 
 	if (view->ctx == NULL) {
 		struct launcher_ctx *ctx = launcher_ctx_find_pid(view->pid);
@@ -910,7 +920,9 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		view_update_csd_from_client(view, decoration);
 	}
 
-	if (view->impl->wants_floating && view->impl->wants_floating(view)) {
+	// tide: a status popup, with no app ID and no title, floats
+	if ((view->impl->wants_floating && view->impl->wants_floating(view))
+			|| tide_focus_nameless(view)) {
 		view->container->pending.border = config->floating_border;
 		view->container->pending.border_thickness = config->floating_border_thickness;
 		container_set_floating(view->container, true);
@@ -959,6 +971,7 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	if (set_focus) {
 		input_manager_set_focus(&view->container->node);
 	}
+	tide_focus_opened(view); // tide: its urgency, or its grant's focus
 
 	if (view->ext_foreign_toplevel) {
 		update_ext_foreign_toplevel(view);

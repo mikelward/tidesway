@@ -151,8 +151,11 @@ sway_cmd cmd_seat;
 sway_cmd cmd_ipc;
 sway_cmd cmd_kill;
 sway_cmd cmd_layout;
-// tide: its layout commands and config lines (sway/tide/commands.c)
+// tide: its layout commands and config lines (sway/tide/commands.c), and
+// the focus guard's (sway/tide/focus.c)
 sway_cmd cmd_default_layout;
+sway_cmd cmd_focus_guard;
+sway_cmd cmd_grant;
 sway_cmd cmd_layout_cycle;
 sway_cmd cmd_layout_defaults;
 sway_cmd cmd_mfact;

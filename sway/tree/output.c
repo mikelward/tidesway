@@ -10,6 +10,7 @@
 #include "sway/tree/arrange.h"
 #include "sway/tree/workspace.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "log.h"
 #include "util.h"
 
@@ -294,7 +295,9 @@ void output_disable(struct sway_output *output) {
 	output->enabled = false;
 
 	destroy_layers(output);
+	tide_focus_quiet_begin(); // tide: focus moving as it goes isn't you moving on
 	output_evacuate(output);
+	tide_focus_quiet_end();
 	sway_ext_workspace_output_disable(output);
 }
 

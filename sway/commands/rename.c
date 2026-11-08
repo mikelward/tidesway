@@ -9,6 +9,7 @@
 #include "sway/ipc-server.h"
 #include "sway/output.h"
 #include "sway/desktop/launcher.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/container.h"
 #include "sway/tree/workspace.h"
 #include "sway/tree/root.h"
@@ -100,6 +101,7 @@ struct cmd_results *cmd_rename(int argc, char **argv) {
 
 	output_sort_workspaces(workspace->output);
 	ipc_event_workspace(NULL, workspace, "rename");
+	tide_focus_renamed(workspace); // tide: a grant made on it follows it
 
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }

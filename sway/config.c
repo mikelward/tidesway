@@ -207,6 +207,7 @@ static void destroy_removed_seats(struct sway_config *old_config,
 
 static void config_defaults(struct sway_config *config) {
 	tide_config_defaults(&config->tide); // tide
+	tide_focus_config_defaults(&config->tide_focus); // tide
 	if (!(config->swaynag_command = strdup("swaynag"))) goto cleanup;
 	config->swaynag_config_errors = (struct swaynag_instance){0};
 	config->swaynag_config_errors.args = "--type error "
@@ -547,6 +548,7 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 
 	if (old_config) {
 		tide_config_reloaded(old_config, config); // tide
+		tide_focus_reloaded(); // tide
 		destroy_removed_seats(old_config, config);
 		free_config(old_config);
 	}

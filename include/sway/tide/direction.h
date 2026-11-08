@@ -26,10 +26,12 @@ struct sway_node *tide_focus_in_direction(struct sway_container *con,
 
 /* focus next (step 1) or prev (-1) from con on a workspace in a tide
  * layout, as tidewm's focusstack: the next window there in tiled order,
- * then its floating ones, going round; con itself if it's alone, or NULL
- * if con is fullscreen. *handled says whether tide's rule applies. */
-struct sway_container *tide_focus_next(struct sway_container *con, int step,
-	bool *handled);
+ * then its floating ones but a status popup, going round; con itself if
+ * it's alone, or NULL if con is fullscreen. With no con, in sway's
+ * layouts too, ws's most recent window, or one the focus guard holds.
+ * *handled says whether tide's rule applies. */
+struct sway_container *tide_focus_next(struct sway_workspace *ws,
+	struct sway_container *con, int step, bool *handled);
 
 /* Moves tile con dir: swaps it with the tile that way on its output, or,
  * past the edge, puts it on the next output's workspace in the place of

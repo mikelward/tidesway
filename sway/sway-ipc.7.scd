@@ -1362,6 +1362,15 @@ one seat. Each object has the following properties:
 :  array
 :  An array of input devices that are attached to the seat. Currently, this
    is an array of objects that are identical to those returned by _GET\_INPUTS_
+|- last_input
+:  object
+:  tidesway's: your last key press or click, as _type_ ("key" or "button"),
+   _window_ (the id of the window it went to, or null) and _msec\_ago_; null
+   before any (*sway*(5), TIDE'S FOCUS GUARD)
+|- prompt_may_focus
+:  boolean
+:  tidesway's: whether a polkit prompt opening now may take focus, a key
+   having been pressed within the focus guard's _prompt\_seconds_
 
 
 *Example Reply:*

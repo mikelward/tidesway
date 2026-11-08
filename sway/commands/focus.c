@@ -8,6 +8,7 @@
 #include "sway/input/seat.h"
 #include "sway/output.h"
 #include "sway/tide/direction.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
@@ -238,7 +239,8 @@ static struct sway_node *node_get_in_direction_floating(
 
 	for (int i = 0; i < con->pending.workspace->floating->length; i++) {
 		struct sway_container *floater = con->pending.workspace->floating->items[i];
-		if (floater == con) {
+		// tide: never a status popup, which only the pointer focuses
+		if (floater == con || tide_focus_passed_by(floater)) {
 			continue;
 		}
 		float distance = dir == WLR_DIRECTION_LEFT || dir == WLR_DIRECTION_RIGHT
@@ -330,7 +332,11 @@ static struct cmd_results *focus_output(struct sway_seat *seat,
 
 	free(identifier);
 	if (output) {
-		seat_set_focus(seat, seat_get_focus_inactive(seat, &output->node));
+		struct sway_node *node = seat_get_focus_inactive(seat, &output->node);
+		// tide: an output showing only windows the focus guard holds focuses one
+		struct sway_container *held = node && node->type == N_WORKSPACE
+			? tide_focus_go(node->sway_workspace) : NULL;
+		seat_set_focus(seat, held ? &held->node : node);
 		seat_consider_warp_to_focus(seat);
 	}
 
@@ -414,6 +420,11 @@ struct cmd_results *cmd_focus(int argc, char **argv) {
 		return focus_output(seat, argc, argv);
 	}
 
+	// tide: focus recent APP ..., a notification center's
+	if (strcmp(argv[0], "recent") == 0) {
+		return tide_cmd_focus_recent(argc - 1, argv + 1);
+	}
+
 	if (strcasecmp(argv[0], "parent") == 0) {
 		return focus_parent();
 	}
@@ -424,7 +435,7 @@ struct cmd_results *cmd_focus(int argc, char **argv) {
 	// tide: next and prev go round the tiled order, not by the boxes
 	if (strcasecmp(argv[0], "next") == 0 || strcasecmp(argv[0], "prev") == 0) {
 		bool tide = false;
-		struct sway_container *next = tide_focus_next(container,
+		struct sway_container *next = tide_focus_next(workspace, container,
 			strcasecmp(argv[0], "next") == 0 ? 1 : -1, &tide);
 		if (tide) {
 			if (next) {

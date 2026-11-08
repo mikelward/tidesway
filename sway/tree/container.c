@@ -16,6 +16,7 @@
 #include "sway/sway_text_node.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/view.h"
@@ -1300,6 +1301,10 @@ void container_fullscreen_disable(struct sway_container *con) {
 
 void container_set_fullscreen(struct sway_container *con,
 		enum sway_fullscreen_mode mode) {
+	// tide: a window the focus guard holds goes fullscreen once it has focus
+	if (tide_focus_defer_fullscreen(con, mode)) {
+		return;
+	}
 	if (con->pending.fullscreen_mode == mode) {
 		return;
 	}

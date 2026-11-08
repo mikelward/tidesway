@@ -1,6 +1,7 @@
 #include <wlr/types/wlr_xdg_activation_v1.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include "sway/desktop/launcher.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
 
@@ -34,6 +35,11 @@ void xdg_activation_v1_handle_request_activate(struct wl_listener *listener,
 			ctx->activated = true;
 			view_assign_ctx(view, ctx);
 		}
+		return;
+	}
+
+	// tide: a grant naming its app focuses it, whoever asks
+	if (tide_focus_activate(view)) {
 		return;
 	}
 
