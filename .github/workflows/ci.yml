@@ -126,6 +126,13 @@ jobs:
         env:
           JOBS: "4"
           FILE_TIMEOUT: "1500"
+      # tidesway's own tests, for what tidewm's suite can't express (sway's
+      # split tree, say), through tidewm's harness. These fail the job.
+      - name: tidesway's tests
+        timeout-minutes: 10
+        run: python3 -m unittest discover -s tests/tidesway -v
+        env:
+          TIDEWM_CHECKOUT: tidewm
       - if: always()
         run: if test -f results/summary.md; then cat results/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
       - if: always()
