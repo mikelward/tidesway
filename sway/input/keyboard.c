@@ -15,6 +15,7 @@
 #include "sway/input/cursor.h"
 #include "sway/ipc-server.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "log.h"
 
 #if WLR_HAS_SESSION
@@ -446,6 +447,7 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 
 	if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		cursor_notify_key_press(seat->cursor);
+		tide_focus_key(); // tide: you moving on, before any binding runs
 	}
 
 	// Identify new keycode, raw keysym(s), and translated keysym(s)
@@ -580,6 +582,8 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 		wlr_seat_set_keyboard(wlr_seat, keyboard->wlr);
 		wlr_seat_keyboard_notify_key(wlr_seat, event->time_msec,
 				event->keycode, event->state);
+		// tide: the window it went to, for GET_SEATS' last_input
+		tide_focus_delivered(wlr_seat->keyboard_state.focused_surface);
 	}
 
 	free(device_identifier);

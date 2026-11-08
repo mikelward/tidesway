@@ -18,6 +18,7 @@
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
 
@@ -674,7 +675,10 @@ static void handle_request_activate(struct wl_listener *listener, void *data) {
 	if (xsurface->surface == NULL || !xsurface->surface->mapped) {
 		return;
 	}
-	view_request_activate(view, NULL);
+	// tide: a grant naming its app focuses it
+	if (!tide_focus_activate(view)) {
+		view_request_activate(view, NULL);
+	}
 
 	transaction_commit_dirty();
 }

@@ -9,8 +9,10 @@ this order, one PR each; each makes more of tidewm's suite pass.
 - ~~**Layouts**~~. Done: tide's `tile`, `threecol`, `twocol` and `monocle`, with
   `mfact`, `nmaster`, `single_width`, `zoom` and `movestack`, tidewm's layout
   lines and its `layout` IPC (`sway/tide/`).
-- **Focus guard**. Hooks in `view_map()` and `should_focus()` so a held window never
-  takes focus, the lone window on an empty workspace included.
+- ~~**Focus guard**~~. Done: tidewm's grants, held windows and status popups,
+  a canceled grant's placement, `grant`, `grant extend`, `grant --or-recent`,
+  `focus recent` and `focus_guard`, with GET_SEATS' `last_input` and a
+  window's `workspace` and `output` (`sway/tide/focus.c`).
 - **Dimming**. `dim_inactive`, darkening unfocused windows rather than making them
   see-through.
 - **Workspaces spanning every monitor**. Grouped workspaces: each output's
@@ -55,3 +57,22 @@ Each patch's PR says how far it moves this.
   sway's layouts. `focus` and `move` by direction go by tidewm's rule for
   a tile, so they don't nest either; anything else that nests is laid out in
   tree order, and `zoom`, `movestack` and the next new window flatten it.
+- **Status popups float** (2026-11-08): a window with neither an app ID nor a
+  title floats, guard or no guard, as in tidewm, so `zoom` and the tiles
+  never meet it; `focus next|prev` and the arrow keys pass it by while the
+  guard holds it.
+- **A grant's workspace and `assign`** (2026-11-08): an `assign` rule's
+  workspace wins over a grant's `--workspace`, as it does over a canceled
+  grant's place. In tidewm a grant's `--workspace` wins over the rules; here
+  both places are chosen where sway chooses a new window's workspace.
+- **`focus next` with nothing focused** (2026-11-08): goes to the workspace's
+  most recent window, or one the guard holds, in sway's layouts as in tide's,
+  where sway's did nothing; otherwise a held window in sway's layouts could
+  be reached only by the pointer.
+- **Unbalanced quotes** (2026-11-08): sway strips a lone `"` before a command
+  sees it, so `grant "app` grants `app`, where tidewm fails with "expected
+  app ids".
+- **Activations with the guard off** (2026-11-08): `focus_on_window_activation`
+  decides, as in sway, unless a grant names the app. tidewm marks every
+  ungranted activation urgent, guard or no guard; here that holds with the
+  guard on, whatever the setting says.

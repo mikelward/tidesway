@@ -26,6 +26,7 @@
 #include "sway/output.h"
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
@@ -356,7 +357,14 @@ void dispatch_cursor_button(struct sway_cursor *cursor,
 		time_msec = get_current_time_in_msec();
 	}
 
+	// tide: a click is you moving on, then the window it went to
+	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		tide_focus_click();
+	}
 	seatop_button(cursor->seat, time_msec, device, button, state);
+	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		tide_focus_delivered(cursor->seat->wlr_seat->pointer_state.focused_surface);
+	}
 }
 
 static void handle_pointer_button(struct wl_listener *listener, void *data) {

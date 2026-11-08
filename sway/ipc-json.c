@@ -13,6 +13,7 @@
 #include "sway/config.h"
 #include "sway/ipc-json.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
@@ -594,6 +595,13 @@ static void ipc_json_describe_view(struct sway_container *c, json_object *object
 
 	bool visible = view_is_visible(c->view);
 	json_object_object_add(object, "visible", json_object_new_boolean(visible));
+
+	// tide: where it is, as tidewm's window has it
+	struct sway_workspace *ws = c->pending.workspace;
+	json_object_object_add(object, "workspace",
+			ws ? json_object_new_string(ws->name) : NULL);
+	json_object_object_add(object, "output", ws && ws->output ?
+			json_object_new_string(ws->output->wlr_output->name) : NULL);
 
 	bool has_titlebar = c->title_bar.tree->node.enabled;
 	struct wlr_box window_box = {
@@ -1241,6 +1249,7 @@ json_object *ipc_json_describe_seat(struct sway_seat *seat) {
 		json_object_array_add(devices, ipc_json_describe_input(device->input_device));
 	}
 	json_object_object_add(object, "devices", devices);
+	tide_focus_describe_seat(object); // tide: last_input, prompt_may_focus
 
 	return object;
 }

@@ -29,6 +29,7 @@
 #include "sway/layers.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -294,6 +295,10 @@ static void handle_seat_node_destroy(struct wl_listener *listener, void *data) {
 			seat_get_focus_inactive_view(seat, &ws->node);
 		next_focus = con ? &(con->node) : &(ws->node);
 	}
+	if (needs_new_focus) {
+		// tide: never to a window the focus guard holds
+		next_focus = tide_focus_after_close(seat, next_focus);
+	}
 
 	if (next_focus->type == N_WORKSPACE &&
 			!workspace_is_visible(next_focus->sway_workspace)) {
@@ -310,6 +315,7 @@ static void handle_seat_node_destroy(struct wl_listener *listener, void *data) {
 		// the focus stack without sending focus notifications to the view
 		if (seat_get_focus(seat) == next_focus) {
 			seat_send_focus(next_focus, seat);
+			tide_focus_focused(next_focus); // tide: focus moved, as it closed
 		} else {
 			seat_set_focus(seat, next_focus);
 		}
@@ -1250,6 +1256,7 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 		// the workspace needs to be arranged
 		arrange_workspace(new_workspace);
 	}
+	tide_focus_focused(node); // tide: the focus guard's grants and held windows
 }
 
 void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {

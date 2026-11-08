@@ -2,6 +2,7 @@
 #include "log.h"
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/focus.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
@@ -30,7 +31,9 @@ struct cmd_results *cmd_fullscreen(int argc, char **argv) {
 		}
 	}
 
-	bool is_fullscreen = container->pending.fullscreen_mode != FULLSCREEN_NONE;
+	// tide: a held window's waiting request counts as made
+	bool is_fullscreen = container->pending.fullscreen_mode != FULLSCREEN_NONE
+		|| tide_focus_wants_fullscreen(container);
 	bool global = false;
 	bool enable = !is_fullscreen;
 
