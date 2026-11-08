@@ -17,6 +17,7 @@
 #include "swaynag.h"
 #include "tree/container.h"
 #include "sway/input/tablet.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/root.h"
 #include "wlr-layer-shell-unstable-v1-protocol.h"
 #include <pango/pangocairo.h>
@@ -607,6 +608,9 @@ struct sway_config {
 			char **argv;
 		} leftovers;
 	} handler_context;
+
+	// tide: its layout lines
+	struct tide_config tide;
 };
 
 /**

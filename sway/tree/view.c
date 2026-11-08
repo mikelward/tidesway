@@ -30,6 +30,7 @@
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
 #include "sway/sway_text_node.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
@@ -895,7 +896,10 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 			&view->foreign_destroy);
 
 	struct sway_container *container = view->container;
-	if (target_sibling) {
+	struct sway_container *tide = ws ? tide_add_new(ws, container, target_sibling) : NULL;
+	if (tide) { // tide: placed by new_window
+		container = tide;
+	} else if (target_sibling) {
 		container_add_sibling(target_sibling, container, 1);
 	} else if (ws) {
 		container = workspace_add_tiling(ws, container);

@@ -523,8 +523,10 @@ static void ipc_json_describe_workspace(struct sway_workspace *workspace,
 	json_object_object_add(object, "representation", workspace->representation ?
 			json_object_new_string(workspace->representation) : NULL);
 
+	// tide: its tide layout's name, where it's in one
+	const char *tide = tide_layout_name(tide_workspace_layout(workspace));
 	json_object_object_add(object, "layout",
-			json_object_new_string(
+			json_object_new_string(tide ? tide :
 				ipc_json_layout_description(workspace->layout)));
 	json_object_object_add(object, "orientation",
 			json_object_new_string(

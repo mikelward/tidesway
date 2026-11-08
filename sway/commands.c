@@ -101,11 +101,17 @@ static const struct cmd_handler handlers[] = {
 
 /* Config-time only commands. Keep alphabetized */
 static const struct cmd_handler config_handlers[] = {
+	{ "default_layout", cmd_default_layout }, // tide
 	{ "default_orientation", cmd_default_orientation },
 	{ "include", cmd_include },
+	{ "layout_cycle", cmd_layout_cycle }, // tide
+	{ "layout_defaults", cmd_layout_defaults }, // tide
 	{ "primary_selection", cmd_primary_selection },
+	{ "resize_grab", cmd_resize_grab }, // tide
+	{ "single_window", cmd_single_window }, // tide
 	{ "swaybg_command", cmd_swaybg_command },
 	{ "swaynag_command", cmd_swaynag_command },
+	{ "ultrawide_aspect", cmd_ultrawide_aspect }, // tide
 	{ "workspace_layout", cmd_workspace_layout },
 	{ "xwayland", cmd_xwayland },
 };
@@ -123,7 +129,10 @@ static const struct cmd_handler command_handlers[] = {
 	{ "layout", cmd_layout },
 	{ "mark", cmd_mark },
 	{ "max_render_time", cmd_max_render_time },
+	{ "mfact", cmd_mfact }, // tide
 	{ "move", cmd_move },
+	{ "movestack", cmd_movestack }, // tide
+	{ "nmaster", cmd_nmaster }, // tide
 	{ "nop", cmd_nop },
 	{ "opacity", cmd_opacity },
 	{ "reload", cmd_reload },
@@ -131,6 +140,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "resize", cmd_resize },
 	{ "scratchpad", cmd_scratchpad },
 	{ "shortcuts_inhibitor", cmd_shortcuts_inhibitor },
+	{ "single_width", cmd_single_width }, // tide
 	{ "split", cmd_split },
 	{ "splith", cmd_splith },
 	{ "splitt", cmd_splitt },
@@ -140,6 +150,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "title_format", cmd_title_format },
 	{ "unmark", cmd_unmark },
 	{ "urgent", cmd_urgent },
+	{ "zoom", cmd_zoom }, // tide
 };
 
 static int handler_compare(const void *_a, const void *_b) {

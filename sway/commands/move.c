@@ -12,6 +12,8 @@
 #include "sway/ipc-server.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/direction.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -223,10 +225,18 @@ static void container_move_to_workspace(struct sway_container *container,
 		if (workspace_is_empty(workspace) && container->pending.children) {
 			workspace_unwrap_children(workspace, container);
 			container_reap_empty(container);
+			if (tide_workspace_layout(workspace) != TIDE_NONE) {
+				tide_normalize(workspace); // tide: its windows, unwrapped
+			}
 		} else {
 			container->pending.width = container->pending.height = 0;
 			container->width_fraction = container->height_fraction = 0;
-			workspace_add_tiling(workspace, container);
+			// tide: a window moved in is placed as a new one
+			struct sway_container *focus = seat_get_focus_inactive_tiling(
+				config->handler_context.seat, workspace);
+			if (!tide_add_new(workspace, container, focus)) {
+				workspace_add_tiling(workspace, container);
+			}
 		}
 		container_update_representation(container);
 	}
@@ -249,6 +259,13 @@ static void container_move_to_container(struct sway_container *container,
 		return;
 	}
 	struct sway_workspace *old_workspace = container->pending.workspace;
+	// tide: moved in from another workspace, a window is placed as new
+	struct sway_workspace *dest_ws = destination->pending.workspace;
+	if (dest_ws && dest_ws != old_workspace
+			&& tide_workspace_layout(dest_ws) != TIDE_NONE) {
+		container_move_to_workspace(container, dest_ws);
+		return;
+	}
 
 	container_detach(container);
 	container->pending.width = container->pending.height = 0;
@@ -708,6 +725,11 @@ static struct cmd_results *cmd_move_in_direction(
 		}
 		container_floating_move_to(container, lx, ly);
 		return cmd_results_new(CMD_SUCCESS, NULL);
+	}
+	if (tide_direction_applies(container)) { // tide: by the windows' boxes
+		const char *err = tide_move_in_direction(container, direction);
+		return err ? cmd_results_new(CMD_FAILURE, "%s", err)
+			: cmd_results_new(CMD_SUCCESS, NULL);
 	}
 	struct sway_workspace *old_ws = container->pending.workspace;
 	struct sway_container *old_parent = container->pending.parent;

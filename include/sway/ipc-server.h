@@ -22,5 +22,7 @@ void ipc_event_shutdown(const char *reason);
 void ipc_event_binding(struct sway_binding *binding);
 void ipc_event_input(const char *change, struct sway_input_device *device);
 void ipc_event_output(void);
+// tide: ws's layout, as tidewm's layout event has it
+void ipc_event_layout(struct sway_workspace *ws);
 
 #endif

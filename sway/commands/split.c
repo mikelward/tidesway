@@ -7,11 +7,13 @@
 #include "sway/tree/workspace.h"
 #include "sway/input/input-manager.h"
 #include "sway/input/seat.h"
+#include "sway/tide/layout.h"
 #include "log.h"
 
 static struct cmd_results *do_split(int layout) {
 	struct sway_container *con = config->handler_context.container;
 	struct sway_workspace *ws = config->handler_context.workspace;
+	tide_leave(ws); // tide: a split is sway's layouts again
 	if (con) {
 		if (container_is_scratchpad_hidden_or_child(con) &&
 				con->pending.fullscreen_mode != FULLSCREEN_GLOBAL) {

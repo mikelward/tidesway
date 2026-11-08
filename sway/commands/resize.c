@@ -7,6 +7,8 @@
 #include <strings.h>
 #include <wlr/util/edges.h>
 #include "sway/commands.h"
+#include "sway/tide/direction.h"
+#include "sway/tide/layout.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
@@ -240,6 +242,13 @@ static struct cmd_results *resize_adjust_tiled(uint32_t axis,
 
 	if (container_is_scratchpad_hidden_or_child(current)) {
 		return cmd_results_new(CMD_FAILURE, "Cannot resize a hidden scratchpad container");
+	}
+
+	if (tide_direction_applies(current)) { // tide: the master/stack edge
+		const char *err = tide_resize(current, is_horizontal(axis), amount->amount,
+			amount->unit == MOVEMENT_UNIT_PX);
+		return err ? cmd_results_new(CMD_FAILURE, "%s", err)
+			: cmd_results_new(CMD_SUCCESS, NULL);
 	}
 
 	if (amount->unit == MOVEMENT_UNIT_DEFAULT) {

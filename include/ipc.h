@@ -36,6 +36,9 @@ enum ipc_command_type {
 	// sway-specific event types
 	IPC_EVENT_BAR_STATE_UPDATE = ((1<<31) | 20),
 	IPC_EVENT_INPUT = ((1<<31) | 21),
+
+	// tide's: a workspace's tide layout changes, or the workspace shown does
+	IPC_EVENT_LAYOUT = ((1<<31) | 30),
 };
 
 #endif

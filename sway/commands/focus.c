@@ -7,6 +7,7 @@
 #include "sway/input/cursor.h"
 #include "sway/input/seat.h"
 #include "sway/output.h"
+#include "sway/tide/direction.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
@@ -420,6 +421,21 @@ struct cmd_results *cmd_focus(int argc, char **argv) {
 		return focus_child();
 	}
 
+	// tide: next and prev go round the tiled order, not by the boxes
+	if (strcasecmp(argv[0], "next") == 0 || strcasecmp(argv[0], "prev") == 0) {
+		bool tide = false;
+		struct sway_container *next = tide_focus_next(container,
+			strcasecmp(argv[0], "next") == 0 ? 1 : -1, &tide);
+		if (tide) {
+			if (next) {
+				seat_set_focus_container(seat, next);
+				seat_consider_warp_to_focus(seat);
+				container_raise_floating(next);
+			}
+			return cmd_results_new(CMD_SUCCESS, NULL);
+		}
+	}
+
 	enum wlr_direction direction = 0;
 	bool descend = true;
 	if (!parse_direction(argv[0], &direction)) {
@@ -455,7 +471,9 @@ struct cmd_results *cmd_focus(int argc, char **argv) {
 		return cmd_results_new(CMD_FAILURE, "");
 	}
 	struct sway_node *next_focus = NULL;
-	if (container_is_floating(container) &&
+	if (tide_direction_applies(container)) { // tide: by the windows' boxes
+		next_focus = tide_focus_in_direction(container, direction);
+	} else if (container_is_floating(container) &&
 			container->pending.fullscreen_mode == FULLSCREEN_NONE) {
 		next_focus = node_get_in_direction_floating(container, seat, direction);
 	} else {

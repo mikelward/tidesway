@@ -507,6 +507,29 @@ void ipc_event_input(const char *change, struct sway_input_device *device) {
 	json_object_put(json);
 }
 
+// tide: tidewm's layout event
+void ipc_event_layout(struct sway_workspace *ws) {
+	if (!ipc_has_event_listeners(IPC_EVENT_LAYOUT)) {
+		return;
+	}
+	sway_log(SWAY_DEBUG, "Sending layout event");
+
+	char symbol[16];
+	const char *name = tide_layout_name(tide_workspace_layout(ws));
+	tide_layout_symbol(ws, symbol, sizeof(symbol));
+	json_object *json = json_object_new_object();
+	json_object_object_add(json, "change", json_object_new_string("layout"));
+	json_object_object_add(json, "workspace", json_object_new_string(ws->name));
+	json_object_object_add(json, "output", ws->output ?
+		json_object_new_string(ws->output->wlr_output->name) : NULL);
+	json_object_object_add(json, "layout", name ? json_object_new_string(name) : NULL);
+	json_object_object_add(json, "symbol", json_object_new_string(symbol));
+
+	const char *json_string = json_object_to_json_string(json);
+	ipc_send_event(json_string, IPC_EVENT_LAYOUT);
+	json_object_put(json);
+}
+
 void ipc_event_output(void) {
 	if (!ipc_has_event_listeners(IPC_EVENT_OUTPUT)) {
 		return;
@@ -763,6 +786,8 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 				is_tick = true;
 			} else if (strcmp(event_type, "input") == 0) {
 				client->subscribed_events |= event_mask(IPC_EVENT_INPUT);
+			} else if (strcmp(event_type, "layout") == 0) { // tide
+				client->subscribed_events |= event_mask(IPC_EVENT_LAYOUT);
 			} else {
 				const char msg[] = "{\"success\": false}";
 				ipc_send_reply(client, payload_type, msg, strlen(msg));

@@ -974,6 +974,115 @@ The default colors are:
 	switch to workspace 2, then invoke the *workspace 2* command again, you
 	will be returned to workspace 1. Default is _no_.
 
+# TIDE'S LAYOUTS
+
+tidesway lays out a workspace by tide's rules, as tidewm does, rather than
+i3's split tree. Its tiled windows, in tree order, are the masters, then the
+stack. Each workspace has its own layout, _mfact_ and _nmaster_, and each
+layout its own _mfact_ and _nmaster_ there. A lone tiled window, in any
+layout, is centered at the _single\_window_ width.
+
+A new workspace starts in tide's layouts. One of sway's layouts or split
+commands (*layout splith*, *splitv*, *split*, ...) puts that workspace back
+in sway's layouts, until a *layout* command names one of tide's.
+
+*layout* tile|threecol|twocol|monocle
+	Sets the focused workspace's layout. _tile_ puts the masters in a column
+	on the left and the stack on the right; _threecol_ centers the master,
+	with a stack either side, right first; _twocol_ puts the masters side by
+	side, with the stack on the right; _monocle_ gives each window the whole
+	area.
+
+*layout* next|prev
+	Goes to the next or previous layout in the cycle, _tile threecol
+	twocol_ and round, or _layout\_cycle_'s. From _monocle_, it goes on from
+	the layout before it.
+
+*layout* toggle
+	On a workspace in tide's layouts, goes back to the layout before.
+
+*mfact* <F>|+<F>|-<F>
+	Sets the master area's share of the width, from 0.1 to 0.9.
+
+*nmaster* <N>|+<N>|-<N>
+	Sets how many windows the master area holds.
+
+*single_width* <F>|reset
+	Sets the lone window's width on the focused workspace, from 0.1 to 1, in
+	place of the _single\_window_ lines, or goes back to them.
+
+*zoom*
+	Swaps the focused window with the master, or with the next window if
+	it's the master.
+
+*movestack* next|prev
+	Swaps the focused window with the next window in the stack, or the
+	previous one. From the end, _next_ goes round to the master's place; from
+	there, _prev_ goes to the end.
+
+On a workspace in tide's layouts, *focus* and *move* left|right|up|down go
+by the tiles' places on screen, as tidewm's do: to the window that way
+sharing the most height (width, going up or down), then the nearest. A move
+swaps the two tiles. Past an output's edge, focus goes to the next output's
+window at that edge, and a tile moves there, in that window's place.
+*focus next|prev* goes round the workspace's windows in tiled order, and
+*resize grow|shrink width* on a tile moves the master/stack edge, in
+percentage points or pixels: a master's grows the masters, a stack window's
+the stack. A tile's height is its stack's equal share, so resizing it fails.
+
+These may only be used in the configuration file:
+
+*single_window* <min_aspect> <width>
+	Centers a lone tiled window at _width_ of the window area, from 0.1 to 1,
+	when the area is at least _min\_aspect_ as wide as it's high, from 0 to
+	100. Of several lines, the one with the largest _min\_aspect_ the area
+	reaches wins, and none means the whole width. The lines replace tide's,
+	which are 80% from 2.1 and 60% from 3.2.
+
+*default_layout* normal|ultrawide tile|threecol|twocol|monocle
+	The layout a new workspace starts in, on an output narrower than
+	_ultrawide\_aspect_ or not. Without it, _threecol_ on an ultrawide and
+	_tile_ otherwise.
+
+*ultrawide_aspect* <N>
+	How wide an output must be for its height, from 0.1 to 100, for
+	_default\_layout ultrawide_. 2.1 without it.
+
+*layout_defaults* tile|threecol|twocol [mfact <F>] [nmaster <N>]
+	The _mfact_, from 0.1 to 0.9, and _nmaster_, up to 100, from 0 for _tile_
+	and 1 for the others, that a layout starts with. Without it, _tile_ starts
+	at 0.55 with one master, _threecol_ at 0.5 with one, and _twocol_ at 0.72
+	with two. A reload that changes them starts every workspace's layouts from
+	them again.
+
+*layout_cycle* tile|threecol|twocol...
+	The layouts *layout next* and *prev* go through, each at most once.
+
+*new_window* end|top|next|master
+	Where a new tiled window goes: at the _end_ of the stack, as without the
+	line, at its _top_, just after the masters, _next_ after the focused
+	window, or as the _master_. A window moved in from another workspace, or
+	tiled again after floating, counts as new. (*new_window* with a border
+	style is still *default_border*'s old name.)
+
+*resize_grab* <pixels>
+	How many pixels either side of an edge a plain left press drags it from,
+	from 0 to 32; 0 turns the drag off. 4 without it.
+
+A plain left press near the edge between the masters and the stack drags it,
+setting _mfact_; either side of _threecol_'s centered master drags it both
+ways, and a lone window's sides drag its width, centered, as *single_width*
+sets it. Over a floating window, a layer surface or a popup, on an output
+that isn't focused, or under a fullscreen window, the press goes where it
+would without the edge. *floating_modifier*'s resize button on a tile drags
+its nearest edge the same way, or floats a tile with none.
+
+In IPC, *GET_WORKSPACES* and *GET_TREE* give a workspace's tide layout as its
+_layout_, and the _layout_ event (0x8000001e) says when it changes or a
+workspace is shown: _change_ ("layout"), _workspace_, _output_, _layout_ (null
+for sway's layouts) and _symbol_ (tidewm's: "[]=", "|M|", "||=", or
+monocle's "[n]", n its windows). See *sway-ipc*(7).
+
 # CRITERIA
 
 A criteria is a string in the form of, for example:
