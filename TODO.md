@@ -89,3 +89,10 @@ Each patch's PR says how far it moves this.
   hidden tab of a tabbed or stacked container included, as tidewm counts a
   monocle's hidden windows; a fullscreen one, on the workspace or across
   every output, counts alone.
+- **A click on a window not yet drawn at its place** (2026-11-09): goes to
+  that window, as GET_TREE places it. sway shows a window's new place only
+  once its client has drawn it there, or after 200 ms, so a click right
+  after a window opens or moves found nothing; a press now shows every
+  window's new place at once, as that timeout would, and the part of a
+  place its client hasn't drawn yet still takes the pointer. tidewm
+  places windows at once, with no wait.

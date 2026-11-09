@@ -61,4 +61,10 @@ bool transaction_notify_view_ready_by_geometry(struct sway_view *view,
 
 void arrange_popups(struct wlr_scene_tree *popups);
 
+/**
+ * tide: applies the transaction waiting on its windows now, as its timeout
+ * would, so input goes by the layout the IPC gives.
+ */
+void transaction_flush(void);
+
 #endif

@@ -17,7 +17,10 @@
 #include <wayland-server-core.h>
 #include <wlr/config.h>
 #include <wlr/types/wlr_compositor.h>
+#include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/util/box.h>
 #if WLR_HAS_XWAYLAND
 #include <wlr/xwayland.h>
 #endif
@@ -734,6 +737,80 @@ void tide_focus_delivered(struct wlr_surface *surface) {
 	struct sway_view *view = surface
 		? view_from_wlr_surface(wlr_surface_get_root_surface(surface)) : NULL;
 	last_input.window = view && view->container ? view->container->node.id : 0;
+}
+
+// Whether con is a window shown at lx, ly that hasn't caught up with its place
+/* The point lx, ly on view's surface, where the scene puts the surface:
+ * at the content's corner, or centered in it, as sway does a floating or
+ * fullscreen window's smaller buffer */
+static void surface_point(struct sway_view *view, double lx, double ly,
+		double *sx, double *sy) {
+	int x, y;
+	wlr_scene_node_coords(&view->content_tree->node, &x, &y);
+	*sx = lx - x + view->geometry.x;
+	*sy = ly - y + view->geometry.y;
+}
+
+static bool unready_at(struct sway_container *con, double lx, double ly) {
+	struct sway_view *view = con->view;
+	if (!view || !view->surface || view->type != SWAY_VIEW_XDG_SHELL
+			|| !view_is_visible(view)
+			|| wl_list_empty(&view->wlr_xdg_toplevel->base->configure_list)) {
+		return false;
+	}
+	struct wlr_box box = { con->current.content_x, con->current.content_y,
+		con->current.content_width, con->current.content_height };
+	if (!wlr_box_contains_point(&box, lx, ly)) {
+		return false;
+	}
+	/* Only where it hasn't drawn yet: what it has drawn keeps its input
+	 * region, which the scene already asked */
+	struct wlr_box drawn;
+	wlr_surface_get_extents(view->surface, &drawn);
+	double sx, sy;
+	surface_point(view, lx, ly, &sx, &sy);
+	return !wlr_box_contains_point(&drawn, sx, sy);
+}
+
+static bool unready_test(struct sway_container *con, void *data) {
+	double *at = data;
+	return unready_at(con, at[0], at[1]);
+}
+
+struct sway_container *tide_focus_unready_at(double lx, double ly,
+		struct wlr_surface **surface, double *sx, double *sy) {
+	if (server.session_lock.lock || root->fullscreen_global) {
+		return NULL;
+	}
+	struct wlr_output *wlr_output =
+		wlr_output_layout_output_at(root->output_layout, lx, ly);
+	struct sway_output *output = wlr_output ? wlr_output->data : NULL;
+	struct sway_workspace *ws = output && output->enabled
+		? output_get_active_workspace(output) : NULL;
+	if (!ws) {
+		return NULL;
+	}
+	double at[2] = { lx, ly };
+	struct sway_container *con = NULL;
+	if (ws->current.fullscreen) {
+		con = unready_at(ws->current.fullscreen, lx, ly)
+			? ws->current.fullscreen : NULL;
+	} else {
+		// The floating windows are over the tiles, the last made on top
+		for (int i = ws->current.floating->length - 1; i >= 0 && !con; i--) {
+			struct sway_container *floater = ws->current.floating->items[i];
+			con = unready_at(floater, lx, ly) ? floater
+				: container_find_child(floater, unready_test, at);
+		}
+		if (!con) {
+			con = workspace_find_container(ws, unready_test, at);
+		}
+	}
+	if (con) {
+		*surface = con->view->surface;
+		surface_point(con->view, lx, ly, sx, sy);
+	}
+	return con;
 }
 
 void tide_focus_describe_seat(json_object *object) {
