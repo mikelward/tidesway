@@ -84,7 +84,7 @@ class DimOnScreenHelpers(TidewmTest):
                 color = self.pixel(x, y)
                 if not self.looks(color, expected):
                     wrong.append(f"window {con_id} at {x},{y}: {color}, not {expected}")
-        self.assertEqual(wrong, [])
+        self.assertEqual(wrong, [], '\n'.join(l for l in self.wm.output().splitlines() if 'DIMDBG' in l)[-6000:])
 
 
 class TideLayoutDimTest(DimOnScreenHelpers):

@@ -162,6 +162,17 @@ bool tide_dim_update(struct sway_view *view) {
 		wlr_scene_buffer_set_dest_size(layer, width, height);
 		wlr_scene_buffer_set_opacity(layer, (float)config->tide_dim_inactive);
 	}
+	if (layer) { // DEBUG
+		int n = 0, lx = 0, ly = 0;
+		struct wlr_scene_node *child;
+		wl_list_for_each(child, &view->scene_tree->children, link) {
+			sway_log(SWAY_ERROR, "DIMDBG   child %d type %d enabled %d", n++, child->type, child->enabled);
+		}
+		bool live = wlr_scene_node_coords(&layer->node, &lx, &ly);
+		sway_log(SWAY_ERROR, "DIMDBG view %p on %d shown %d opacity %f strength %f size %dx%d live %d at %d,%d pai %p filter %d",
+			(void *)view, on, shown, layer->opacity, config->tide_dim_inactive, layer->dst_width, layer->dst_height,
+			live, lx, ly, (void *)layer->point_accepts_input, layer->filter_mode);
+	}
 	return on;
 }
 
