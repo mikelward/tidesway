@@ -210,6 +210,7 @@ sway_sources = files(
 	'commands/output/color_profile.c',
 
 	'tide/commands.c',
+	'tide/dim.c',
 	'tide/direction.c',
 	'tide/focus.c',
 	'tide/layout.c',

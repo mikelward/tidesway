@@ -1159,6 +1159,31 @@ press or click as _type_ ("key" or "button"), _window_ (the id of the window
 it went to, or null) and _msec\_ago_, or null before any, and
 _prompt\_may\_focus_, whether a polkit prompt opening now may take focus.
 
+# TIDE'S DIMMING
+
+With *dim\_inactive* above 0, as tidewm has it, every window but the focused
+one is darkened by a translucent black layer over its content, which clicks
+go through. Windows aren't made see-through. An output showing one window,
+or a fullscreen one, has nothing to tell apart, so nothing on it dims. Nor
+do picture-in-picture windows, by the title "Picture-in-Picture", video, by
+the app's content type (wp-content-type-v1), or a window *dim disable*
+exempts. A window's menus and tooltips, and layer surfaces such as a bar or
+a launcher, never dim; a window that's still focused while a launcher has the
+keyboard doesn't either.
+
+*dim* enable|disable|toggle
+	Whether the window dims when it isn't focused. A *for\_window* rule's
+	*dim disable* exempts a screen share's preview, say.
+
+This may only be used in the configuration file:
+
+*dim\_inactive* <strength>
+	How dark the layer is, from 0, none, to 1, black; tide's is 0.07.
+	Without the line, nothing dims.
+
+In IPC, a window has tidewm's _dim_, whether it dims when it isn't focused,
+and _dimmed_, whether it's dimmed now.
+
 # CRITERIA
 
 A criteria is a string in the form of, for example:

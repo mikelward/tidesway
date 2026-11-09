@@ -800,6 +800,7 @@ static void transaction_progress(void) {
 	}
 	transaction_apply(server.queued_transaction);
 	arrange_root(root);
+	tide_dim_update_all(); // tide: dimmed as the windows are now laid out
 	cursor_rebase_all();
 	transaction_destroy(server.queued_transaction);
 	server.queued_transaction = NULL;

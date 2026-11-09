@@ -310,6 +310,8 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 		return;
 	}
 
+	tide_dim_committed(view); // tide: video, by its content type, doesn't dim
+
 	struct wlr_box *new_geo = &xdg_surface->geometry;
 	bool new_size = new_geo->width != view->geometry.width ||
 			new_geo->height != view->geometry.height ||

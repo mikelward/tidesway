@@ -103,6 +103,7 @@ static const struct cmd_handler handlers[] = {
 static const struct cmd_handler config_handlers[] = {
 	{ "default_layout", cmd_default_layout }, // tide
 	{ "default_orientation", cmd_default_orientation },
+	{ "dim_inactive", cmd_dim_inactive }, // tide
 	{ "focus_guard", cmd_focus_guard }, // tide
 	{ "include", cmd_include },
 	{ "layout_cycle", cmd_layout_cycle }, // tide
@@ -122,6 +123,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "allow_tearing", cmd_allow_tearing },
 	{ "border", cmd_border },
 	{ "create_output", cmd_create_output },
+	{ "dim", cmd_dim }, // tide
 	{ "exit", cmd_exit },
 	{ "floating", cmd_floating },
 	{ "fullscreen", cmd_fullscreen },

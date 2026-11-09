@@ -602,6 +602,11 @@ static void ipc_json_describe_view(struct sway_container *c, json_object *object
 			ws ? json_object_new_string(ws->name) : NULL);
 	json_object_object_add(object, "output", ws && ws->output ?
 			json_object_new_string(ws->output->wlr_output->name) : NULL);
+	// tide: whether it dims when it isn't focused, and is dimmed now
+	json_object_object_add(object, "dim",
+			json_object_new_boolean(!c->view->tide_dim.exempt));
+	json_object_object_add(object, "dimmed",
+			json_object_new_boolean(tide_dim_update(c->view)));
 
 	bool has_titlebar = c->title_bar.tree->node.enabled;
 	struct wlr_box window_box = {
