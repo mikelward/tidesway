@@ -24,12 +24,17 @@ this order, one PR each; each makes more of tidewm's suite pass.
 - ~~**Measure**~~. Done: tidewm's suite and the experiment's benchmarks, against
   tidewm, in `MEASUREMENTS.md`: tidewm's latency, no intermediate states and no
   wrong frames on close; 348 of 665 of the suite (`measure.yml`, `bench/`).
-- **Fail on regressions**. Make the `test` job fail when a test that passed in the
-  baseline stops passing.
+- ~~**Fail on regressions**~~. Done: the `test` job fails when a test in
+  `tests/tidewm-harness/passing.txt` stops passing, unless `flaky.txt` lists it
+  (`tests/tidewm-harness/gate`).
 
 ## Baseline
 
-tidewm's suite on sway 1.12 as forked, before any tide patch (2026-11-08, tidewm main
+`tests/tidewm-harness/passing.txt` is the baseline CI holds tidesway to: the 341
+tests that pass on main (2026-11-09, `9612edaf`, tidewm main at `1f47ac2`), less
+the 9 in `flaky.txt`. A PR that makes a test pass for good adds it there.
+
+Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
 subtests counts once per subtest. Nothing passes yet in layouts, split, minimize,
 maximize, layers, floating, dimming, capture, seats or urgency; focus passes 5 of 95.
@@ -125,3 +130,15 @@ Each patch's PR says how far it moves this.
   buffer already covers the point. Fixing it means focus not following a
   motion with no time, as in tidewm; that changes sway's behavior, so it's
   left for review.
+- **Flaky tests** (2026-11-09): a test that passes and fails on the same code goes
+  in `tests/tidewm-harness/flaky.txt` with a reason, and never fails CI, rather
+  than being retried. The 9 there each flipped in 12 CI runs of main's code
+  (main's re-runs and the last commits of the workspaces and measure branches):
+  five X11 first-map timeouts, `FollowTest`'s dialog stacking, `HeldCloseTest`
+  (above, tidesway#7), and two seen once each with no known cause (`GrantTest`'s
+  closed IPC connection, `TwoMonitorsTest`'s resize). Their causes aren't fixed
+  here.
+- **`passing.txt` by hand** (2026-11-09): nothing rewrites it. The PR that makes a
+  test pass adds it, from the "Newly passing" list in the `test` job's summary,
+  so each addition is reviewed; a test tidewm renames or removes fails the gate
+  as missing until the list follows.

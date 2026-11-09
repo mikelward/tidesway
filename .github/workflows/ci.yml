@@ -83,9 +83,10 @@ jobs:
       - run: ninja -C build
 
   # tidewm's own suite (mikelward/tidewm tests/), run against tidesway on
-  # wlroots' headless backend through tests/tidewm-harness/run. For now the
-  # failures are the baseline, not an error: the job fails only if the suite
-  # can't run, and reports what passed in its summary and an artifact.
+  # wlroots' headless backend through tests/tidewm-harness/run. The job fails
+  # if the suite can't run, or if a test in tests/tidewm-harness/passing.txt
+  # doesn't pass (flaky.txt's aside), and reports what passed in its summary
+  # and an artifact.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -121,6 +122,7 @@ jobs:
           tests/client tests/workspaces tests/locker tests/power tests/ime
           tests/pointer tests/launcher tests/keyboard tests/capture tests/x11client
       - name: Suite
+        id: suite
         timeout-minutes: 80
         run: tests/tidewm-harness/suite tidewm results
         env:
@@ -133,8 +135,15 @@ jobs:
         run: python3 -m unittest discover -s tests/tidesway -v
         env:
           TIDEWM_CHECKOUT: tidewm
+      # Fails on a baseline test that didn't pass, whether or not tidesway's
+      # own tests did, as long as the suite ran.
+      - name: Regressions
+        if: ${{ !cancelled() && steps.suite.outcome == 'success' }}
+        run: tests/tidewm-harness/gate results/results.json --report results/gate.md
       - if: always()
-        run: if test -f results/summary.md; then cat results/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+        run: |
+          if test -f results/gate.md; then cat results/gate.md >> "$GITHUB_STEP_SUMMARY"; fi
+          if test -f results/summary.md; then cat results/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
