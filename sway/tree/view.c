@@ -1160,6 +1160,7 @@ void view_update_title(struct sway_view *view, bool force) {
 		container_update_title_bar(view->container);
 	}
 
+	tide_dim_update(view); // tide: picture-in-picture, by its title, doesn't dim
 	ipc_event_window(view->container, "title");
 
 	if (view->foreign_toplevel && title) {

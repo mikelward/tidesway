@@ -236,7 +236,8 @@ void output_configure_scene(struct sway_output *output,
 		// hack: don't call the scene setter because that will damage all outputs
 		// We don't want to damage outputs that aren't our current output that
 		// we're configuring
-		if (output) {
+		// tide: a dim layer keeps its own, as one pixel filtered fades
+		if (output && !tide_dim_is_layer(buffer)) {
 			buffer->filter_mode = get_scale_filter(output, buffer);
 		}
 
