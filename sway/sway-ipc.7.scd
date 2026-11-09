@@ -1373,7 +1373,9 @@ one seat. Each object has the following properties:
 :  object
 :  tidesway's: your last key press or click, as _type_ ("key" or "button"),
    _window_ (the id of the window it went to, or null) and _msec\_ago_; null
-   before any (*sway*(5), TIDE'S FOCUS GUARD)
+   before any (*sway*(5), TIDE'S FOCUS GUARD). A click goes to the window
+   under the pointer as _GET\_TREE_ places it, even before its client has
+   drawn it there
 |- prompt_may_focus
 :  boolean
 :  tidesway's: whether a polkit prompt opening now may take focus, a key

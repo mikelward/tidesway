@@ -26,6 +26,7 @@
 #include "sway/output.h"
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
+#include "sway/desktop/transaction.h"
 #include "sway/tide/focus.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -115,6 +116,12 @@ struct sway_node *node_at_coords(
 
 			current = &current->parent->node;
 		}
+	}
+
+	// tide: a window still drawing itself at its place has that place
+	struct sway_container *unready = tide_focus_unready_at(lx, ly, surface, sx, sy);
+	if (unready) {
+		return &unready->node;
 	}
 
 	// if we aren't on a container, determine what workspace we are on
@@ -359,6 +366,8 @@ void dispatch_cursor_button(struct sway_cursor *cursor,
 
 	// tide: a click is you moving on, then the window it went to
 	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		// tide: a window placed but still waiting on its client is there
+		transaction_flush();
 		tide_focus_click();
 	}
 	seatop_button(cursor->seat, time_msec, device, button, state);

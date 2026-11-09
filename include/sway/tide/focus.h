@@ -110,6 +110,14 @@ void tide_focus_key(void);
 void tide_focus_click(void);
 void tide_focus_delivered(struct wlr_surface *surface);
 
+/* The window at lx, ly that hasn't yet drawn itself at the place it was
+ * given, for the pointer: the part of that place it hasn't drawn yet is
+ * its, as GET_TREE places it, where sway's scene still has a hole, and
+ * its surface and the point on it go in *surface, *sx and *sy. What it
+ * has drawn keeps its input region. NULL for none. */
+struct sway_container *tide_focus_unready_at(double lx, double ly,
+	struct wlr_surface **surface, double *sx, double *sy);
+
 /* An activation of mapped view: a grant naming its app focuses it, and
  * with the guard on, any other marks it urgent, returning true; with the
  * guard off, one no grant names is left to focus_on_window_activation */

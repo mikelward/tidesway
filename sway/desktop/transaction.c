@@ -822,6 +822,20 @@ static int handle_timeout(void *data) {
 	return 0;
 }
 
+/* tide: applies the transaction waiting on its windows now, as its timeout
+ * would, and any that was pending behind it, so the screen and the pointer
+ * have the layout the IPC already gives */
+void transaction_flush(void) {
+	while (server.queued_transaction
+			&& server.queued_transaction->num_waiting > 0) {
+		struct sway_transaction *transaction = server.queued_transaction;
+		sway_log(SWAY_DEBUG, "Transaction %p flushed (%zi waiting)",
+				transaction, transaction->num_waiting);
+		transaction->num_waiting = 0;
+		transaction_progress();
+	}
+}
+
 static bool should_configure(struct sway_node *node,
 		struct sway_transaction_instruction *instruction) {
 	if (!node_is_view(node)) {
