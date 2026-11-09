@@ -32,7 +32,8 @@ this order, one PR each; each makes more of tidewm's suite pass.
 
 `tests/tidewm-harness/passing.txt` is the baseline CI holds tidesway to: the 341
 tests that pass on main (2026-11-09, `9612edaf`, tidewm main at `1f47ac2`), less
-the 9 in `flaky.txt`. A PR that makes a test pass for good adds it there.
+the 9 in `flaky.txt`, and since then `GrantTest`'s grant on a workspace, once its
+crash was fixed. A PR that makes a test pass for good adds it there.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -132,12 +133,12 @@ Each patch's PR says how far it moves this.
   left for review.
 - **Flaky tests** (2026-11-09): a test that passes and fails on the same code goes
   in `tests/tidewm-harness/flaky.txt` with a reason, and never fails CI, rather
-  than being retried. The 9 there each flipped in 12 CI runs of main's code
+  than being retried. The 9 put there each flipped in 12 CI runs of main's code
   (main's re-runs and the last commits of the workspaces and measure branches):
   five X11 first-map timeouts, `FollowTest`'s dialog stacking, `HeldCloseTest`
   (above, tidesway#7), and two seen once each with no known cause (`GrantTest`'s
-  closed IPC connection, `TwoMonitorsTest`'s resize). Their causes aren't fixed
-  here.
+  closed IPC connection, `TwoMonitorsTest`'s resize). `GrantTest`'s was a crash,
+  since fixed, and it's back in `passing.txt`.
 - **`passing.txt` by hand** (2026-11-09): nothing rewrites it. The PR that makes a
   test pass adds it, from the "Newly passing" list in the `test` job's summary,
   so each addition is reviewed; a test tidewm renames or removes fails the gate

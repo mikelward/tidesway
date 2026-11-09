@@ -20,10 +20,6 @@ test_dialogs.FollowTest.test_a_dialog_stays_above_its_floating_parent
 # tidesway#7); failed 2 of 12 runs on main's code.
 test_focus.HeldCloseTest.test_a_held_window_under_the_pointer_waits_when_the_focused_one_closes
 
-# tidesway closed the test's IPC connection mid-test, once in 12 runs on
-# main's code; the cause isn't known yet.
-test_focus.GrantTest.test_a_grant_on_a_workspace_takes_its_window_there_with_focus
-
 # The drag on the unfocused monitor resized its tiles, once in 12 runs on
 # main's code; the cause isn't known yet.
 test_split.TwoMonitorsTest.test_only_on_the_focused_monitor

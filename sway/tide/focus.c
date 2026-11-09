@@ -772,9 +772,22 @@ static bool unready_at(struct sway_container *con, double lx, double ly) {
 	return !wlr_box_contains_point(&drawn, sx, sy);
 }
 
-static bool unready_test(struct sway_container *con, void *data) {
-	double *at = data;
-	return unready_at(con, at[0], at[1]);
+/* The topmost window in cons, or in their children, as the screen shows
+ * them, that hasn't caught up with its place at lx, ly: the last in a list
+ * is on top, as floating windows are */
+static struct sway_container *unready_in(list_t *cons, double lx, double ly) {
+	for (int i = cons->length - 1; i >= 0; i--) {
+		struct sway_container *con = cons->items[i];
+		if (unready_at(con, lx, ly)) {
+			return con;
+		}
+		struct sway_container *child = con->current.children
+			? unready_in(con->current.children, lx, ly) : NULL;
+		if (child) {
+			return child;
+		}
+	}
+	return NULL;
 }
 
 struct sway_container *tide_focus_unready_at(double lx, double ly,
@@ -785,25 +798,25 @@ struct sway_container *tide_focus_unready_at(double lx, double ly,
 	struct wlr_output *wlr_output =
 		wlr_output_layout_output_at(root->output_layout, lx, ly);
 	struct sway_output *output = wlr_output ? wlr_output->data : NULL;
+	/* The workspace the output shows, as its last transaction left it: a
+	 * workspace made since, such as one a grant's window opens on, has no
+	 * state on screen yet (its current lists are NULL) until its own
+	 * transaction applies, and a layer surface mapping in between rebases
+	 * the cursor through here */
 	struct sway_workspace *ws = output && output->enabled
-		? output_get_active_workspace(output) : NULL;
+		? output->current.active_workspace : NULL;
 	if (!ws) {
 		return NULL;
 	}
-	double at[2] = { lx, ly };
 	struct sway_container *con = NULL;
 	if (ws->current.fullscreen) {
 		con = unready_at(ws->current.fullscreen, lx, ly)
 			? ws->current.fullscreen : NULL;
 	} else {
-		// The floating windows are over the tiles, the last made on top
-		for (int i = ws->current.floating->length - 1; i >= 0 && !con; i--) {
-			struct sway_container *floater = ws->current.floating->items[i];
-			con = unready_at(floater, lx, ly) ? floater
-				: container_find_child(floater, unready_test, at);
-		}
+		// The floating windows are over the tiles
+		con = unready_in(ws->current.floating, lx, ly);
 		if (!con) {
-			con = workspace_find_container(ws, unready_test, at);
+			con = unready_in(ws->current.tiling, lx, ly);
 		}
 	}
 	if (con) {

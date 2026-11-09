@@ -9,7 +9,8 @@ import subprocess
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
-from harness import EVENT_WINDOW, GET_OUTPUTS, GET_SEATS, ROOT, TIMEOUT, TidewmTest
+from harness import (EVENT_WINDOW, GET_OUTPUTS, GET_SEATS, GET_WORKSPACES, ROOT, RUN_COMMAND,
+                     TIMEOUT, TidewmTest)
 
 POINTER = os.path.join(ROOT, "tests", "pointer")
 
@@ -81,6 +82,21 @@ class DimmedClickTest(ClickHelpers):
         self.assertTrue(self.windows()[first]["dimmed"])
         self.click(first)
         self.assertEqual(self.went_to(), ("button", first))
+
+
+class NewWorkspaceTest(TidewmTest):
+    """The pointer moving while a workspace made since the last frame isn't
+    on screen yet. In tidewm's suite, a grant's window opening on a new
+    workspace, or a switch back to one, made one, and swaybg's background
+    mapping moved the pointer before it showed; tidesway crashed now and
+    then (GrantTest, LayoutLinesTest). Here one command list does both, so
+    the new workspace never shows before the pointer moves."""
+
+    def test_the_pointer_moving_onto_a_new_workspace_finds_it(self):
+        reply = self.connect().request(RUN_COMMAND, "workspace fresh; seat - cursor move 1 1")
+        self.assertEqual(reply, [{"success": True}, {"success": True}])
+        focused = [w["name"] for w in self.connect().request(GET_WORKSPACES) if w["focused"]]
+        self.assertEqual(focused, ["fresh"])
 
 
 if __name__ == "__main__":
