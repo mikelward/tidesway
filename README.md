@@ -19,6 +19,9 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   and `unpersist` commands and its workspace IPC (`man 5 sway`, "TIDE'S
   WORKSPACES").
 
+How it compares with tidewm, in latency, flicker and tidewm's tests, is in
+[MEASUREMENTS.md](MEASUREMENTS.md).
+
 Everything else is sway's, as described below. tidesway builds the same way, with
 meson against wlroots 0.20, and releases as `v1.12.0-tide.N`. Report its bugs
 here, not to sway.

@@ -21,7 +21,9 @@ this order, one PR each; each makes more of tidewm's suite pass.
   switching together, with `persist` and `unpersist`, tidewm's workspace IPC
   and events, one ext-workspace group, and a disabled output's windows
   joining the parts left (`sway/tide/workspace.c`).
-- **Measure**. tidewm's suite and the experiment's benchmarks, against tidewm.
+- ~~**Measure**~~. Done: tidewm's suite and the experiment's benchmarks, against
+  tidewm, in `MEASUREMENTS.md`: tidewm's latency, no intermediate states and no
+  wrong frames on close; 348 of 665 of the suite (`measure.yml`, `bench/`).
 - **Fail on regressions**. Make the `test` job fail when a test that passed in the
   baseline stops passing.
 

@@ -1,0 +1,105 @@
+# The sway experiment's benchmark (mikelward/tidewm's
+# experiments/sway/bench/bench.py, on its claude/sway-experiment branch), run
+# against tidewm and tidesway one after the other on the same runner, so
+# their numbers compare. MEASUREMENTS.md records the results. Only on demand,
+# or on a pull request that changes the bench: it isn't part of every PR's
+# CI. Benchmark failures are the result, so they don't fail the job; the
+# results are uploaded.
+#
+# Cost and reliability: one ubuntu-latest job, about 5 minutes, free on a
+# public repository. A slow or noisy runner moves the times; the counts of
+# intermediate states and wrong frames are what to compare.
+name: measure
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: Runs of each benchmark
+        default: "50"
+  pull_request:
+    paths:
+      - bench/**
+      - .github/workflows/measure.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: measure-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # tidewm's claude/sway-experiment: the bench, its harness and tidewm as
+  # REPORT.md measured them
+  TIDEWM_REF: a83bea8de3fe648f65b1fc22e114319370d06173
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container:
+      image: debian:testing
+    steps:
+      - run: apt-get update
+      # ci.yml's test job's packages, which include the experiment's
+      - run: >-
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends
+          build-essential meson ninja-build pkgconf libwlroots-0.20-dev libwayland-dev
+          wayland-protocols libinput-dev libudev-dev libxkbcommon-dev libxcb1-dev
+          libxcb-icccm4-dev libjson-c-dev libpcre2-dev libpango1.0-dev libcairo2-dev
+          libgdk-pixbuf-2.0-dev libpixman-1-dev libevdev-dev libdrm-dev
+          python3 xwayland wtype wlr-randr swaybg grim
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - run: meson setup build -Dman-pages=disabled
+      - run: ninja -C build
+      - uses: actions/checkout@v5
+        with:
+          repository: mikelward/tidewm
+          ref: ${{ env.TIDEWM_REF }}
+          path: tidewm
+          persist-credentials: false
+      # tidewm and the test clients, as the experiment's workflow builds them
+      - run: >-
+          make -C tidewm XWAYLAND=-DXWAYLAND XLIBS="xcb xcb-icccm" dwl
+          tests/client tests/workspaces tests/locker tests/power tests/ime
+          tests/pointer tests/launcher tests/keyboard tests/capture tests/x11client
+      - name: Commits
+        run: |
+          mkdir -p results
+          # From the event, as the container has no git
+          {
+            echo "tidesway $TIDESWAY_SHA, on main at $BASE_SHA"
+            echo "tidewm $TIDEWM_REF"
+            build/sway/sway --version
+            echo "runner $(nproc) CPUs, $(sed -n 's/^model name\s*: //p' /proc/cpuinfo | head -1)"
+          } | tee results/commits.txt
+        shell: bash
+        env:
+          TIDESWAY_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.sha }}
+      # tidewm through the experiment's own bench.py, unchanged
+      - name: tidewm
+        continue-on-error: true
+        timeout-minutes: 30
+        run: python3 tidewm/experiments/sway/bench/bench.py tidewm results "$RUNS"
+        env:
+          RUNS: ${{ inputs.runs || '50' }}
+      # tidesway through this repository's copy, which adds only its mode
+      - name: tidesway
+        continue-on-error: true
+        timeout-minutes: 30
+        run: python3 bench/bench.py tidesway results "$RUNS"
+        env:
+          RUNS: ${{ inputs.runs || '50' }}
+          TIDEWM_CHECKOUT: tidewm
+      - if: always()
+        run: python3 bench/compare.py results | tee results/compare.md >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: measure
+          path: results
+          if-no-files-found: warn
