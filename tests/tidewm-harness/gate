@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""Fails when a test that passed in the baseline stops passing:
+
+  gate [--passing FILE] [--flaky FILE] [--report FILE] RESULTS_JSON
+
+RESULTS_JSON is suite's results.json. FILE defaults are passing.txt and
+flaky.txt beside this script. Both list one test id per line, as
+results.json names it; a line starting with "#" is a comment. In
+flaky.txt each id needs a "#" line above it saying why it's flaky, which
+can cover the ids under it up to a blank line.
+
+It exits 1, naming each, if a test in passing.txt didn't pass: it failed,
+errored, timed out, was skipped, or wasn't in the results at all (its file
+didn't load, or tidewm renamed or removed it). A test in flaky.txt never
+fails the gate, whatever passing.txt says. A test that passed but isn't in
+either file is newly passing: the report lists it, to add to passing.txt
+in the pull request that made it pass. The report is Markdown, on stdout
+and in --report's FILE if given. It exits 2 if it can't read its input.
+"""
+
+import argparse
+import json
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def test_ids(results):
+    """Each test's outcome by its id. An id suite gives without its
+    module, such as a teardown fixture's, gets "MODULE: " in front."""
+    out = {}
+    for module, entry in results.items():
+        for test, outcome in entry["tests"].items():
+            out[test if test.startswith(module + ".") else f"{module}: {test}"] = outcome
+    return out
+
+
+def read_list(path, need_reasons=False):
+    """The ids in a passing.txt or flaky.txt, in order. With need_reasons,
+    an id with no "#" line above it in its paragraph is an error."""
+    ids, reason = [], False
+    with open(path) as f:
+        for n, line in enumerate(f, 1):
+            line = line.rstrip("\n")
+            if not line.strip():
+                reason = False
+            elif line.startswith("#"):
+                reason = reason or bool(line.lstrip("#").strip())
+            else:
+                if need_reasons and not reason:
+                    raise ValueError(f"{path}:{n}: {line} has no reason: "
+                                     "put a \"# why\" line above it")
+                ids.append(line)
+    return ids
+
+
+def check(outcomes, passing, flaky):
+    """(regressions, flaky_failures, newly_passing): regressions and
+    flaky_failures as (id, outcome) lists, outcome "missing" for an id
+    not in the results; newly_passing as a list of ids."""
+    flaky = set(flaky)
+    regressions = [(t, outcomes.get(t, "missing")) for t in passing
+                   if t not in flaky and outcomes.get(t) != "pass"]
+    flaky_failures = [(t, outcomes.get(t, "missing")) for t in sorted(flaky)
+                      if outcomes.get(t) != "pass"]
+    known = set(passing) | flaky
+    newly = sorted(t for t, o in outcomes.items() if o == "pass" and t not in known)
+    return regressions, flaky_failures, newly
+
+
+def report(passing, regressions, flaky_failures, newly):
+    lines = []
+    if regressions:
+        lines.append(f"## Regressions: {len(regressions)} of {len(passing)} baseline tests "
+                     "didn't pass")
+        lines.append("")
+        lines += [f"- `{t}`: {o}" for t, o in regressions]
+        lines.append("")
+        lines.append("Fix them, or, if one is flaky, move it to "
+                     "`tests/tidewm-harness/flaky.txt` with a reason.")
+    else:
+        lines.append(f"## No regressions: all {len(passing)} baseline tests passed "
+                     "(flaky ones aside)")
+    if flaky_failures:
+        lines.append("")
+        lines.append(f"Known flaky, not passing this run ({len(flaky_failures)}):")
+        lines.append("")
+        lines += [f"- `{t}`: {o}" for t, o in flaky_failures]
+    if newly:
+        lines.append("")
+        lines.append(f"Newly passing ({len(newly)}): add them to "
+                     "`tests/tidewm-harness/passing.txt` if they pass for good:")
+        lines.append("")
+        lines += [f"- `{t}`" for t in newly]
+    return "\n".join(lines) + "\n"
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description="Fails on a regression in tidewm's suite.")
+    parser.add_argument("results")
+    parser.add_argument("--passing", default=os.path.join(HERE, "passing.txt"))
+    parser.add_argument("--flaky", default=os.path.join(HERE, "flaky.txt"))
+    parser.add_argument("--report")
+    args = parser.parse_args(argv)
+    try:
+        with open(args.results) as f:
+            outcomes = test_ids(json.load(f))
+        passing = read_list(args.passing)
+        flaky = read_list(args.flaky, need_reasons=True)
+    except (OSError, ValueError, KeyError, AttributeError, TypeError) as e:
+        print(f"gate: couldn't read its input: {e!r}", file=sys.stderr)
+        return 2
+    regressions, flaky_failures, newly = check(outcomes, passing, flaky)
+    text = report(passing, regressions, flaky_failures, newly)
+    sys.stdout.write(text)
+    if args.report:
+        with open(args.report, "w") as f:
+            f.write(text)
+    return 1 if regressions else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

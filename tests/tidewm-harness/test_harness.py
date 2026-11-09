@@ -1,4 +1,4 @@
-"""Tests for run and suite, with a stand-in for tidesway: python3 -m unittest
+"""Tests for run, suite and gate, with a stand-in for tidesway: python3 -m unittest
 discover -s tests/tidewm-harness"""
 
 import importlib.machinery
@@ -292,6 +292,82 @@ class SuiteTest(unittest.TestCase):
         self.assertEqual(head, "tidewm's suite on tidesway: 3 of 7 pass")
         self.assertEqual(totals["fail"], 4)
         self.assertIn("| test_b | 4 | 1 | 3 |", table)
+
+
+class GateTest(unittest.TestCase):
+    PASSING = "m.T.test_a\nm.T.test_b\nm.T.test_flaky\n"
+    FLAKY = "# Races the pointer\nm.T.test_flaky\n"
+
+    def gate(self, outcomes, passing=PASSING, flaky=FLAKY):
+        """Runs gate on a results.json holding these outcomes for module m"""
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        paths = {}
+        for name, text in (("results.json", json.dumps({"m": {"tests": outcomes}})),
+                           ("passing.txt", passing), ("flaky.txt", flaky)):
+            paths[name] = os.path.join(d.name, name)
+            with open(paths[name], "w") as f:
+                f.write(text)
+        self.report = os.path.join(d.name, "gate.md")
+        return subprocess.run([os.path.join(HERE, "gate"), paths["results.json"],
+                               "--passing", paths["passing.txt"],
+                               f"--flaky={paths['flaky.txt']}", "--report", self.report],
+                              capture_output=True, text=True, timeout=10)
+
+    def test_passes_when_every_baseline_test_passes(self):
+        proc = self.gate({"m.T.test_a": "pass", "m.T.test_b": "pass",
+                          "m.T.test_flaky": "pass", "m.T.test_c": "fail"})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("No regressions", proc.stdout)
+
+    def test_a_baseline_test_that_stops_passing_fails_naming_it(self):
+        proc = self.gate({"m.T.test_a": "pass", "m.T.test_b": "timeout",
+                          "m.T.test_flaky": "pass"})
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("`m.T.test_b`: timeout", proc.stdout)
+        self.assertNotIn("m.T.test_a", proc.stdout)
+        with open(self.report) as f:
+            self.assertEqual(f.read(), proc.stdout)
+
+    def test_a_baseline_test_missing_from_the_results_fails(self):
+        proc = self.gate({"m.T.test_a": "pass", "m.T.test_flaky": "pass"})
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("`m.T.test_b`: missing", proc.stdout)
+
+    def test_a_flaky_failure_doesnt_fail(self):
+        proc = self.gate({"m.T.test_a": "pass", "m.T.test_b": "pass",
+                          "m.T.test_flaky": "error"})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("Known flaky", proc.stdout)
+        self.assertIn("`m.T.test_flaky`: error", proc.stdout)
+
+    def test_a_newly_passing_test_is_listed_not_failed(self):
+        proc = self.gate({"m.T.test_a": "pass", "m.T.test_b": "pass",
+                          "m.T.test_flaky": "pass", "m.T.test_new (i=1)": "pass"})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("Newly passing (1)", proc.stdout)
+        self.assertIn("`m.T.test_new (i=1)`", proc.stdout)
+
+    def test_an_id_without_its_module_gets_it(self):
+        gate = load("gate")
+        self.assertEqual(gate.test_ids({"m": {"tests": {"tearDownClass (m.T)": "error"}}}),
+                         {"m: tearDownClass (m.T)": "error"})
+
+    def test_a_flaky_test_needs_a_reason(self):
+        proc = self.gate({"m.T.test_a": "pass"}, flaky="m.T.test_flaky\n")
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("no reason", proc.stderr)
+        # A blank line ends the reason above it
+        proc = self.gate({"m.T.test_a": "pass"}, flaky="# Races\nm.T.x\n\nm.T.test_flaky\n")
+        self.assertEqual(proc.returncode, 2)
+
+    def test_the_committed_lists_are_well_formed(self):
+        gate = load("gate")
+        passing = gate.read_list(os.path.join(HERE, "passing.txt"))
+        flaky = gate.read_list(os.path.join(HERE, "flaky.txt"), need_reasons=True)
+        self.assertEqual(len(passing), len(set(passing)), "passing.txt repeats an id")
+        self.assertEqual(passing, sorted(passing), "passing.txt isn't sorted")
+        self.assertFalse(set(passing) & set(flaky), "an id is in both passing.txt and flaky.txt")
 
 
 if __name__ == "__main__":

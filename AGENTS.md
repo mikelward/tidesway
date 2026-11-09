@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-11-08
+last_modified: 2026-11-09
 ---
 
 # tidesway
@@ -128,9 +128,11 @@ Shared by every mikelward repo and the user-level agent config; canonical in mik
   `tests/tidesway/test_*.py`, on tidewm's `tests/harness.py`: `TIDEWM_CHECKOUT=DIR
   python3 -m unittest discover -s tests/tidesway`. They fail CI's `test` job.
 - **CI**. Builds on Arch (`build`) and Debian testing (`build-debian`), the two places
-  a packaged wlroots 0.20 exists; tidewm's suite runs on Debian testing (`test`). Until
-  a PR turns it on, a test failure doesn't fail `test`: its summary gives the pass
-  count, against the baseline in `TODO.md`.
+  a packaged wlroots 0.20 exists; tidewm's suite runs on Debian testing (`test`).
+  `test` fails if a test in `tests/tidewm-harness/passing.txt` doesn't pass
+  (`tests/tidewm-harness/gate`), except one in `flaky.txt`, which says why it's
+  flaky; a PR that makes a test pass adds it to `passing.txt`. Its summary lists
+  newly passing tests.
 - **Upstream**. tide's code lives in its own files, `sway/tide/` and
   `include/sway/tide/`, with small hooks in sway's files, so rebasing onto each sway
   release stays cheap. One commit per patch. Rebase onto upstream; never merge it.
