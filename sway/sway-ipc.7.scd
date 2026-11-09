@@ -119,7 +119,10 @@ Retrieves the list of workspaces.
 
 *REPLY*++
 The reply is an array of objects corresponding to each workspace. Each object
-has the following properties:
+has the following properties. In tidesway a workspace spans every output, so
+each is listed once, in the order made, as its part on the focused output,
+and _visible_ and _focused_ both mean it's current (*sway*(5), TIDE'S
+WORKSPACES):
 
 [- *PROPERTY*
 :- *DATA TYPE*
@@ -145,6 +148,9 @@ has the following properties:
 |- output
 :  string
 :  The name of the output that the workspace is on
+|- persistent
+:  boolean
+:  tidesway's: whether it's kept while it's empty (*persist workspace*)
 
 
 *Example Reply:*

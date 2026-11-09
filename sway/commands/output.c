@@ -2,6 +2,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/output.h"
+#include "sway/tide/output.h"
 #include "list.h"
 #include "log.h"
 
@@ -44,6 +45,11 @@ struct cmd_results *cmd_output(int argc, char **argv) {
 	if (strcasecmp(argv[0], root->fallback_output->wlr_output->name) == 0) {
 		return cmd_results_new(CMD_FAILURE,
 				"Refusing to configure the no op output");
+	}
+
+	struct cmd_results *tide = NULL;
+	if (tide_output_power(argc, argv, &tide)) { // tide: power, as tidewm's
+		return tide;
 	}
 
 	struct output_config *output = NULL;

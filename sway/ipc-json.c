@@ -14,6 +14,7 @@
 #include "sway/ipc-json.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/workspace.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
@@ -521,6 +522,7 @@ static void ipc_json_describe_workspace(struct sway_workspace *workspace,
 			json_object_new_string(workspace->output->wlr_output->name) : NULL);
 	json_object_object_add(object, "urgent",
 			json_object_new_boolean(workspace->urgent));
+	tide_ws_describe(workspace, object); // tide: its workspace's urgency, persistent
 	json_object_object_add(object, "representation", workspace->representation ?
 			json_object_new_string(workspace->representation) : NULL);
 

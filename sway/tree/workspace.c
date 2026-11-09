@@ -16,6 +16,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/workspace.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/node.h"
@@ -25,8 +26,7 @@
 #include "util.h"
 
 static const uint32_t WORKSPACE_CAPABILITIES =
-	EXT_WORKSPACE_HANDLE_V1_WORKSPACE_CAPABILITIES_ACTIVATE |
-	EXT_WORKSPACE_HANDLE_V1_WORKSPACE_CAPABILITIES_ASSIGN;
+	EXT_WORKSPACE_HANDLE_V1_WORKSPACE_CAPABILITIES_ACTIVATE; // tide: not ASSIGN
 
 static const uint32_t GROUP_CAPABILITIES =
 	EXT_WORKSPACE_GROUP_HANDLE_V1_GROUP_CAPABILITIES_CREATE_WORKSPACE;
@@ -40,7 +40,7 @@ static struct sway_output *group_to_output(
 			return output;
 		}
 	}
-	abort(); // unreachable
+	return NULL; // tide: the one group has no output while there are none
 }
 
 // Callback for ext-workspace-v1 commit events.
@@ -59,7 +59,10 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 			break;
 		case WLR_EXT_WORKSPACE_V1_REQUEST_CREATE_WORKSPACE:;
 			struct sway_output *output = group_to_output(req->create_workspace.group);
-			sway_assert(output, "NULL output given to create_workspace");
+			if (!output) { // tide
+				sway_log(SWAY_INFO, "No output to create a workspace on");
+				break;
+			}
 
 			char *name;
 			if (req->create_workspace.name) {
@@ -78,16 +81,8 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 			}
 			free(name);
 			break;
-		case WLR_EXT_WORKSPACE_V1_REQUEST_ASSIGN:;
-			if (!req->assign.workspace || !req->assign.group) break;
-
-			struct sway_workspace *ws = req->assign.workspace->data;
-			struct sway_output *new_output = group_to_output(req->assign.group);
-			struct sway_output *old_output = ws->output;
-			workspace_move_to_output(ws, new_output);
-			arrange_output(old_output);
-			arrange_output(new_output);
-			break;
+		case WLR_EXT_WORKSPACE_V1_REQUEST_ASSIGN:
+			// tide: a workspace spans every output, so it isn't assigned one
 		case WLR_EXT_WORKSPACE_V1_REQUEST_DEACTIVATE:
 		case WLR_EXT_WORKSPACE_V1_REQUEST_REMOVE:
 			break; // No-op.
@@ -118,9 +113,8 @@ void sway_ext_workspace_output_enable(struct sway_output *output) {
 		return;
 	}
 
-	output->ext_workspace_group =
-		wlr_ext_workspace_group_handle_v1_create(
-			server.workspace_manager_v1, GROUP_CAPABILITIES);
+	// tide: one group, on every output, as a workspace spans them
+	output->ext_workspace_group = tide_ws_ext_group(GROUP_CAPABILITIES);
 	if (!output->ext_workspace_group) {
 		sway_log(SWAY_ERROR, "Failed to create workspace group for output '%s'",
 			output->wlr_output->name);
@@ -137,7 +131,9 @@ void sway_ext_workspace_output_disable(struct sway_output *output) {
 		return;
 	}
 
-	wlr_ext_workspace_group_handle_v1_destroy(output->ext_workspace_group);
+	// tide: the group stays, for the other outputs
+	wlr_ext_workspace_group_handle_v1_output_leave(
+		output->ext_workspace_group, output->wlr_output);
 	output->ext_workspace_group = NULL;
 }
 
@@ -269,6 +265,7 @@ struct sway_workspace *workspace_create(struct sway_output *output,
 		workspace_is_visible(ws));
 	ipc_event_workspace(NULL, ws, "init");
 	wl_signal_emit_mutable(&root->events.new_node, &ws->node);
+	tide_ws_created(ws); // tide: a part of its workspace, on every output
 
 	return ws;
 }
@@ -303,8 +300,7 @@ void workspace_begin_destroy(struct sway_workspace *workspace) {
 	ipc_event_workspace(NULL, workspace, "empty"); // intentional
 	wl_signal_emit_mutable(&workspace->node.events.destroy, &workspace->node);
 
-	wlr_ext_workspace_handle_v1_destroy(workspace->ext_workspace);
-	workspace->ext_workspace = NULL;
+	tide_ws_destroying(workspace); // tide: its handle is its workspace's
 
 	if (workspace->output) {
 		workspace_detach(workspace);
@@ -314,6 +310,10 @@ void workspace_begin_destroy(struct sway_workspace *workspace) {
 }
 
 void workspace_consider_destroy(struct sway_workspace *ws) {
+	if (ws->tide_group) { // tide: every part goes, or none
+		tide_ws_consider_destroy(ws);
+		return;
+	}
 	if (ws->tiling->length || ws->floating->length) {
 		return;
 	}
@@ -504,7 +504,8 @@ static bool _workspace_by_number(struct sway_workspace *ws, void *data) {
 }
 
 struct sway_workspace *workspace_by_number(const char* name) {
-	return root_find_workspace(_workspace_by_number, (void *) name);
+	// tide: its part on the focused output
+	return tide_ws_here(root_find_workspace(_workspace_by_number, (void *) name));
 }
 
 static bool _workspace_by_name(struct sway_workspace *ws, void *data) {
@@ -530,10 +531,11 @@ struct sway_workspace *workspace_by_name(const char *name) {
 		if (!seat->prev_workspace_name) {
 			return NULL;
 		}
-		return root_find_workspace(_workspace_by_name,
-				(void*)seat->prev_workspace_name);
+		return tide_ws_here(root_find_workspace(_workspace_by_name,
+				(void*)seat->prev_workspace_name)); // tide
 	} else {
-		return root_find_workspace(_workspace_by_name, (void*)name);
+		// tide: its part on the focused output
+		return tide_ws_here(root_find_workspace(_workspace_by_name, (void*)name));
 	}
 }
 
@@ -548,6 +550,9 @@ static int workspace_get_number(struct sway_workspace *workspace) {
 }
 
 struct sway_workspace *workspace_prev(struct sway_workspace *workspace) {
+	if (workspace->tide_group) { // tide: tidewm's order, every output's
+		return tide_ws_step(workspace, -1);
+	}
 	int n = workspace_get_number(workspace);
 	struct sway_workspace *prev = NULL, *last = NULL, *other = NULL;
 	bool found = false;
@@ -613,6 +618,9 @@ struct sway_workspace *workspace_prev(struct sway_workspace *workspace) {
 }
 
 struct sway_workspace *workspace_next(struct sway_workspace *workspace) {
+	if (workspace->tide_group) { // tide: tidewm's order, every output's
+		return tide_ws_step(workspace, 1);
+	}
 	int n = workspace_get_number(workspace);
 	struct sway_workspace *next = NULL, *first = NULL, *other = NULL;
 	bool found = false;
@@ -701,10 +709,16 @@ static struct sway_workspace *workspace_output_prev_next_impl(
 
 
 struct sway_workspace *workspace_output_next(struct sway_workspace *current) {
+	if (current->tide_group) { // tide: every output has every workspace
+		return tide_ws_step(current, 1);
+	}
 	return workspace_output_prev_next_impl(current->output, 1);
 }
 
 struct sway_workspace *workspace_output_prev(struct sway_workspace *current) {
+	if (current->tide_group) { // tide: every output has every workspace
+		return tide_ws_step(current, -1);
+	}
 	return workspace_output_prev_next_impl(current->output, -1);
 }
 
@@ -732,6 +746,7 @@ struct sway_workspace *workspace_auto_back_and_forth(
 
 bool workspace_switch(struct sway_workspace *workspace) {
 	struct sway_seat *seat = input_manager_current_seat();
+	workspace = tide_ws_here(workspace); // tide: focus stays on its output
 
 	sway_log(SWAY_DEBUG, "Switching to workspace %p:%s",
 		workspace, workspace->name);
@@ -831,8 +846,7 @@ void workspace_detect_urgent(struct sway_workspace *workspace) {
 
 	if (workspace->urgent != new_urgent) {
 		workspace->urgent = new_urgent;
-		wlr_ext_workspace_handle_v1_set_urgent(workspace->ext_workspace, workspace->urgent);
-		ipc_event_workspace(NULL, workspace, "urgent");
+		tide_ws_urgency(workspace); // tide: its workspace's, by every part's
 	}
 }
 

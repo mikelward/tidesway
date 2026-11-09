@@ -13,11 +13,11 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   "TIDE'S FOCUS GUARD");
 * tide's dimming: `dim_inactive` darkens every window but the one you're in,
   rather than making it see-through, with tidewm's `dim` command for windows
-  that shouldn't dim (`man 5 sway`, "TIDE'S DIMMING").
-
-Still to come:
-
-* workspaces that span every monitor, by grouping each output's workspaces.
+  that shouldn't dim (`man 5 sway`, "TIDE'S DIMMING");
+* tide's workspaces, which span every monitor: each output shows its own part
+  of the current one, and they all switch together, with tidewm's `persist`
+  and `unpersist` commands and its workspace IPC (`man 5 sway`, "TIDE'S
+  WORKSPACES").
 
 Everything else is sway's, as described below. tidesway builds the same way, with
 meson against wlroots 0.20, and releases as `v1.12.0-tide.N`. Report its bugs

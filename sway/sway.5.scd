@@ -1184,6 +1184,51 @@ This may only be used in the configuration file:
 In IPC, a window has tidewm's _dim_, whether it dims when it isn't focused,
 and _dimmed_, whether it's dimmed now.
 
+# TIDE'S WORKSPACES
+
+As in tidewm, a workspace spans every output: each output shows its own part
+of it, the windows on that output, and one workspace is current, on every
+output at once. Switching workspaces switches every output, and focus stays
+on the output it was on. A workspace is made the first time it's named, with
+a part on every output, and goes once it's empty and not current, unless
+it's persistent.
+
+*workspace next*|*prev* go through the workspaces in tidewm's order: those
+named by a number by that number, then the rest in the order they were made,
+going round. *next\_on\_output* and *prev\_on\_output* do the same, as every
+output has every workspace. *move* *container* *to* *workspace* takes a
+window to that workspace's part on the window's own output; *move*
+*container* *to* *output* takes it to the other output's part of its
+workspace. *move workspace to output* fails, as a workspace is on every
+output already.
+
+An output that's disabled gives each part's windows to the part of the same
+workspace on the first output left. One that's enabled gets a part of every
+workspace, showing the current one. An output that's only powered off keeps
+its windows.
+
+*output* <name>|\* power|dpms on|off|toggle
+	As tidewm's, at runtime: turns the output off as an idle daemon does,
+	keeping its windows and its place, or on again. \* means every enabled
+	output, each toggled by its own power. A disabled output stays off,
+	and the command fails for it alone, as it does for a name no output
+	has. The config file's power lines are sway's.
+
+*persist workspace* <name>
+	Keeps that workspace, making it if it's new, even while it's empty.
+	_name_ may be in double quotes.
+
+*unpersist workspace* <name>
+	Lets that workspace go once it's empty and not current.
+
+In IPC, _GET\_WORKSPACES_ lists each workspace once, in the order made, as its
+part on the focused output, with tidewm's _persistent_; _focused_ and
+_visible_ both mean it's current, and _urgent_ means a window on any part is.
+_GET\_TREE_ has every output's parts. The workspace events are a workspace's,
+not a part's: _init_ when it's made, _empty_ when it goes, _focus_ when it
+becomes current, and _urgent_. ext-workspace has one group, on every output,
+holding each workspace once, which a client may activate.
+
 # CRITERIA
 
 A criteria is a string in the form of, for example:
