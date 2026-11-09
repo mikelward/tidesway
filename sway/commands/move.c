@@ -14,6 +14,7 @@
 #include "sway/server.h"
 #include "sway/tide/direction.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/workspace.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -530,6 +531,7 @@ static struct cmd_results *cmd_move_container(bool no_auto_back_and_forth,
 			arrange_workspace(ws);
 		}
 		free(ws_name);
+		ws = tide_ws_part(ws, old_output); // tide: its part on the window's output
 		struct sway_container *dst = seat_get_focus_inactive_tiling(seat, ws);
 		destination = dst ? &dst->node : &ws->node;
 	} else if (strcasecmp(argv[0], "output") == 0) {
@@ -540,6 +542,12 @@ static struct cmd_results *cmd_move_container(bool no_auto_back_and_forth,
 				"Can't find output with name/direction '%s'", argv[1]);
 		}
 		destination = seat_get_focus_inactive(seat, &new_output->node);
+		// tide: its own workspace's part there, shown or not
+		struct sway_workspace *part = tide_ws_part(old_ws, new_output);
+		if (part && part != old_ws && part->output == new_output) {
+			struct sway_container *dst = seat_get_focus_inactive_tiling(seat, part);
+			destination = dst ? &dst->node : &part->node;
+		}
 	} else if (strcasecmp(argv[0], "mark") == 0) {
 		struct sway_container *dest_con = container_find_mark(argv[1]);
 		if (dest_con == NULL) {
@@ -662,6 +670,10 @@ static struct cmd_results *cmd_move_workspace(int argc, char **argv) {
 	struct sway_workspace *workspace = config->handler_context.workspace;
 	if (!workspace) {
 		return cmd_results_new(CMD_FAILURE, "No workspace to move");
+	}
+	if (workspace->tide_group) { // tide
+		return cmd_results_new(CMD_FAILURE,
+			"A workspace spans every output, so it can't move to one");
 	}
 
 	struct sway_output *old_output = workspace->output;

@@ -139,6 +139,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "nmaster", cmd_nmaster }, // tide
 	{ "nop", cmd_nop },
 	{ "opacity", cmd_opacity },
+	{ "persist", cmd_persist }, // tide
 	{ "reload", cmd_reload },
 	{ "rename", cmd_rename },
 	{ "resize", cmd_resize },
@@ -153,6 +154,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "swap", cmd_swap },
 	{ "title_format", cmd_title_format },
 	{ "unmark", cmd_unmark },
+	{ "unpersist", cmd_unpersist }, // tide
 	{ "urgent", cmd_urgent },
 	{ "zoom", cmd_zoom }, // tide
 };

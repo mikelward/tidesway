@@ -11,6 +11,7 @@
 #include "sway/tree/workspace.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/workspace.h"
 #include "log.h"
 #include "util.h"
 
@@ -31,7 +32,8 @@ enum wlr_direction opposite_direction(enum wlr_direction d) {
 
 static void restore_workspaces(struct sway_output *output) {
 	// Workspace output priority
-	for (int i = 0; i < root->outputs->length; i++) {
+	// tide: every workspace has a part on every output, so none moves here
+	for (int i = 0; i < root->outputs->length && !TIDE_WS_SPANNING; i++) {
 		struct sway_output *other = root->outputs->items[i];
 		if (other == output) {
 			continue;
@@ -158,6 +160,7 @@ void output_enable(struct sway_output *output) {
 
 	sway_ext_workspace_output_enable(output);
 	restore_workspaces(output);
+	tide_ws_output_enabled(output); // tide: a part of every workspace
 
 	struct sway_workspace *ws = NULL;
 	if (!output->workspaces->length) {
@@ -207,6 +210,9 @@ static void output_evacuate(struct sway_output *output) {
 	if (!output->workspaces->length) {
 		return;
 	}
+	if (tide_ws_evacuate(output)) { // tide: to the parts on the output left
+		return;
+	}
 	struct sway_output *fallback_output = NULL;
 	if (root->outputs->length > 0) {
 		fallback_output = root->outputs->items[0];
@@ -229,7 +235,8 @@ static void output_evacuate(struct sway_output *output) {
 		struct sway_workspace *new_output_ws =
 			output_get_active_workspace(new_output);
 
-		if (workspace_is_empty(workspace)) {
+		// tide: a persistent workspace stays, empty or not
+		if (workspace_is_empty(workspace) && !tide_ws_persistent(workspace)) {
 			// If the new output has an active workspace (the noop output may
 			// not have one), move all sticky containers to it
 			if (new_output_ws &&

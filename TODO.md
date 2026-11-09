@@ -16,8 +16,11 @@ this order, one PR each; each makes more of tidewm's suite pass.
 - ~~**Dimming**~~. Done: tidewm's `dim_inactive` and `dim`, a black layer
   over every window but the focused one, which clicks go through, with a
   window's `dim` and `dimmed` in IPC (`sway/tide/dim.c`).
-- **Workspaces spanning every monitor**. Grouped workspaces: each output's
-  workspace of one name switches together.
+- ~~**Workspaces spanning every monitor**~~. Done: each workspace a group of
+  sway's per-output workspaces of one name, its parts, on every output and
+  switching together, with `persist` and `unpersist`, tidewm's workspace IPC
+  and events, one ext-workspace group, and a disabled output's windows
+  joining the parts left (`sway/tide/workspace.c`).
 - **Measure**. tidewm's suite and the experiment's benchmarks, against tidewm.
 - **Fail on regressions**. Make the `test` job fail when a test that passed in the
   baseline stops passing.
@@ -96,3 +99,15 @@ Each patch's PR says how far it moves this.
   window's new place at once, as that timeout would, and the part of a
   place its client hasn't drawn yet still takes the pointer. tidewm
   places windows at once, with no wait.
+- **A part on every output** (2026-11-09): every workspace has a part on every
+  output, empty or not, so `GET_TREE` lists every workspace under each
+  output, as tidewm's does, and a workspace goes only when every part is
+  empty. Parts made only on demand would leave the tree closer to sway's.
+- **No workspace moves to an output** (2026-11-09): `move workspace to
+  output` fails, ext-workspace's assign does nothing, and `workspace NAME
+  output OUTPUT` lines move no part, as a workspace is on every output
+  already. tidewm has none of these.
+- **A disabled output's windows** (2026-11-09): go to the part of their
+  workspace on the first output left, as new windows go there, tiled or
+  floating, each with a `move` window event. sway would move its whole
+  workspaces over.

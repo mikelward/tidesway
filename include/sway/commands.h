@@ -152,7 +152,8 @@ sway_cmd cmd_ipc;
 sway_cmd cmd_kill;
 sway_cmd cmd_layout;
 // tide: its layout commands and config lines (sway/tide/commands.c), the
-// focus guard's (sway/tide/focus.c) and dimming's (sway/tide/dim.c)
+// focus guard's (sway/tide/focus.c), dimming's (sway/tide/dim.c) and
+// workspaces' (sway/tide/workspace.c)
 sway_cmd cmd_default_layout;
 sway_cmd cmd_dim;
 sway_cmd cmd_dim_inactive;
@@ -163,10 +164,12 @@ sway_cmd cmd_layout_defaults;
 sway_cmd cmd_mfact;
 sway_cmd cmd_movestack;
 sway_cmd cmd_nmaster;
+sway_cmd cmd_persist;
 sway_cmd cmd_resize_grab;
 sway_cmd cmd_single_width;
 sway_cmd cmd_single_window;
 sway_cmd cmd_ultrawide_aspect;
+sway_cmd cmd_unpersist;
 sway_cmd cmd_zoom;
 sway_cmd cmd_log_colors;
 sway_cmd cmd_mark;

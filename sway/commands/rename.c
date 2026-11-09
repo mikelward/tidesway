@@ -10,6 +10,7 @@
 #include "sway/output.h"
 #include "sway/desktop/launcher.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/workspace.h"
 #include "sway/tree/container.h"
 #include "sway/tree/workspace.h"
 #include "sway/tree/root.h"
@@ -100,6 +101,7 @@ struct cmd_results *cmd_rename(int argc, char **argv) {
 	wlr_ext_workspace_handle_v1_set_name(workspace->ext_workspace, workspace->name);
 
 	output_sort_workspaces(workspace->output);
+	tide_ws_renamed(workspace); // tide: every part of it
 	ipc_event_workspace(NULL, workspace, "rename");
 	tide_focus_renamed(workspace); // tide: a grant made on it follows it
 

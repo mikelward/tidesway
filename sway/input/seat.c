@@ -30,6 +30,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/workspace.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -1107,6 +1108,12 @@ static void set_workspace(struct sway_seat *seat,
 		return;
 	}
 
+	// tide: another output's part of it is the same workspace
+	if (seat->workspace && new_ws && seat->workspace->tide_group
+			&& seat->workspace->tide_group == new_ws->tide_group) {
+		seat->workspace = new_ws;
+		return;
+	}
 	if (seat->workspace) {
 		free(seat->prev_workspace_name);
 		seat->prev_workspace_name = strdup(seat->workspace->name);
@@ -1169,6 +1176,7 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 	if (last_workspace != new_workspace && new_output) {
 		node_set_dirty(&new_output->node);
 	}
+	tide_ws_show(seat, new_workspace); // tide: every output shows its part
 
 	// Unfocus the previous focus
 	if (last_focus) {

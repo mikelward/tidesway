@@ -27,6 +27,7 @@
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
+#include "sway/tide/workspace.h"
 #include "list.h"
 #include "log.h"
 #include "util.h"
@@ -295,6 +296,9 @@ static void ipc_send_event(const char *json_string, enum ipc_command_type event)
 void ipc_event_workspace(struct sway_workspace *old,
 		struct sway_workspace *new, const char *change) {
 	if (!ipc_has_event_listeners(IPC_EVENT_WORKSPACE)) {
+		return;
+	}
+	if (!tide_ws_event_wanted(old, new, change)) { // tide: a workspace's, not a part's
 		return;
 	}
 	sway_log(SWAY_DEBUG, "Sending workspace::%s event", change);
@@ -742,7 +746,8 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 	case IPC_GET_WORKSPACES:
 	{
 		json_object *workspaces = json_object_new_array();
-		root_for_each_workspace(ipc_get_workspaces_callback, workspaces);
+		// tide: each workspace once, as its part on the focused output
+		tide_ws_for_each(ipc_get_workspaces_callback, workspaces);
 		const char *json_string = json_object_to_json_string(workspaces);
 		ipc_send_reply(client, payload_type, json_string,
 			(uint32_t)strlen(json_string));
