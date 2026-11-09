@@ -19,6 +19,13 @@ concurrency:
   group: ci-${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && format('main-{0}', github.sha) || github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ !(github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && github.event.action != 'edited' }}
 
+env:
+  # The mikelward/tidewm commit whose suite and harness the test job runs,
+  # pinned so tests/tidewm-harness/passing.txt holds against it: main at
+  # 1f47ac2, as main's last green run had it. To move it, change it here,
+  # re-run, and update passing.txt (and flaky.txt) in the same pull request.
+  TIDEWM_REF: 1f47ac246ddf6154a2f6a02d1184515d5552ec1d
+
 jobs:
   classify:
     runs-on: ubuntu-latest
@@ -113,7 +120,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: mikelward/tidewm
-          ref: main
+          ref: ${{ env.TIDEWM_REF }}
           path: tidewm
           persist-credentials: false
       # The test clients, as tidewm's own test target builds them

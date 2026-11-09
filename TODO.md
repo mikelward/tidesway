@@ -33,7 +33,9 @@ this order, one PR each; each makes more of tidewm's suite pass.
 `tests/tidewm-harness/passing.txt` is the baseline CI holds tidesway to: the 341
 tests that pass on main (2026-11-09, `9612edaf`, tidewm main at `1f47ac2`), less
 the 9 in `flaky.txt`, and since then `GrantTest`'s grant on a workspace, once its
-crash was fixed. A PR that makes a test pass for good adds it there.
+crash was fixed. A PR that makes a test pass for good adds it there. CI runs
+tidewm's suite at the commit `ci.yml`'s `TIDEWM_REF` pins, `1f47ac2`, so tidewm's
+changes reach it only through a PR that moves the pin and updates the lists.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -141,5 +143,6 @@ Each patch's PR says how far it moves this.
   since fixed, and it's back in `passing.txt`.
 - **`passing.txt` by hand** (2026-11-09): nothing rewrites it. The PR that makes a
   test pass adds it, from the "Newly passing" list in the `test` job's summary,
-  so each addition is reviewed; a test tidewm renames or removes fails the gate
-  as missing until the list follows.
+  so each addition is reviewed. tidewm is pinned (`TIDEWM_REF` in `ci.yml`), so
+  a test it renames or removes fails the gate as missing only in the PR that
+  moves the pin, which updates the list.

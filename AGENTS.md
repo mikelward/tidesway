@@ -127,12 +127,14 @@ Shared by every mikelward repo and the user-level agent config; canonical in mik
   tests, for what tidewm's suite can't express (sway's split tree, say), are
   `tests/tidesway/test_*.py`, on tidewm's `tests/harness.py`: `TIDEWM_CHECKOUT=DIR
   python3 -m unittest discover -s tests/tidesway`. They fail CI's `test` job.
+  CI runs both against the tidewm commit `TIDEWM_REF` pins in `ci.yml`.
 - **CI**. Builds on Arch (`build`) and Debian testing (`build-debian`), the two places
   a packaged wlroots 0.20 exists; tidewm's suite runs on Debian testing (`test`).
   `test` fails if a test in `tests/tidewm-harness/passing.txt` doesn't pass
   (`tests/tidewm-harness/gate`), except one in `flaky.txt`, which says why it's
   flaky; a PR that makes a test pass adds it to `passing.txt`. Its summary lists
-  newly passing tests.
+  newly passing tests. To move tidewm's pin, change `TIDEWM_REF`, re-run, and
+  update `passing.txt` and `flaky.txt` in the same PR.
 - **Upstream**. tide's code lives in its own files, `sway/tide/` and
   `include/sway/tide/`, with small hooks in sway's files, so rebasing onto each sway
   release stays cheap. One commit per patch. Rebase onto upstream; never merge it.
