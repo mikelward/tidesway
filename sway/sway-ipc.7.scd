@@ -401,6 +401,13 @@ node and will have the following properties:
 |- shell
 :  string
 :  (Only windows) The shell of the window, such as _xdg\_shell_ or _xwayland_
+|- dim
+:  boolean
+:  (Only windows) tidesway's: whether the window dims when it isn't focused,
+   as *dim* sets (*sway*(5), TIDE'S DIMMING)
+|- dimmed
+:  boolean
+:  (Only windows) tidesway's: whether the window is dimmed now
 |- inhibit_idle
 :  boolean
 :  (Only windows) Whether the window is inhibiting the idle state

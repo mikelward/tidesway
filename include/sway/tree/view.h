@@ -128,6 +128,7 @@ struct sway_view {
 	enum wp_tearing_control_v1_presentation_hint tearing_hint;
 
 	struct tide_view tide; // tide: the focus guard's
+	struct tide_dim_view tide_dim; // tide: its dimming
 };
 
 struct sway_xdg_shell_view {

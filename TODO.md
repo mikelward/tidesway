@@ -13,8 +13,9 @@ this order, one PR each; each makes more of tidewm's suite pass.
   a canceled grant's placement, `grant`, `grant extend`, `grant --or-recent`,
   `focus recent` and `focus_guard`, with GET_SEATS' `last_input` and a
   window's `workspace` and `output` (`sway/tide/focus.c`).
-- **Dimming**. `dim_inactive`, darkening unfocused windows rather than making them
-  see-through.
+- ~~**Dimming**~~. Done: tidewm's `dim_inactive` and `dim`, a black layer
+  over every window but the focused one, which clicks go through, with a
+  window's `dim` and `dimmed` in IPC (`sway/tide/dim.c`).
 - **Workspaces spanning every monitor**. Grouped workspaces: each output's
   workspace of one name switches together.
 - **Measure**. tidewm's suite and the experiment's benchmarks, against tidewm.
@@ -76,3 +77,15 @@ Each patch's PR says how far it moves this.
   decides, as in sway, unless a grant names the app. tidewm marks every
   ungranted activation urgent, guard or no guard; here that holds with the
   guard on, whatever the setting says.
+- **The focused window stays undimmed under a launcher** (2026-11-09): a
+  window dims unless it's the one GET_TREE calls focused, tidewm's rule. In
+  sway that window keeps the name while a layer surface, such as tide's
+  launcher, has the keyboard, so it stays undimmed, where tidewm dims every
+  window then.
+- **The dim covers a window's content, not sway's borders or title bars**
+  (2026-11-09): tidewm's layer covers its borders too. tide has neither, and
+  sway's colors already mark the focused one's.
+- **What an output shows** (2026-11-09): every window on its workspace, a
+  hidden tab of a tabbed or stacked container included, as tidewm counts a
+  monocle's hidden windows; a fullscreen one, on the workspace or across
+  every output, counts alone.

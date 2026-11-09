@@ -10,11 +10,13 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   "TIDE'S LAYOUTS");
 * tide's focus guard, so a window you didn't ask for never takes focus, with
   tidewm's `grant`, `focus recent` and `focus_guard` lines (`man 5 sway`,
-  "TIDE'S FOCUS GUARD").
+  "TIDE'S FOCUS GUARD");
+* tide's dimming: `dim_inactive` darkens every window but the one you're in,
+  rather than making it see-through, with tidewm's `dim` command for windows
+  that shouldn't dim (`man 5 sway`, "TIDE'S DIMMING").
 
 Still to come:
 
-* `dim_inactive`, darkening the windows you're not in;
 * workspaces that span every monitor, by grouping each output's workspaces.
 
 Everything else is sway's, as described below. tidesway builds the same way, with
