@@ -27,6 +27,10 @@ this order, one PR each; each makes more of tidewm's suite pass.
 - ~~**Fail on regressions**~~. Done: the `test` job fails when a test in
   `tests/tidewm-harness/passing.txt` stops passing, unless `flaky.txt` lists it
   (`tests/tidewm-harness/gate`).
+- **Track sway**. A weekly check of swaywm/sway: new commits on the current release
+  branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
+  since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
+  past `1.12`. Why this can't sync as tidewm does: tide's `docs/dwl-vs-sway.md`.
 
 ## Baseline
 
