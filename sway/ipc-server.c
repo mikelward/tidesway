@@ -75,6 +75,16 @@ static void handle_display_destroy(struct wl_listener *listener, void *data) {
 	close(ipc_socket);
 	unlink(ipc_sockaddr->sun_path);
 
+	/* tide: what's queued goes before the clients do, so exit's reply and
+	 * the shutdown event reach them, as tidewm sends them; a write that
+	 * fails disconnects that client, so the list is walked from its end */
+	for (int i = ipc_client_list->length - 1; i >= 0; i--) {
+		struct ipc_client *client = ipc_client_list->items[i];
+		if (client->write_buffer_len > 0) {
+			ipc_client_handle_writable(client->fd, WL_EVENT_WRITABLE, client);
+		}
+	}
+
 	while (ipc_client_list->length) {
 		ipc_client_disconnect(ipc_client_list->items[ipc_client_list->length-1]);
 	}
