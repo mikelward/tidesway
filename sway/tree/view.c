@@ -30,6 +30,7 @@
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
 #include "sway/sway_text_node.h"
+#include "sway/tide/dialog.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
 #include "sway/tide/keepopen.h"
@@ -923,9 +924,11 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		view_update_csd_from_client(view, decoration);
 	}
 
-	// tide: a status popup, with no app ID and no title, floats
+	// tide: a status popup, with no app ID and no title, floats, and so do
+	// picture-in-picture and a modal dialog
 	if ((view->impl->wants_floating && view->impl->wants_floating(view))
-			|| tide_focus_nameless(view)) {
+			|| tide_focus_nameless(view) || tide_dialog_pip(view)
+			|| tide_dialog_modal(view)) {
 		view->container->pending.border = config->floating_border;
 		view->container->pending.border_thickness = config->floating_border_thickness;
 		container_set_floating(view->container, true);
@@ -978,6 +981,7 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		input_manager_set_focus(&view->container->node);
 	}
 	tide_focus_opened(view); // tide: its urgency, or its grant's focus
+	tide_dialog_place(view); // tide: one floating as it opens takes its place
 	// tide: an app that asked to be maximized before it mapped opens so
 	if (view->type == SWAY_VIEW_XDG_SHELL && view->wlr_xdg_toplevel->requested.maximized) {
 		tide_maximize_opening(view);

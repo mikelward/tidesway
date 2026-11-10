@@ -134,6 +134,11 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **tidewm's floating places** (2026-11-10): a window floating as it opens
+  takes tidewm's place (its parent's middle, or the window area's, capped at
+  80% of the output), where sway centered it on the workspace at its own
+  size, with `floating_maximum_size`. A floating window's client-chosen size
+  waits, too, while sway has a configure scheduled but not yet sent.
 - **No `urgent allow|deny`** (2026-11-10): `urgent` takes only `enable` and
   `disable`, as tidewm's does, and every window may mark itself. Each mark,
   by an activation, the guard, X11's hint coming on or `urgent enable`, is

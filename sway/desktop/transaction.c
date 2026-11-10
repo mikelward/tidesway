@@ -11,6 +11,7 @@
 #include "sway/input/input-manager.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/dialog.h"
 #include "sway/tide/minimize.h"
 #include "sway/tide/maximize.h"
 #include "sway/tree/container.h"
@@ -1064,6 +1065,7 @@ static void _transaction_commit_dirty(bool server_request) {
 	if (!server.dirty_nodes->length) {
 		return;
 	}
+	tide_dialog_follow(); // tide: dialogs go where their windows went
 
 	if (!server.pending_transaction) {
 		server.pending_transaction = transaction_create();
