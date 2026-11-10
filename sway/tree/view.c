@@ -834,6 +834,7 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	view_populate_pid(view);
 	view->container = container_create(view);
 	tide_focus_open(view); // tide: held or granted, before it's placed
+	view->tide.mapping = true; // tide: no events of its own before its new one
 
 	if (view->ctx == NULL) {
 		struct launcher_ctx *ctx = launcher_ctx_find_pid(view->pid);
@@ -961,10 +962,13 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 			arrange_workspace(container->pending.workspace);
 		}
 	}
-	// tide: the new event once the window has its place, as tidewm's has it
-	ipc_event_window(view->container, "new");
-
 	view_execute_criteria(view);
+	tide_dialog_place(view); // tide: one floating as it opens takes its place
+
+	// tide: the new event once the window has its place, the rules have run
+	// and it has its workspace and floating state, as tidewm's has it
+	view->tide.mapping = false;
+	ipc_event_window(view->container, "new");
 
 	// tide: a rule that minimized it as it opened keeps it so
 	bool set_focus = should_focus(view) && !view->tide.minimized;
@@ -981,7 +985,6 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		input_manager_set_focus(&view->container->node);
 	}
 	tide_focus_opened(view); // tide: its urgency, or its grant's focus
-	tide_dialog_place(view); // tide: one floating as it opens takes its place
 	// tide: an app that asked to be maximized before it mapped opens so
 	if (view->type == SWAY_VIEW_XDG_SHELL && view->wlr_xdg_toplevel->requested.maximized) {
 		tide_maximize_opening(view);

@@ -134,6 +134,11 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **No events before a window's new one** (2026-11-10): a window's `new`
+  event now comes once its `for_window` rules have run and it has its place,
+  as tidewm sends it, and the events its rules would cause before then
+  (`floating`, `move`, `title`) aren't sent: `new` says what they did. sway
+  sent `new` first, then the rules' events.
 - **tidewm's floating places** (2026-11-10): a window floating as it opens
   takes tidewm's place (its parent's middle, or the window area's, capped at
   80% of the output), where sway centered it on the workspace at its own
