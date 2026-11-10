@@ -33,18 +33,19 @@ static bool sway_switch_trigger_test(enum sway_switch_trigger trigger,
 	abort(); // unreachable
 }
 
-static void execute_binding(struct sway_switch *sway_switch) {
-	struct sway_seat *seat = sway_switch->seat_device->sway_seat;
+// tide: by type and state, for tidewm's switch command too
+static void run_bindings(struct sway_seat *seat, enum wlr_switch_type type,
+		enum wlr_switch_state state) {
 	bool locked = server.session_lock.lock;
 
 	list_t *bindings = config->current_mode->switch_bindings;
 	struct sway_switch_binding *matched_binding = NULL;
 	for (int i = 0; i < bindings->length; ++i) {
 		struct sway_switch_binding *binding = bindings->items[i];
-		if (binding->type != sway_switch->type) {
+		if (binding->type != type) {
 			continue;
 		}
-		if (!sway_switch_trigger_test(binding->trigger, sway_switch->state)) {
+		if (!sway_switch_trigger_test(binding->trigger, state)) {
 			continue;
 		}
 		if (config->reloading && (binding->trigger == SWAY_SWITCH_TRIGGER_TOGGLE
@@ -73,6 +74,16 @@ static void execute_binding(struct sway_switch *sway_switch) {
 		seat_execute_command(seat, dummy_binding);
 		free(dummy_binding);
 	}
+}
+
+static void execute_binding(struct sway_switch *sway_switch) {
+	run_bindings(sway_switch->seat_device->sway_seat, sway_switch->type,
+		sway_switch->state);
+}
+
+void tide_switch_moved(struct sway_seat *seat, enum wlr_switch_type type,
+		enum wlr_switch_state state) {
+	run_bindings(seat, type, state);
 }
 
 static void handle_switch_toggle(struct wl_listener *listener, void *data) {
