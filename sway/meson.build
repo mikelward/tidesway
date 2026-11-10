@@ -217,6 +217,7 @@ sway_sources = files(
 	'tide/dim.c',
 	'tide/direction.c',
 	'tide/focus.c',
+	'tide/gesture.c',
 	'tide/grab.c',
 	'tide/keepopen.c',
 	'tide/layout.c',

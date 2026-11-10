@@ -378,6 +378,13 @@ set|plus|minus|toggle <amount>
 	becomes fullscreen on the same workspace as the first container. In either
 	of those cases, the second container will gain focus.
 
+*gesture* swipe|pinch|hold <fingers>
+	tidesway's, as tidewm's: a touchpad gesture with that many fingers, as
+	if from a touchpad, which goes to the window under the pointer or a
+	*bindgesture* binding, as a real one does: a swipe 10 to the right, a
+	pinch 10 to the right that zooms to twice the size and turns 90 degrees,
+	or a hold. For a test, which has no touchpad.
+
 *switch* lid|tablet on|off
 	tidesway's, as tidewm's: runs the *bindswitch* lines for that switch
 	as if it had moved, for a test, which has no lid, or a lid the hardware
