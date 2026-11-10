@@ -158,6 +158,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "splitv", cmd_splitv },
 	{ "sticky", cmd_sticky },
 	{ "swap", cmd_swap },
+	{ "switch", cmd_switch }, // tide
 	{ "title_format", cmd_title_format },
 	{ "unlock", cmd_unlock }, // tide
 	{ "unmark", cmd_unmark },

@@ -378,6 +378,11 @@ set|plus|minus|toggle <amount>
 	becomes fullscreen on the same workspace as the first container. In either
 	of those cases, the second container will gain focus.
 
+*switch* lid|tablet on|off
+	tidesway's, as tidewm's: runs the *bindswitch* lines for that switch
+	as if it had moved, for a test, which has no lid, or a lid the hardware
+	doesn't report.
+
 *title_format* <format>
 	Sets the format of window titles. The following placeholders may be used:
 
