@@ -443,10 +443,22 @@ static bool load_config(const char *path, struct sway_config *config,
 		sway_log(SWAY_ERROR, "Error(s) loading config!");
 	}
 
-	return config->active || !config->validating || config_load_success;
+	// tide: a reload's validation fails on an error, so the config stays
+	// as it was, as tidewm's reload does, where sway only showed them;
+	// loading it, as at startup, goes on past an error as sway's does
+	return config->validating ? config_load_success : true;
+}
+
+// tide: the first error loading the config, as "FILE:LINE: ERROR", or NULL
+static char *first_error;
+
+const char *config_first_error(void) {
+	return first_error;
 }
 
 bool load_main_config(const char *file, bool is_active, bool validating) {
+	free(first_error);
+	first_error = NULL;
 	char *path;
 	if (file != NULL) {
 		path = strdup(file);
@@ -558,6 +570,8 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 	return success;
 }
 
+// tide: whether it has no errors; one that's missing, or already
+// included, is skipped, which is none
 static bool load_include_config(const char *path, struct sway_config *config,
 		struct swaynag_instance *swaynag) {
 	// save parent config
@@ -567,7 +581,7 @@ static bool load_include_config(const char *path, struct sway_config *config,
 
 	if (real_path == NULL) {
 		sway_log(SWAY_DEBUG, "%s not found.", path);
-		return false;
+		return true;
 	}
 
 	// check if config has already been included
@@ -579,7 +593,7 @@ static bool load_include_config(const char *path, struct sway_config *config,
 				"%s already included once, won't be included again.",
 				real_path);
 			free(real_path);
-			return false;
+			return true;
 		}
 	}
 
@@ -599,8 +613,9 @@ static bool load_include_config(const char *path, struct sway_config *config,
 	return true;
 }
 
-void load_include_configs(const char *path, struct sway_config *config,
+bool load_include_configs(const char *path, struct sway_config *config,
 		struct swaynag_instance *swaynag) {
+	bool loaded = true;
 	char *wd = getcwd(NULL, 0);
 	char *parent_path = strdup(config->current_config_path);
 	const char *parent_dir = dirname(parent_path);
@@ -615,7 +630,7 @@ void load_include_configs(const char *path, struct sway_config *config,
 		char **w = p.we_wordv;
 		size_t i;
 		for (i = 0; i < p.we_wordc; ++i) {
-			load_include_config(w[i], config, swaynag);
+			loaded &= load_include_config(w[i], config, swaynag);
 		}
 		wordfree(&p);
 	}
@@ -627,6 +642,7 @@ void load_include_configs(const char *path, struct sway_config *config,
 cleanup:
 	free(parent_path);
 	free(wd);
+	return loaded;
 }
 
 void run_deferred_commands(void) {
@@ -819,6 +835,11 @@ bool read_config(FILE *file, struct sway_config *config,
 		case CMD_INVALID:
 			sway_log(SWAY_ERROR, "Error on line %i '%s': %s (%s)", line_number,
 				line, res->error, config->current_config_path);
+			// tide: the first, for reload to name, as tidewm's does
+			if (!first_error) {
+				first_error = format_str("%s:%i: %s", config->current_config_path,
+					line_number, res->error ? res->error : "error");
+			}
 			if (!config->validating) {
 				swaynag_log(config->swaynag_command, swaynag,
 					"Error on line %i (%s) '%s': %s", line_number,
