@@ -1169,6 +1169,14 @@ whatever *focus_on_window_activation* says; with it off, that setting
 decides. With the guard off, a new window still uses its grant, and goes to
 its _--workspace_.
 
+Closing the window you're in focuses the window under the pointer, as tide's
+SPEC §14.2 has it, going by where the windows left are once they've moved
+into its space; the pointer stays where it is, and a layer surface over a
+window, such as a notification, doesn't count. Focus goes to the window you
+were in before, as in sway, when the pointer is over nothing or over a window
+the guard holds, and a dialog closing hands focus back to its parent. A window
+you weren't in closing moves no focus. This holds with the guard off too.
+
 *grant* [--pid <pid>] [--key <key>] [--workspace <name>] [<app>...]
 	A one-shot grant: the first new window of one of the apps takes focus,
 	or of any app's for _\*_, which stands alone. Apps match ignoring case

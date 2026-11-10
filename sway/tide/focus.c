@@ -17,6 +17,7 @@
 #include <wayland-server-core.h>
 #include <wlr/config.h>
 #include <wlr/types/wlr_compositor.h>
+#include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
@@ -28,6 +29,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/desktop/transaction.h"
+#include "sway/input/cursor.h"
 #include "sway/input/input-manager.h"
 #include "sway/input/seat.h"
 #include "sway/output.h"
@@ -1130,4 +1132,112 @@ struct cmd_results *cmd_focus_guard(int argc, char **argv) {
 			"focus_guard takes enable, disable, grant_seconds S or prompt_seconds S");
 	}
 	return cmd_results_new(CMD_SUCCESS, NULL);
+}
+
+bool tide_focus_closing(struct sway_view *view) {
+	struct sway_seat *seat = input_manager_get_default_seat();
+	if (!view->container || seat_get_focus(seat) != &view->container->node) {
+		return false;
+	}
+	// A dialog hands focus back to its parent
+	if (view->type == SWAY_VIEW_XDG_SHELL && view->wlr_xdg_toplevel
+			&& view->wlr_xdg_toplevel->parent) {
+		return false;
+	}
+#if WLR_HAS_XWAYLAND
+	if (view->type == SWAY_VIEW_XWAYLAND && view->wlr_xwayland_surface
+			&& view->wlr_xwayland_surface->parent) {
+		return false;
+	}
+#endif
+	return true;
+}
+
+static bool pending_at(struct sway_container *con, double lx, double ly) {
+	// A minimized window isn't there, though it keeps its place
+	return con->view && !con->view->tide.minimized && lx >= con->pending.x && ly >= con->pending.y
+		&& lx < con->pending.x + con->pending.width
+		&& ly < con->pending.y + con->pending.height;
+}
+
+struct under {
+	double lx, ly;
+	struct sway_container *con;
+	struct sway_seat *seat;
+};
+
+/* Whether con shows in sway's tabbed and stacked layouts: each of those
+ * above it shows the child it's under, the one the seat last had there */
+static bool shown_tab(struct sway_seat *seat, struct sway_container *con) {
+	for (struct sway_container *child = con; child; child = child->pending.parent) {
+		struct sway_node *parent = child->pending.parent
+			? &child->pending.parent->node
+			: child->pending.workspace ? &child->pending.workspace->node : NULL;
+		if (!parent) {
+			break;
+		}
+		enum sway_container_layout layout = parent->type == N_WORKSPACE
+			? parent->sway_workspace->layout : parent->sway_container->pending.layout;
+		if ((layout == L_TABBED || layout == L_STACKED)) {
+			struct sway_node *active = seat_get_active_tiling_child(seat, parent);
+			if (active && active != &child->node) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+static void tile_under(struct sway_container *con, void *data) {
+	struct under *u = data;
+	if (!u->con && !container_is_floating_or_child(con)
+			&& pending_at(con, u->lx, u->ly) && shown_tab(u->seat, con)) {
+		u->con = con;
+	}
+}
+
+void tide_focus_closed(void) {
+	struct sway_seat *seat = input_manager_get_default_seat();
+	if (server.session_lock.lock || root->fullscreen_global) {
+		return;
+	}
+	double lx = seat->cursor->cursor->x, ly = seat->cursor->cursor->y;
+	struct wlr_output *wlr_output =
+		wlr_output_layout_output_at(root->output_layout, lx, ly);
+	struct sway_output *output = wlr_output ? wlr_output->data : NULL;
+	struct sway_workspace *ws = output && output->enabled
+		? output_get_active_workspace(output) : NULL;
+	if (!ws) {
+		return;
+	}
+	struct under u = { lx, ly, NULL, seat };
+	if (ws->fullscreen) {
+		u.con = pending_at(ws->fullscreen, lx, ly) ? ws->fullscreen : NULL;
+	} else {
+		// The floating windows are over the tiles, the last on top
+		for (int i = ws->floating->length - 1; i >= 0 && !u.con; i--) {
+			struct sway_container *con = ws->floating->items[i];
+			if (pending_at(con, lx, ly)) {
+				u.con = con;
+			}
+		}
+		/* Of the tiles there, the one the seat had last: the one shown, as
+		 * tide's monocle and sway's tabs stack them */
+		struct sway_seat_node *current;
+		wl_list_for_each(current, &seat->focus_stack, link) {
+			if (u.con) {
+				break;
+			}
+			struct sway_node *node = current->node;
+			if (node->type == N_CONTAINER && !node->destroying
+					&& node->sway_container->pending.workspace == ws) {
+				tile_under(node->sway_container, &u);
+			}
+		}
+	}
+	if (!u.con || u.con->view->tide.held != TIDE_FREE
+			|| seat_get_focus(seat) == &u.con->node) {
+		return;
+	}
+	seat_set_focus_container(seat, u.con);
 }
