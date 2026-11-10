@@ -24,6 +24,7 @@
 #include "sway/config.h"
 #include "sway/tide/configinfo.h"
 #include "sway/tide/inputcheck.h"
+#include "sway/tide/x11scale.h"
 #include "sway/tide/names.h"
 #include "sway/criteria.h"
 #include "sway/desktop/transaction.h"
@@ -215,6 +216,7 @@ static void config_defaults(struct sway_config *config) {
 	tide_config_defaults(&config->tide); // tide
 	tide_focus_config_defaults(&config->tide_focus); // tide
 	config->tide_dim_inactive = 0; // tide: no dimming
+	config->tide_xwayland_unscaled = false; // tide: X11 scaled, as in sway
 	if (!(config->swaynag_command = strdup("swaynag"))) goto cleanup;
 	config->swaynag_config_errors = (struct swaynag_instance){0};
 	config->swaynag_config_errors.args = "--type error "
@@ -549,6 +551,7 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 		spawn_swaybg();
 
 		config->reloading = false;
+		tide_x11_apply(); // tide: xwayland_scaling, as the config has it now
 		if (is_active) {
 			request_modeset();
 			if (config->swaynag_config_errors.client != NULL) {

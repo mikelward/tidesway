@@ -19,6 +19,7 @@
 #include "sway/tree/node.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
+#include "sway/tide/x11scale.h"
 #include "list.h"
 #include "log.h"
 
@@ -924,6 +925,12 @@ static bool should_configure(struct sway_node *node,
 	// Xwayland views are position-aware and need to be reconfigured
 	// when their position changes.
 	if (node->sway_container->view->type == SWAY_VIEW_XWAYLAND) {
+		// tide: one in X11's pixels as its last configure was waits on nothing
+		if (tide_x11_configures_nothing(node->sway_container->view,
+				istate->content_x, istate->content_y,
+				istate->content_width, istate->content_height)) {
+			return false;
+		}
 		// Sway logical coordinates are doubles, but they get truncated to
 		// integers when sent to Xwayland through `xcb_configure_window`.
 		// X11 apps will not respond to duplicate configure requests (from their

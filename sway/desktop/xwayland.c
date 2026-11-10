@@ -22,6 +22,7 @@
 #include "sway/tide/xwayland.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
+#include "sway/tide/x11scale.h"
 
 static const char *atom_map[ATOM_LAST] = {
 	[NET_WM_WINDOW_TYPE_NORMAL] = "_NET_WM_WINDOW_TYPE_NORMAL",
@@ -52,7 +53,15 @@ static void unmanaged_handle_set_geometry(struct wl_listener *listener, void *da
 		wl_container_of(listener, surface, set_geometry);
 	struct wlr_xwayland_surface *xsurface = surface->wlr_xwayland_surface;
 
-	wlr_scene_node_set_position(&surface->surface_scene->buffer->node, xsurface->x, xsurface->y);
+	// tide: from X11's space into the layout (x11scale.h)
+	tide_x11_place_unmanaged(xsurface, surface->surface_scene);
+}
+
+// tide: shown at its size in the layout again, after the scene's own sizing
+static void unmanaged_handle_tide_commit(struct wl_listener *listener, void *data) {
+	struct sway_xwayland_unmanaged *surface =
+		wl_container_of(listener, surface, tide_commit);
+	tide_x11_place_unmanaged(surface->wlr_xwayland_surface, surface->surface_scene);
 }
 
 static void unmanaged_handle_map(struct wl_listener *listener, void *data) {
@@ -66,11 +75,13 @@ static void unmanaged_handle_map(struct wl_listener *listener, void *data) {
 	if (surface->surface_scene) {
 		scene_descriptor_assign(&surface->surface_scene->buffer->node,
 			SWAY_SCENE_DESC_XWAYLAND_UNMANAGED, surface);
-		wlr_scene_node_set_position(&surface->surface_scene->buffer->node,
-			xsurface->x, xsurface->y);
+		// tide: from X11's space into the layout (x11scale.h)
+		tide_x11_place_unmanaged(xsurface, surface->surface_scene);
 
 		wl_signal_add(&xsurface->events.set_geometry, &surface->set_geometry);
 		surface->set_geometry.notify = unmanaged_handle_set_geometry;
+		wl_signal_add(&xsurface->surface->events.commit, &surface->tide_commit);
+		surface->tide_commit.notify = unmanaged_handle_tide_commit;
 	}
 
 	if (wlr_xwayland_surface_override_redirect_wants_focus(xsurface)) {
@@ -88,6 +99,7 @@ static void unmanaged_handle_unmap(struct wl_listener *listener, void *data) {
 
 	if (surface->surface_scene) {
 		wl_list_remove(&surface->set_geometry.link);
+		wl_list_remove(&surface->tide_commit.link);
 
 		wlr_scene_node_destroy(&surface->surface_scene->buffer->node);
 		surface->surface_scene = NULL;
@@ -275,10 +287,12 @@ static uint32_t configure(struct sway_view *view, double lx, double ly, int widt
 	}
 	struct wlr_xwayland_surface *xsurface = view->wlr_xwayland_surface;
 
+	// tide: in its output's pixels, with xwayland_scaling disable
+	uint32_t serial = tide_x11_configure(view, &lx, &ly, &width, &height);
 	wlr_xwayland_surface_configure(xsurface, lx, ly, width, height);
 
-	// xwayland doesn't give us a serial for the configure
-	return 0;
+	// xwayland doesn't give us a serial for the configure; tide's, or 0
+	return serial;
 }
 
 static void set_activated(struct sway_view *view, bool activated) {
@@ -399,6 +413,19 @@ static void get_constraints(struct sway_view *view, double *min_width,
 	*max_width = size_hints->max_width > 0 ? size_hints->max_width : DBL_MAX;
 	*min_height = size_hints->min_height > 0 ? size_hints->min_height : DBL_MIN;
 	*max_height = size_hints->max_height > 0 ? size_hints->max_height : DBL_MAX;
+	// tide: X11's pixels, in the layout (x11scale.h)
+	if (size_hints->min_width > 0) {
+		*min_width = tide_x11_asked_size(view, size_hints->min_width);
+	}
+	if (size_hints->max_width > 0) {
+		*max_width = tide_x11_asked_size(view, size_hints->max_width);
+	}
+	if (size_hints->min_height > 0) {
+		*min_height = tide_x11_asked_size(view, size_hints->min_height);
+	}
+	if (size_hints->max_height > 0) {
+		*max_height = tide_x11_asked_size(view, size_hints->max_height);
+	}
 }
 
 static const struct sway_view_impl view_impl = {
@@ -423,8 +450,9 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 	struct wlr_surface_state *state = &xsurface->surface->current;
 
 	struct wlr_box new_geo = {0};
-	new_geo.width = state->width;
-	new_geo.height = state->height;
+	// tide: its pixels, in the layout (x11scale.h)
+	new_geo.width = tide_x11_to_layout_size(view, state->width);
+	new_geo.height = tide_x11_to_layout_size(view, state->height);
 
 	bool new_size = new_geo.width != view->geometry.width ||
 			new_geo.height != view->geometry.height;
@@ -443,8 +471,14 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 	}
 
 	if (view->container->node.instruction) {
-		bool successful = transaction_notify_view_ready_by_geometry(view,
-				xsurface->x, xsurface->y, state->width, state->height);
+		/* tide: its last configure's, in X11's pixels, or else from X11's
+		 * space into the layout (x11scale.h) */
+		double x, y;
+		tide_x11_view_to_layout(view, xsurface->x, xsurface->y, &x, &y);
+		bool successful = tide_x11_acked(view, xsurface->x, xsurface->y,
+				state->width, state->height)
+			|| transaction_notify_view_ready_by_geometry(view,
+				x, y, new_geo.width, new_geo.height);
 
 		// If we saved the view and this commit isn't what we're looking for
 		// that means the user will never actually see the buffers submitted to
@@ -464,6 +498,7 @@ static void handle_destroy(struct wl_listener *listener, void *data) {
 	if (view->surface) {
 		view_unmap(view);
 		wl_list_remove(&xwayland_view->commit.link);
+		wl_list_remove(&xwayland_view->tide_commit.link);
 	}
 
 	xwayland_view->view.wlr_xwayland_surface = NULL;
@@ -498,7 +533,11 @@ static void handle_unmap(struct wl_listener *listener, void *data) {
 	}
 
 	wl_list_remove(&xwayland_view->commit.link);
+	wl_list_remove(&xwayland_view->tide_commit.link);
 	wl_list_remove(&xwayland_view->surface_tree_destroy.link);
+	// tide: mapped again, it opens anew in its output's pixels (x11scale.h)
+	view->tide.xscale = 0;
+	view->tide.x11_serial = 0;
 
 	wlr_scene_node_destroy(&xwayland_view->image_capture_scene_surface->buffer->node);
 	xwayland_view->image_capture_scene_surface = NULL;
@@ -517,14 +556,38 @@ static void handle_surface_tree_destroy(struct wl_listener *listener, void *data
 	xwayland_view->surface_tree = NULL;
 }
 
+static void handle_tide_commit(struct wl_listener *listener, void *data) {
+	struct sway_xwayland_view *xwayland_view =
+		wl_container_of(listener, xwayland_view, tide_commit);
+	tide_x11_scale_view(&xwayland_view->view);
+}
+
 static void handle_map(struct wl_listener *listener, void *data) {
 	struct sway_xwayland_view *xwayland_view =
 		wl_container_of(listener, xwayland_view, map);
 	struct sway_view *view = &xwayland_view->view;
 	struct wlr_xwayland_surface *xsurface = view->wlr_xwayland_surface;
 
-	view->natural_width = xsurface->width;
-	view->natural_height = xsurface->height;
+	/* tide: its pixels, within its size hints, as tidewm opens it, into
+	 * the layout once view_map knows its output (x11scale.h) */
+	int width = xsurface->width, height = xsurface->height;
+	xcb_size_hints_t *hints = xsurface->size_hints;
+	if (hints) {
+		if (hints->min_width > 0 && width < hints->min_width) {
+			width = hints->min_width;
+		}
+		if (hints->max_width > 0 && width > hints->max_width) {
+			width = hints->max_width;
+		}
+		if (hints->min_height > 0 && height < hints->min_height) {
+			height = hints->min_height;
+		}
+		if (hints->max_height > 0 && height > hints->max_height) {
+			height = hints->max_height;
+		}
+	}
+	view->natural_width = width;
+	view->natural_height = height;
 
 	// Wire up the commit listener here, because xwayland map/unmap can change
 	// the underlying wlr_surface
@@ -545,6 +608,11 @@ static void handle_map(struct wl_listener *listener, void *data) {
 
 	xwayland_view->image_capture_scene_surface =
 		wlr_scene_surface_create(&xwayland_view->view.image_capture_scene->tree, xsurface->surface);
+
+	// tide: shown at its size in the layout, after the scene's own sizing
+	wl_signal_add(&xsurface->surface->events.commit, &xwayland_view->tide_commit);
+	xwayland_view->tide_commit.notify = handle_tide_commit;
+	tide_x11_scale_view(view);
 
 	transaction_commit_dirty();
 }
@@ -591,8 +659,9 @@ static void handle_request_configure(struct wl_listener *listener, void *data) {
 	}
 	if (container_is_floating(view->container)) {
 		// Respect minimum and maximum sizes
-		view->natural_width = ev->width;
-		view->natural_height = ev->height;
+		// tide: its pixels, in the layout (x11scale.h)
+		view->natural_width = tide_x11_asked_size(view, ev->width);
+		view->natural_height = tide_x11_asked_size(view, ev->height);
 		container_floating_resize_and_center(view->container);
 
 		configure(view, view->container->pending.content_x,

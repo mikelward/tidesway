@@ -630,6 +630,8 @@ struct sway_config {
 	struct tide_focus_config tide_focus;
 	// tide: dim_inactive, from 0, none, to 1, black
 	double tide_dim_inactive;
+	// tide: xwayland_scaling disable: X11 in the outputs' own pixels
+	bool tide_xwayland_unscaled;
 	// tide: each file include lines read, with its text, for GET_CONFIG
 	list_t *tide_included;
 	// tide: its named bindings, as bindsym --name lines first name them

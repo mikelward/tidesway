@@ -71,6 +71,7 @@
 #if WLR_HAS_XWAYLAND
 #include <wlr/xwayland/shell.h>
 #include "sway/xwayland.h"
+#include "sway/tide/x11scale.h"
 #endif
 
 #if WLR_HAS_DRM_BACKEND
@@ -136,6 +137,11 @@ static bool is_privileged(const struct wl_global *global) {
 
 static bool filter_global(const struct wl_client *client,
 		const struct wl_global *global, void *data) {
+	// tide: Xwayland sees its own xdg-output, in X11's space
+	int x11 = tide_x11_filter(client, global);
+	if (x11 >= 0) {
+		return x11;
+	}
 #if WLR_HAS_XWAYLAND
 	struct wlr_xwayland *xwayland = server.xwayland.wlr_xwayland;
 	if (xwayland && global == xwayland->shell_v1->global) {
@@ -750,6 +756,7 @@ void server_fini(struct sway_server *server) {
 	wl_list_remove(&server->workspace_manager_v1_commit.link);
 	input_manager_finish(server->input);
 	tide_capture_fini(); // tide
+	tide_x11_fini(); // tide
 
 	// TODO: free sway-specific resources
 #if WLR_HAS_XWAYLAND
@@ -786,6 +793,7 @@ bool server_start(struct sway_server *server) {
 			server->xwayland_ready.notify = handle_xwayland_ready;
 
 			setenv("DISPLAY", server->xwayland.wlr_xwayland->display_name, true);
+			tide_x11_init(); // tide: Xwayland's xdg-output
 
 			/* xcursor configured by the default seat */
 		}

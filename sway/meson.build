@@ -233,6 +233,7 @@ sway_sources = files(
 	'tide/stack.c',
 	'tide/unlock.c',
 	'tide/workspace.c',
+	'tide/x11scale.c',
 
 	'tree/arrange.c',
 	'tree/container.c',

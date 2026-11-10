@@ -118,6 +118,7 @@ static const struct cmd_handler config_handlers[] = {
 	{ "ultrawide_aspect", cmd_ultrawide_aspect }, // tide
 	{ "workspace_layout", cmd_workspace_layout },
 	{ "xwayland", cmd_xwayland },
+	{ "xwayland_scaling", cmd_xwayland_scaling }, // tide
 };
 
 /* Runtime-only commands. Keep alphabetized */

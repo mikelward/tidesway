@@ -99,6 +99,15 @@ The following commands may only be used in the configuration file.
 	machines, it may be desirable to have Xwayland started immediately by
 	using _force_ instead of _enable_.
 
+*xwayland_scaling* enable|disable
+	tidesway's, as tidewm's and Hyprland's _xwayland:force_zero_scaling_:
+	with _disable_, X11 windows are drawn in their output's own pixels, so
+	they're sharp at a fractional scale. An app that scales itself, by
+	*GDK_SCALE*, *QT_SCALE_FACTOR* or *Xft.dpi*, is then the size it would be
+	scaled; one that doesn't is small. A floating X11 window keeps its pixels
+	on an output of another scale. With _enable_, the default, X11 windows
+	are scaled with their output, and blurry at a fractional scale.
+
 ## Runtime only commands
 The following commands cannot be used directly in the configuration file.
 They are expected to be used with *bindsym* or at runtime through *swaymsg*(1).

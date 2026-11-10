@@ -50,6 +50,9 @@ struct tide_view {
 	bool maximized; // tide's maximize: covering its output's window area
 	double max_x, max_y, max_width, max_height; // a floating one's place before
 	struct wlr_box max_area; // the window area that place was in
+	double xscale; // an X11 window's pixels over the layout's (x11scale.h), or 0 for 1
+	struct wlr_box x11_configured; // where its last configure put it, in X11's space
+	uint32_t x11_serial; // that configure's, for its transaction, or 0
 	char *keep_open_ws; // tide's keep_open: the workspace it's kept open on
 	uint64_t urgent_order; // higher for a more recent mark, 0 if unmarked
 	bool urgency_hint; // an X11 window's urgency hint, as last heard
