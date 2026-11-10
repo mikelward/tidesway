@@ -801,6 +801,8 @@ static void ipc_json_describe_container(struct sway_container *c, json_object *o
 		tide_minimize_describe(c, object); // tide: minimized, and its fullscreen
 		tide_maximize_describe(c, object); // tide: maximized
 		tide_keep_open_describe(c, object); // tide: keep_open
+		json_object_object_add(object, "urgent_order", // tide: its mark's order
+			json_object_new_int64((int64_t)c->view->tide.urgent_order));
 	}
 }
 
