@@ -420,66 +420,52 @@ void ipc_event_binding(struct sway_binding *binding) {
 	}
 	json_object_object_add(json_binding, "event_state_mask", modifiers);
 
-	json_object *input_codes = json_object_new_array();
+	/* tide: as i3 and tidewm send it, one input_code and one symbol, without
+	 * sway's input_codes and symbols: a mouse binding's symbol is its button
+	 * as the binding names it, and a switch's is null */
 	int input_code = 0;
-	json_object *symbols = json_object_new_array();
 	json_object *symbol = NULL;
+	const char *input_type = "keyboard";
 
 	switch (binding->type) {
-	case BINDING_KEYCODE:; // bindcode: populate input_codes
-		uint32_t keycode;
-		for (int i = 0; i < binding->keys->length; ++i) {
-			keycode = *(uint32_t *)binding->keys->items[i];
-			json_object_array_add(input_codes, json_object_new_int(keycode));
-			if (i == 0) {
-				input_code = keycode;
-			}
+	case BINDING_KEYCODE:; // bindcode: its first code
+		if (binding->keys->length) {
+			input_code = *(uint32_t *)binding->keys->items[0];
 		}
 		break;
 
-	case BINDING_KEYSYM:
-	case BINDING_MOUSESYM:
-	case BINDING_MOUSECODE:; // bindsym/mouse: populate symbols
-		uint32_t keysym;
+	case BINDING_KEYSYM:; // bindsym: its first keysym
 		char buffer[64];
-		for (int i = 0; i < binding->keys->length; ++i) {
-			keysym = *(uint32_t *)binding->keys->items[i];
-			if (keysym >= BTN_LEFT && keysym <= BTN_LEFT + 8) {
-				snprintf(buffer, 64, "button%u", keysym - BTN_LEFT + 1);
-			} else if (xkb_keysym_get_name(keysym, buffer, 64) < 0) {
-				continue;
-			}
-
-			json_object *str = json_object_new_string(buffer);
-			if (i == 0) {
-				// str is owned by both symbol and symbols. Make sure
-				// to bump the ref count.
-				json_object_array_add(symbols, json_object_get(str));
-				symbol = str;
-			} else {
-				json_object_array_add(symbols, str);
-			}
+		if (binding->keys->length && xkb_keysym_get_name(
+				*(uint32_t *)binding->keys->items[0], buffer, sizeof(buffer)) >= 0) {
+			symbol = json_object_new_string(buffer);
 		}
+		break;
+
+	case BINDING_MOUSESYM:
+	case BINDING_MOUSECODE:; // its button, as its line has it
+		input_type = "mouse";
+		const char *keys = binding->tide_keys;
+		const char *button = keys ? strrchr(keys, '+') : NULL;
+		button = button ? button + 1 : keys;
+		if (button && *button) {
+			symbol = json_object_new_string(button);
+		}
+		break;
+
+	case BINDING_SWITCH:
+		input_type = "switch";
 		break;
 
 	default:
 		sway_log(SWAY_DEBUG, "Unsupported ipc binding event");
-		json_object_put(input_codes);
-		json_object_put(symbols);
 		json_object_put(json_binding);
 		return; // do not send any event
 	}
 
-	json_object_object_add(json_binding, "input_codes", input_codes);
 	json_object_object_add(json_binding, "input_code", json_object_new_int(input_code));
-	json_object_object_add(json_binding, "symbols", symbols);
 	json_object_object_add(json_binding, "symbol", symbol);
-
-	bool mouse = binding->type == BINDING_MOUSECODE ||
-		binding->type == BINDING_MOUSESYM;
-	json_object_object_add(json_binding, "input_type", mouse
-			? json_object_new_string("mouse")
-			: json_object_new_string("keyboard"));
+	json_object_object_add(json_binding, "input_type", json_object_new_string(input_type));
 
 	json_object *json = json_object_new_object();
 	json_object_object_add(json, "change", json_object_new_string("run"));
