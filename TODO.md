@@ -31,6 +31,15 @@ this order, one PR each; each makes more of tidewm's suite pass.
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
   past `1.12`. Why this can't sync as tidewm does: tide's `docs/dwl-vs-sway.md`.
+- **X11 at a fractional scale**. tidewm's `xwayland_scaling disable` (tide's SPEC
+  §17, Hyprland's `xwayland:force_zero_scaling`): X11 windows in their outputs' own
+  pixels, so they're sharp. As tidewm's `x11.h` does it: a zxdg_output_manager_v1
+  only Xwayland sees, giving each output's box spread by the largest scale; X11
+  configures and input points translated to and from those boxes; and the scene
+  showing an X11 buffer one pixel to one. 8 of tidewm's tests (`test_xwayland`).
+- **Input lines in tidewm's words**. The input command failing when no device
+  matches, an unknown `type:`, `xkb_switch_layout` past the keymap's layouts, and
+  XKB's errors as "XKB can't make a keymap of its xkb_ settings".
 
 ## Baseline
 
@@ -134,11 +143,42 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
-- **A reload with an error fails** (2026-11-10): `reload` fails on the first
-  error, as "FILE:LINE: ERROR", an included file's included, and keeps the
-  config it had, as tidewm's does; sway's always succeeded, showing errors
-  in swaynag, and skipped an included file's. A missing included file is
-  still skipped.
+- **A reload with an error fails** (2026-11-10): `reload` fails, naming its
+  first three errors as "FILE:LINE: ERROR", an included file's included, then
+  how many more, and keeps the config it had, as tidewm's does; sway's always
+  succeeded, showing errors in swaynag, and skipped an included file's. A
+  missing included file is still skipped.
+- **Config errors in tidewm's words, sway's lines kept** (2026-11-10): an
+  unknown line, a binding's unknown key or flag, and bad `bindsym`,
+  `bindswitch`, `set` and `include` lines say what tidewm's do. sway's own
+  flags and lines stay: `--border`, `bindswitch --reload` and `bindswitch` in
+  a mode, which tidewm's tests call errors; so does `mode NAME` alone in the
+  file, which starts sway in that mode, and a mode name with a `;`.
+- **GET_CONFIG under the harness** (2026-11-10): the harness's config
+  includes the test's, so `config` and `path` are the harness's and the
+  test's file is in `included_configs`; tidewm's tests of those fail for that
+  alone.
+- **Workspaces are named by number** (2026-11-10): a new workspace takes the
+  next free number, so tidesway starts on `1`, as tidewm does. sway named it
+  after the first workspace a binding shows.
+- **Binding events and command replies as i3's** (2026-11-10): a binding
+  event has one `input_code` and one `symbol`, without sway's `input_codes`
+  and `symbols` lists, and a failed command's reply gives `parse_error` only
+  when it's true, as i3 and tidewm do. A client reading sway's lists gets
+  none.
+- **Outputs named as tidewm names them** (2026-11-10): by Hyprland's
+  description too; GET_OUTPUTS gives a missing make, model or serial as ""
+  where sway said "Unknown"; in the file, a line naming what an output is
+  beats one naming its connector whatever the order; and the output command
+  fails for a name no output has, where sway kept it for one that might
+  connect later.
+- **Focus on close goes under the pointer** (2026-11-10): closing the window
+  you're in focuses the window under the pointer, by the windows' places
+  once they've moved in, with the focus guard on or off, as tidewm and
+  tide's SPEC §14.2 have it; sway focused the one you were in before.
+- **Named bindings** (2026-11-10): `bindsym --name` and `rebind`, as tidewm's.
+  A rebind binds each key as a `bindsym` line with the name's flags would,
+  taking the key from the binding that had it, without swaynag's warning.
 - **Known flaky: maximize ended by focus** (2026-11-10):
   `test_maximize.MaximizeTest.test_another_window_on_the_workspace_taking_focus_ends_it`
   fails 2 runs in 60 under load: the test client prints "maximized" but
@@ -170,11 +210,12 @@ Each patch's PR says how far it moves this.
   where sway sent it only on success; a key bound to `kill` in a window kept
   open says it ran. Criteria that match nothing fail with tidewm's "No
   window matches the criteria", where sway said "No matching node."
-- **No maximize in a floating layout, nor ids across a remap** (2026-11-10):
-  tidewm's maximize tests that use its floating layout fail here, as
-  tidesway has none (above), and so do its maximize and keep_open tests that
-  remap a window, since sway makes a new container, with a new id, for a
-  window that maps again.
+- **No maximize in a floating layout** (2026-11-10): tidewm's maximize
+  tests that use its floating layout fail here, as tidesway has none
+  (above).
+- **A window keeps its id as it maps again** (2026-11-10): sway gave the new
+  container a new id; tidesway gives it the window's first, as tidewm does,
+  so a shell that knows it by id still does.
 - **On-demand layer surfaces wait for a click** (2026-11-10): one that takes
   the keyboard on demand, such as a notification's reply field, gets it when
   clicked, as tide's SPEC §14.1 has it, where sway gave it the keyboard as it

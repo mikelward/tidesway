@@ -21,6 +21,12 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
 * tide's focus grabs, over hyprland-focus-grab-v1, for its notification
   center, and on-demand layer surfaces that keep the keyboard until you
   move it (`man 5 sway`, "TIDE'S FOCUS GRABS");
+* tidewm's window commands and IPC that tide's shell uses: `minimize`,
+  `maximize`, `keep_open`, `send_shortcut`, `unlock` after a locker dies,
+  `switch`, named bindings and `rebind`,
+  dialogs placed and taken along with their window, floating places
+  remembered per app, `position auto` outputs, GET_BINDINGS and the capture
+  and output-focus events (`man 5 sway`, `man 7 sway-ipc`);
 * fixes for what tide hit in sway: a floating window's dialogs stay above it,
   and an X11 window always shows up, past two races in wlroots that could
   leave one unmapped.
