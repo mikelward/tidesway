@@ -110,6 +110,17 @@ void tide_focus_quiet_end(void);
 struct sway_node *tide_focus_after_close(struct sway_seat *seat,
 	struct sway_node *next);
 
+/* Closing the window you're in focuses the window under the pointer, as
+ * tide's SPEC §14.2 and tidewm have it, going by where the windows left
+ * are once they've moved into its space; a layer surface over it doesn't
+ * count. Over nothing, or a window the guard holds, or as a dialog closes,
+ * focus stays where closing it left it: the window you were in before, or
+ * the dialog's parent. tide_focus_closing, as view starts to go, says
+ * whether it's the one you're in and no dialog; tide_focus_closed, once
+ * the windows left are arranged, then moves focus under the pointer. */
+bool tide_focus_closing(struct sway_view *view);
+void tide_focus_closed(void);
+
 /* The window focus next|prev goes to on ws with no window focused: its
  * most recent one, or one the guard holds if that's all it has; NULL for
  * none */

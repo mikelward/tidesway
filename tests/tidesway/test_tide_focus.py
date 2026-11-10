@@ -3,10 +3,14 @@ sway's split tree holds a new window from focus as a tide layout does, and
 what tidewm's suite says of focus next and a closing window holds there
 too."""
 
+import os
+import subprocess
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
-from harness import EVENT_WINDOW, TidewmTest
+from harness import EVENT_WINDOW, GET_OUTPUTS, ROOT, TIMEOUT, TidewmTest
+
+POINTER = os.path.join(ROOT, "tests", "pointer")
 
 
 class SwayLayoutGuardTest(TidewmTest):
@@ -86,6 +90,43 @@ class FloatingPopupTest(TidewmTest):
             focused = [i for i, w in self.windows().items() if w["focused"]]
             self.assertEqual(focused, [floating["id"]], direction)
 
+
+class CloseInTabsTest(TidewmTest):
+    """Closing the window you're in focuses the window under the pointer:
+    in sway's tabbed layout, the tab shown there, not a hidden one whose
+    place it shares."""
+    CONFIG = 'for_window [app_id="^test.float$"] floating enable\n'
+    LAYOUT = "layout tabbed"
+
+    def test_closing_a_floating_window_over_tabs_focuses_the_tab_shown(self):
+        ipc = self.connect()
+        ipc.subscribe("window")
+        self.command(self.connect(), self.LAYOUT)
+
+        def opened(app_id):
+            self.wm.open_window(app_id, app_id)
+            return ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "new"
+                                  and e["container"]["app_id"] == app_id)["container"]["id"]
+
+        opened("test.hidden")
+        shown = opened("test.shown")
+        floating = opened("test.float")
+        self.command(self.connect(), f"[con_id={floating}] focus")
+        rect = self.windows()[floating]["rect"]
+        output, = self.connect().request(GET_OUTPUTS)
+        subprocess.run([POINTER, "move", str(rect["x"] + 20), str(rect["y"] + 20),
+                        str(output["rect"]["width"]), str(output["rect"]["height"])],
+                       env=self.wm.env, check=True, timeout=TIMEOUT)
+        self.command(self.connect(), f"[con_id={floating}] kill")
+        ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "close")
+        self.assertTrue(self.windows()[shown]["focused"])
+
+
+
+class CloseInMonocleTest(CloseInTabsTest):
+    """In tide's monocle layout, the tile shown is the one under the
+    pointer, not one hidden under it."""
+    LAYOUT = "layout monocle"
 
 if __name__ == "__main__":
     unittest.main()
