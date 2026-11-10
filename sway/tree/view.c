@@ -914,7 +914,6 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	} else if (ws) {
 		container = workspace_add_tiling(ws, container);
 	}
-	ipc_event_window(view->container, "new");
 
 	if (decoration) {
 		view_update_csd_from_client(view, decoration);
@@ -955,6 +954,8 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 			arrange_workspace(container->pending.workspace);
 		}
 	}
+	// tide: the new event once the window has its place, as tidewm's has it
+	ipc_event_window(view->container, "new");
 
 	view_execute_criteria(view);
 
