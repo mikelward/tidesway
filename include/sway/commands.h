@@ -149,6 +149,7 @@ sway_cmd cmd_inhibit_idle;
 sway_cmd cmd_input;
 sway_cmd cmd_seat;
 sway_cmd cmd_ipc;
+sway_cmd cmd_keep_open;
 sway_cmd cmd_kill;
 sway_cmd cmd_layout;
 // tide: its layout commands and config lines (sway/tide/commands.c), the

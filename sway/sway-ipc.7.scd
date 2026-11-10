@@ -427,6 +427,11 @@ node and will have the following properties:
 :  boolean
 :  (Only windows) tidesway's: whether the window is maximized; a window event
    with the change _maximize_ says when it is or isn't
+|- keep_open
+:  boolean
+:  (Only windows) tidesway's: whether *kill* leaves the window open; window
+   events with the change _keep\_open_ say when it is or isn't, and
+   _close\_refused_ when it stays open
 |- minimized
 :  boolean
 :  (Only windows) tidesway's: whether the window is minimized; a window event

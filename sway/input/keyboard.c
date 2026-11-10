@@ -16,6 +16,7 @@
 #include "sway/ipc-server.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/keepopen.h"
 #include "log.h"
 
 #if WLR_HAS_SESSION
@@ -156,12 +157,19 @@ static bool update_shortcut_state(struct sway_shortcut_state *state,
  * If one exists, finds a binding which matches the shortcut model state,
  * current modifiers, release state, and locked state.
  */
-static void get_active_binding(const struct sway_shortcut_state *state,
+static void get_active_binding(struct sway_seat *seat,
+		const struct sway_shortcut_state *state,
 		list_t *bindings, struct sway_binding **current_binding,
 		uint32_t modifiers, bool release, bool locked, bool inhibited,
 		const char *input, bool exact_input, xkb_layout_index_t group) {
+	// tide: --kept-open bindings count only in a window kept open, on the
+	// seat whose keyboard it is
+	bool kept_open = tide_kept_open_focused(seat);
 	for (int i = 0; i < bindings->length; ++i) {
 		struct sway_binding *binding = bindings->items[i];
+		if ((binding->flags & BINDING_KEPT_OPEN) && !kept_open) {
+			continue;
+		}
 		bool binding_locked = (binding->flags & BINDING_LOCKED) != 0;
 		bool binding_inhibited = (binding->flags & BINDING_INHIBITED) != 0;
 		bool binding_release = binding->flags & BINDING_RELEASE;
@@ -200,6 +208,17 @@ static void get_active_binding(const struct sway_shortcut_state *state,
 
 		if (*current_binding) {
 			if (*current_binding == binding) {
+				continue;
+			}
+
+			// tide: in a window kept open, its --kept-open binding comes
+			// before one for every window, as tidewm has it
+			bool current_kept = ((*current_binding)->flags & BINDING_KEPT_OPEN) != 0;
+			bool binding_kept = (binding->flags & BINDING_KEPT_OPEN) != 0;
+			if (current_kept != binding_kept) {
+				if (binding_kept) {
+					*current_binding = binding;
+				}
 				continue;
 			}
 
@@ -252,7 +271,9 @@ static void get_active_binding(const struct sway_shortcut_state *state,
 		if (strcmp((*current_binding)->input, input) == 0 &&
 				(((*current_binding)->flags & BINDING_LOCKED) == locked) &&
 				(((*current_binding)->flags & BINDING_INHIBITED) == inhibited) &&
-				(*current_binding)->group == group) {
+				(*current_binding)->group == group &&
+				// tide: unless a --kept-open one may come after
+				(!kept_open || ((*current_binding)->flags & BINDING_KEPT_OPEN))) {
 			return; // If a perfect match is found, quit searching
 		}
 	}
@@ -457,17 +478,17 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	bool handled = false;
 	// Identify active release binding
 	struct sway_binding *binding_released = NULL;
-	get_active_binding(&keyboard->state_keycodes,
+	get_active_binding(seat, &keyboard->state_keycodes,
 			config->current_mode->keycode_bindings, &binding_released,
 			keyinfo.code_modifiers, true, locked,
 			shortcuts_inhibited, device_identifier,
 			exact_identifier, keyboard->effective_layout);
-	get_active_binding(&keyboard->state_keysyms_raw,
+	get_active_binding(seat, &keyboard->state_keysyms_raw,
 			config->current_mode->keysym_bindings, &binding_released,
 			keyinfo.raw_modifiers, true, locked,
 			shortcuts_inhibited, device_identifier,
 			exact_identifier, keyboard->effective_layout);
-	get_active_binding(&keyboard->state_keysyms_translated,
+	get_active_binding(seat, &keyboard->state_keysyms_translated,
 			config->current_mode->keysym_bindings, &binding_released,
 			keyinfo.translated_modifiers, true, locked,
 			shortcuts_inhibited, device_identifier,
@@ -489,17 +510,17 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	// Identify and execute active pressed binding
 	struct sway_binding *binding = NULL;
 	if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-		get_active_binding(&keyboard->state_keycodes,
+		get_active_binding(seat, &keyboard->state_keycodes,
 				config->current_mode->keycode_bindings, &binding,
 				keyinfo.code_modifiers, false, locked,
 				shortcuts_inhibited, device_identifier,
 				exact_identifier, keyboard->effective_layout);
-		get_active_binding(&keyboard->state_keysyms_raw,
+		get_active_binding(seat, &keyboard->state_keysyms_raw,
 				config->current_mode->keysym_bindings, &binding,
 				keyinfo.raw_modifiers, false, locked,
 				shortcuts_inhibited, device_identifier,
 				exact_identifier, keyboard->effective_layout);
-		get_active_binding(&keyboard->state_keysyms_translated,
+		get_active_binding(seat, &keyboard->state_keysyms_translated,
 				config->current_mode->keysym_bindings, &binding,
 				keyinfo.translated_modifiers, false, locked,
 				shortcuts_inhibited, device_identifier,

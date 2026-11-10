@@ -14,6 +14,7 @@
 #include "sway/ipc-json.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/keepopen.h"
 #include "sway/tide/maximize.h"
 #include "sway/tide/minimize.h"
 #include "sway/tide/output.h"
@@ -799,6 +800,7 @@ static void ipc_json_describe_container(struct sway_container *c, json_object *o
 		ipc_json_describe_view(c, object);
 		tide_minimize_describe(c, object); // tide: minimized, and its fullscreen
 		tide_maximize_describe(c, object); // tide: maximized
+		tide_keep_open_describe(c, object); // tide: keep_open
 	}
 }
 

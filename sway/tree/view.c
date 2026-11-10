@@ -32,6 +32,7 @@
 #include "sway/sway_text_node.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/keepopen.h"
 #include "sway/tide/maximize.h"
 #include "sway/tide/minimize.h"
 #include "sway/tree/arrange.h"
@@ -136,6 +137,7 @@ void view_destroy(struct sway_view *view) {
 	}
 	wl_list_remove(&view->events.unmap.listener_list);
 	list_free(view->executed_criteria);
+	tide_keep_open_unmapped(view); // tide: its workspace's name
 
 	view_assign_ctx(view, NULL);
 	wlr_scene_node_destroy(&view->image_capture_scene->tree.node);
@@ -998,6 +1000,7 @@ void view_unmap(struct sway_view *view) {
 	wl_signal_emit_mutable(&view->events.unmap, view);
 	tide_maximize_unmapped(view); // tide: mapped again, it's a new window
 	tide_minimize_unmapped(view);
+	tide_keep_open_unmapped(view);
 
 	view->executed_criteria->length = 0;
 

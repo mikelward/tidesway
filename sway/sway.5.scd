@@ -430,7 +430,7 @@ runtime.
 
 *bindsym* [--whole-window] [--border] [--exclude-titlebar] [--release] [--locked] \
 [--to-code] [--input-device=<device>] [--no-warn] [--no-repeat] [--inhibited] \
-[Group<1-4>+]<key combo> <command>
+[--kept-open] [Group<1-4>+]<key combo> <command>
 	Binds _key combo_ to execute the sway command _command_ when pressed. You
 	may use XKB key names here (*wev*(1) is a good tool for discovering these).
 	With the flag _--release_, the command is executed when the key combo is
@@ -460,6 +460,10 @@ runtime.
 	to the remote or virtual session. The _--inhibited_ flag allows one to
 	define bindings which will be exempt from pass-through to such
 	software. The same preference logic as for _--locked_ applies.
+
+	With the flag _--kept-open_, tidesway's, the binding counts only while
+	the window you're typing in is kept open (*keep\_open*), so it can take
+	an app's own close keys, such as Ctrl+W, from that window alone.
 
 	Unless the flag _--no-repeat_ is set, the command will be run
 	repeatedly when the key is held, according to the repeat
@@ -1185,6 +1189,15 @@ binding or a command, or the launcher or the lock takes it.
 	its workspace takes focus (not a dialog of it). An app's own request
 	maximizes it too. Fullscreen covers it while it lasts, and a floating
 	window gets its place back after. Alone, it toggles.
+
+*keep_open* enable|disable|toggle
+	Keeps the window open, as tidewm does for tide's pinned windows: *kill*,
+	from a key or IPC, leaves it open, and a _close\_refused_ window event
+	says so. While you're typing in it, its bindings made with *--kept-open*
+	count, so a config can take an app's own close keys from it alone. It's
+	kept open on the workspace it's on: on any other, or minimized, it isn't.
+	A window that maps again is a new one, not kept open. Its own close
+	button still closes it.
 
 *minimize* [enable|disable|toggle]
 	Hides the window, as tidewm does: it leaves the layout, and focus on it
