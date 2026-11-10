@@ -1180,6 +1180,19 @@ reply field, gets it when you click it, not when it opens or the pointer
 crosses it. It keeps it the same way: until you click elsewhere, use a
 binding or a command, or the launcher or the lock takes it.
 
+# TIDE'S DIALOGS
+
+As in tidewm, a window floats when it has a parent, is a modal dialog
+(xdg-dialog-v1), asks for a fixed size, or has neither an app ID nor a
+title, or when a rule floats it. One that floats as it opens goes in the
+middle of its parent, or of its output's window area without one, as big as
+it asks but no more than 80% of the output, unless its fixed size is bigger,
+and kept in the window area. A browser's picture-in-picture window, titled
+"Picture-in-Picture" or "Picture in picture", floats a quarter of the output
+each way in the window area's bottom right corner, and is sticky. A dialog
+stays above its parent, and follows it to another workspace or output, to
+the middle of it there, unless it's sticky itself.
+
 # TIDE'S WINDOW STATES
 
 *maximize* [enable|disable|toggle]

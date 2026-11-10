@@ -51,6 +51,7 @@ struct tide_view {
 	char *keep_open_ws; // tide's keep_open: the workspace it's kept open on
 	uint64_t urgent_order; // higher for a more recent mark, 0 if unmarked
 	bool urgency_hint; // an X11 window's urgency hint, as last heard
+	struct sway_workspace *follow_ws; // its workspace, as its dialogs last knew it
 };
 
 // The config file's focus_guard lines

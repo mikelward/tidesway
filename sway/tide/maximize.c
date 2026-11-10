@@ -49,7 +49,13 @@ static void set(struct sway_container *con, bool maximized, bool event) {
 	}
 	view->tide.maximized = maximized;
 	bool floating = container_is_floating(con);
-	if (maximized && floating) {
+	if (maximized && floating && con->pending.fullscreen_mode != FULLSCREEN_NONE) {
+		// Its floating place is the one it had as it went fullscreen
+		view->tide.max_x = con->saved_x;
+		view->tide.max_y = con->saved_y;
+		view->tide.max_width = con->saved_width;
+		view->tide.max_height = con->saved_height;
+	} else if (maximized && floating) {
 		view->tide.max_x = con->pending.x;
 		view->tide.max_y = con->pending.y;
 		view->tide.max_width = con->pending.width;

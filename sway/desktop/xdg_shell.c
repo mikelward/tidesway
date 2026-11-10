@@ -327,10 +327,13 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 		// we only recenter the surface.
 		memcpy(&view->geometry, new_geo, sizeof(struct wlr_box));
 		// tide: not while a newer configure is unanswered, as when a
-		// tile's size arrives after the window floated, nor while it's
+		// tile's size arrives after the window floated, nor one sway has
+		// yet to send, as a dialog's place as it maps, nor while it's
 		// maximized, when it covers the window area whatever it draws
 		if (container_is_floating(view->container) &&
 				wl_list_empty(&xdg_surface->configure_list) &&
+				!xdg_surface->configure_idle &&
+				!view->container->node.dirty &&
 				!tide_maximized(view->container)) {
 			view_update_size(view);
 			// Only set the toplevel size the current container actually has a size.

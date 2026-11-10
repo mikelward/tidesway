@@ -62,6 +62,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/input/cursor.h"
+#include "sway/tide/dialog.h"
 #include "sway/tide/grab.h"
 #include "sway/tree/root.h"
 #include "sway/tree/workspace.h"
@@ -590,8 +591,9 @@ bool server_init(struct sway_server *server) {
 		return false;
 	}
 
-	// tide: focus grabs, which tide's notification center takes
-	if (!tide_grab_init()) {
+	// tide: focus grabs, which tide's notification center takes, and
+	// xdg-dialog-v1, by which a modal dialog floats
+	if (!tide_grab_init() || !tide_dialog_init()) {
 		return false;
 	}
 
