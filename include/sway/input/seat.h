@@ -288,6 +288,11 @@ void seatop_begin_move_tiling(struct sway_seat *seat,
 void seatop_begin_resize_floating(struct sway_seat *seat,
 		struct sway_container *con, enum wlr_edges edge);
 
+/* tide: a floating window's resize by its bottom right corner, which the
+ * pointer jumps to, as tidewm's floating_modifier resize */
+void seatop_begin_resize_floating_corner(struct sway_seat *seat,
+		struct sway_container *con);
+
 void seatop_begin_resize_tiling(struct sway_seat *seat,
 		struct sway_container *con, enum wlr_edges edge);
 

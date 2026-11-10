@@ -515,13 +515,10 @@ static void handle_button_unheld(struct sway_seat *seat, uint32_t time_msec,
 		// Via mod+click
 		if (mod_resize_btn_pressed) {
 			struct sway_container *floater = container_toplevel_ancestor(cont);
-			edge = 0;
-			edge |= cursor->cursor->x > floater->pending.x + floater->pending.width / 2 ?
-				WLR_EDGE_RIGHT : WLR_EDGE_LEFT;
-			edge |= cursor->cursor->y > floater->pending.y + floater->pending.height / 2 ?
-				WLR_EDGE_BOTTOM : WLR_EDGE_TOP;
+			// tide: by its bottom right corner, which the pointer jumps
+			// to, as tidewm's and dwl's resize
 			seat_set_focus_container(seat, floater);
-			seatop_begin_resize_floating(seat, floater, edge);
+			seatop_begin_resize_floating_corner(seat, floater);
 			return;
 		}
 	}

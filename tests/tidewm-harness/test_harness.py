@@ -62,6 +62,17 @@ class RunTest(unittest.TestCase):
         with open(script) as f:
             self.assertEqual(f.read(), "echo up\n")
 
+    def test_alt_drags_unless_the_config_says_what_the_mouse_does(self):
+        config = os.path.join(self.dir.name, "config")
+        for text, alt in [("", True), ("bindsym Mod1+x nop\n", True),
+                          ("floating_modifier Mod4\n", False),
+                          ("bindsym --whole-window Mod4+button2 nop\n", False)]:
+            with self.subTest(text=text):
+                with open(config, "w") as f:
+                    f.write(text)
+                self.assertEqual(self.run_harness("-c", config, "-s", "true").returncode, 0)
+                self.assertEqual("floating_modifier Mod1 normal\n" in self.written(), alt)
+
     def test_without_c_includes_tidewms_own_config_path(self):
         self.assertEqual(self.run_harness("-s", "true").returncode, 0)
         path = os.path.join(self.dir.name, "xdg", "tidewm", "config")
