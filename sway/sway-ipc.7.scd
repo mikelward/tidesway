@@ -1100,12 +1100,24 @@ default binding mode
 Retrieve the contents of the config that was last loaded
 
 *REPLY*++
-An object with a single string property containing the contents of the config
+An object with the contents of the config in _config_. tide adds, as tidewm
+does: _path_, the config file's; _included_configs_, each file an _include_
+line read, as _path_ and _raw_config_, its text then; and _errors_, those the
+last load or reload met, each as _FILE:LINE: ERROR_. A reload that fails
+names its first three, joined by _; _, then how many more there are.
 
 *Example Reply:*
 ```
 {
-	"config": "set $mod Mod4\\nbindsym $mod+q exit\\n"
+	"config": "set $mod Mod4\\nbindsym $mod+q exit\\ninclude tide-*.conf\\n",
+	"path": "/home/user/.config/sway/config",
+	"included_configs": [
+		{
+			"path": "/home/user/.config/sway/tide-keys.conf",
+			"raw_config": "bindsym $mod+t exec foot\\n"
+		}
+	],
+	"errors": []
 }
 ```
 

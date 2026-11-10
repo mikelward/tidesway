@@ -21,6 +21,7 @@
 #include "sway/input/switch.h"
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/configinfo.h"
 #include "sway/criteria.h"
 #include "sway/desktop/transaction.h"
 #include "sway/server.h"
@@ -169,6 +170,7 @@ void free_config(struct sway_config *config) {
 	list_free(config->no_focus);
 	list_free(config->active_bar_modifiers);
 	list_free_items_and_destroy(config->config_chain);
+	tide_config_included_free(config);
 	free(config->floating_scroll_up_cmd);
 	free(config->floating_scroll_down_cmd);
 	free(config->floating_scroll_left_cmd);
@@ -449,16 +451,8 @@ static bool load_config(const char *path, struct sway_config *config,
 	return config->validating ? config_load_success : true;
 }
 
-// tide: the first error loading the config, as "FILE:LINE: ERROR", or NULL
-static char *first_error;
-
-const char *config_first_error(void) {
-	return first_error;
-}
-
 bool load_main_config(const char *file, bool is_active, bool validating) {
-	free(first_error);
-	first_error = NULL;
+	tide_config_errors_reset();
 	char *path;
 	if (file != NULL) {
 		path = strdup(file);
@@ -610,6 +604,7 @@ static bool load_include_config(const char *path, struct sway_config *config,
 
 	// restore current_config_path
 	config->current_config_path = parent_config;
+	tide_config_included(config, real_path); // tide: for GET_CONFIG
 	return true;
 }
 
@@ -835,11 +830,8 @@ bool read_config(FILE *file, struct sway_config *config,
 		case CMD_INVALID:
 			sway_log(SWAY_ERROR, "Error on line %i '%s': %s (%s)", line_number,
 				line, res->error, config->current_config_path);
-			// tide: the first, for reload to name, as tidewm's does
-			if (!first_error) {
-				first_error = format_str("%s:%i: %s", config->current_config_path,
-					line_number, res->error ? res->error : "error");
-			}
+			// tide: for reload and GET_CONFIG to name, as tidewm's do
+			tide_config_error(config->current_config_path, line_number, res->error);
 			if (!config->validating) {
 				swaynag_log(config->swaynag_command, swaynag,
 					"Error on line %i (%s) '%s': %s", line_number,

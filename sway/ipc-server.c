@@ -16,6 +16,7 @@
 #include <wayland-server-core.h>
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/configinfo.h"
 #include "sway/desktop/transaction.h"
 #include "sway/ipc-json.h"
 #include "sway/ipc-server.h"
@@ -984,6 +985,7 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 	{
 		json_object *json = json_object_new_object();
 		json_object_object_add(json, "config", json_object_new_string(config->current_config));
+		tide_config_describe(config, json); // tide: as tidewm's
 		const char *json_string = json_object_to_json_string(json);
 		ipc_send_reply(client, payload_type, json_string,
 			(uint32_t)strlen(json_string));
