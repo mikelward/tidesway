@@ -1112,10 +1112,11 @@ void sway_keyboard_configure(struct sway_keyboard *keyboard) {
 		sway_keyboard_set_layout(keyboard, input_config);
 	}
 
-	// If the seat has no active keyboard, set this one
+	// If the seat has no active keyboard, set this one; tide: once it has a
+	// keymap, so clients aren't told there's none
 	struct wlr_seat *seat = keyboard->seat_device->sway_seat->wlr_seat;
 	struct wlr_keyboard *current_keyboard = seat->keyboard_state.keyboard;
-	if (current_keyboard == NULL) {
+	if (current_keyboard == NULL && keyboard->wlr->keymap) {
 		wlr_seat_set_keyboard(seat, keyboard->wlr);
 	}
 
@@ -1139,7 +1140,18 @@ void sway_keyboard_destroy(struct sway_keyboard *keyboard) {
 	}
 	struct wlr_seat *wlr_seat = keyboard->seat_device->sway_seat->wlr_seat;
 	if (wlr_seat_get_keyboard(wlr_seat) == keyboard->wlr) {
-		wlr_seat_set_keyboard(wlr_seat, NULL);
+		/* tide: another keyboard of the seat's with a keymap takes over,
+		 * so clients keep a keymap, as a virtual one comes and goes */
+		struct wlr_keyboard *next = NULL;
+		struct sway_seat_device *other;
+		wl_list_for_each(other, &keyboard->seat_device->sway_seat->devices, link) {
+			if (other->keyboard && other->keyboard != keyboard
+					&& other->keyboard->wlr->keymap) {
+				next = other->keyboard->wlr;
+				break;
+			}
+		}
+		wlr_seat_set_keyboard(wlr_seat, next);
 	}
 	if (keyboard->keymap) {
 		xkb_keymap_unref(keyboard->keymap);
