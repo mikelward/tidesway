@@ -2,3 +2,8 @@
 # `test` job (tests/tidewm-harness/gate). Each paragraph's "#" lines say why for
 # the ids under them. Take an id out once its cause is fixed; if it passes for
 # good then, it belongs in passing.txt.
+
+# The app sometimes hears it's maximized but not, after focus moves on,
+# that it isn't, though sway sends the configure saying so; 2 of 60 runs
+# under load (TODO.md, "Known flaky: maximize ended by focus").
+test_maximize.MaximizeTest.test_another_window_on_the_workspace_taking_focus_ends_it

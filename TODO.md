@@ -134,6 +134,12 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **Known flaky: maximize ended by focus** (2026-11-10):
+  `test_maximize.MaximizeTest.test_another_window_on_the_workspace_taking_focus_ends_it`
+  fails 2 runs in 60 under load: the test client prints "maximized" but
+  not "unmaximized", though WAYLAND_DEBUG shows sway sending the configure
+  without the maximized state each time. Not found yet; it's in
+  `flaky.txt`.
 - **floating_modifier resizes by the corner** (2026-11-10): the modifier and
   the resize button resize a floating window by its bottom right corner,
   which the pointer jumps to, as tidewm's and dwl's do, where sway resized
