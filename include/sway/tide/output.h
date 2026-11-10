@@ -26,4 +26,10 @@ bool tide_output_power(int argc, char **argv, struct cmd_results **result);
  * windows, both in the layout's coordinates */
 void tide_output_describe_layers(struct sway_output *output, json_object *object);
 
+/* Places each output whose config says position auto-*, as tidewm's and
+ * Hyprland's monitor rules do: in the order they connected, beside those
+ * put at positions and those placed before it, past their far edge that
+ * way, at 0 across, or at the origin alone */
+void tide_output_place_beside(void);
+
 #endif

@@ -6,6 +6,8 @@
 #include <string.h>
 #include <strings.h>
 #include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_output_layout.h>
+#include <wlr/util/box.h>
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/layers.h"
@@ -14,6 +16,8 @@
 #include "sway/tide/output.h"
 #include "sway/tree/node.h"
 #include "sway/tree/root.h"
+#include "list.h"
+#include "log.h"
 
 static bool applying; // running sway's own command for one output
 
@@ -126,4 +130,71 @@ void tide_output_describe_layers(struct sway_output *output, json_object *object
 	struct wlr_box *a = &output->usable_area;
 	json_object_object_add(object, "window_area",
 		rect(output->lx + a->x, output->ly + a->y, a->width, a->height));
+}
+
+// Where output goes on side, beside the outputs placed already
+static void beside(struct sway_output *output, int side, list_t *placed, int *x, int *y) {
+	int width, height;
+	wlr_output_effective_resolution(output->wlr_output, &width, &height);
+	bool any = false;
+	int left = 0, right = 0, top = 0, bottom = 0;
+	for (int i = 0; i < placed->length; i++) {
+		struct sway_output *other = placed->items[i];
+		struct wlr_box box;
+		wlr_output_layout_get_box(root->output_layout, other->wlr_output, &box);
+		if (wlr_box_empty(&box)) {
+			continue;
+		}
+		left = any && left < box.x ? left : box.x;
+		top = any && top < box.y ? top : box.y;
+		right = any && right > box.x + box.width ? right : box.x + box.width;
+		bottom = any && bottom > box.y + box.height ? bottom : box.y + box.height;
+		any = true;
+	}
+	*x = *y = 0;
+	if (!any) {
+		return;
+	}
+	switch (side) {
+	case TIDE_POSITION_AUTO_LEFT:
+		*x = left - width;
+		break;
+	case TIDE_POSITION_AUTO_UP:
+		*y = top - height;
+		break;
+	case TIDE_POSITION_AUTO_DOWN:
+		*y = bottom;
+		break;
+	default:
+		*x = right;
+		break;
+	}
+}
+
+void tide_output_place_beside(void) {
+	list_t *placed = create_list();
+	if (!placed) {
+		sway_log(SWAY_ERROR, "tide: no memory to place outputs beside the others");
+		return;
+	}
+	for (int i = 0; i < root->outputs->length; i++) {
+		struct sway_output *output = root->outputs->items[i];
+		if (!output->tide_position_side) {
+			list_add(placed, output);
+		}
+	}
+	// In the order they connected, each beside those placed before it
+	for (int i = 0; i < root->outputs->length; i++) {
+		struct sway_output *output = root->outputs->items[i];
+		if (!output->tide_position_side) {
+			continue;
+		}
+		int x, y;
+		beside(output, output->tide_position_side, placed, &x, &y);
+		sway_log(SWAY_DEBUG, "Set %s position beside the others, %d, %d",
+			output->wlr_output->name, x, y);
+		wlr_output_layout_add(root->output_layout, output->wlr_output, x, y);
+		list_add(placed, output);
+	}
+	list_free(placed);
 }

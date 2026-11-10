@@ -7,6 +7,7 @@
 #include "sway/ipc-server.h"
 #include "sway/layers.h"
 #include "sway/output.h"
+#include "sway/tide/output.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/workspace.h"
 #include "sway/server.h"
@@ -306,6 +307,7 @@ void output_disable(struct sway_output *output) {
 	output_evacuate(output);
 	tide_focus_quiet_end();
 	sway_ext_workspace_output_disable(output);
+	tide_output_place_beside(); // tide: one beside it moves up
 }
 
 void output_begin_destroy(struct sway_output *output) {
