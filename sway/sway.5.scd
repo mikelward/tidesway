@@ -433,7 +433,7 @@ runtime.
 
 *bindsym* [--whole-window] [--border] [--exclude-titlebar] [--release] [--locked] \
 [--to-code] [--input-device=<device>] [--no-warn] [--no-repeat] [--inhibited] \
-[--kept-open] [Group<1-4>+]<key combo> <command>
+[--kept-open] [--name <name>] [Group<1-4>+]<key combo> <command>
 	Binds _key combo_ to execute the sway command _command_ when pressed. You
 	may use XKB key names here (*wev*(1) is a good tool for discovering these).
 	With the flag _--release_, the command is executed when the key combo is
@@ -467,6 +467,12 @@ runtime.
 	With the flag _--kept-open_, tidesway's, the binding counts only while
 	the window you're typing in is kept open (*keep\_open*), so it can take
 	an app's own close keys, such as Ctrl+W, from that window alone.
+
+	With _--name_ _name_, tidesway's, the binding has a name that *rebind*
+	can give other keys. A name is a lower-case letter, then lower-case
+	letters, digits and _\__. Several lines can give a name keys, each in
+	the same mode with the same command and flags; those are its default
+	keys.
 
 	Unless the flag _--no-repeat_ is set, the command will be run
 	repeatedly when the key is held, according to the repeat
@@ -510,6 +516,22 @@ runtime.
 [--locked] [--input-device=<device>] [--no-warn] [--no-repeat] [--inhibited] \
 [Group<1-4>+]<code> <command>
 	is also available for binding with key/button codes instead of key/button names.
+
+*rebind* <name> <key combo...>|none
+	tidesway's: gives the binding *bindsym --name* named _name_ these keys in
+	place of the ones it has, or none. A key it gives is taken from the
+	binding that had it. A name no line has given is logged and skipped, so
+	a shell's file that outlives a name the config dropped still loads. It
+	can't be in a mode block. A shell's keyboard shortcuts can write a file
+	of these lines that the config includes:
+
+```
+		bindsym --name terminal $mod+t exec foot
+		include tide-*.conf
+
+		# tide-keys.conf, which a shell writes
+		rebind terminal Mod4+Return
+```
 
 *bindswitch* [--locked] [--no-warn] [--reload] <switch>:<state> <command>
 	Binds <switch> to execute the sway command _command_ on state changes.

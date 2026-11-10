@@ -7,6 +7,7 @@
 #include <wlr/types/wlr_cursor.h>
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/names.h"
 #include "sway/desktop/transaction.h"
 #include "sway/input/cursor.h"
 #include "sway/input/keyboard.h"
@@ -19,6 +20,10 @@
 
 int binding_order = 0;
 
+// tide: a switch's error, in tidewm's words
+#define TIDE_BAD_SWITCH \
+	"%s %s: a switch is lid or tablet, and its state on, off or toggle"
+
 void free_sway_binding(struct sway_binding *binding) {
 	if (!binding) {
 		return;
@@ -28,6 +33,8 @@ void free_sway_binding(struct sway_binding *binding) {
 	list_free_items_and_destroy(binding->syms);
 	free(binding->input);
 	free(binding->command);
+	free(binding->tide_keys);
+	free(binding->tide_name);
 	free(binding);
 }
 
@@ -333,7 +340,8 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 	}
 
 	struct cmd_results *error = NULL;
-	if ((error = checkarg(argc, bindtype, EXPECTED_AT_LEAST, minargs))) {
+	// tide: a bindsym line's count is checked after its flags, in tidewm's words
+	if (unbind && (error = checkarg(argc, bindtype, EXPECTED_AT_LEAST, minargs))) {
 		return error;
 	}
 
@@ -350,8 +358,26 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 
 	bool exclude_titlebar = false;
 	bool warn = true;
+	const char *tide_name = NULL; // tide: its --name
+	char **tide_flags = argv; // tide: its flags, for a rebind's
 
 	while (argc > 0) {
+		if (!unbind && (strcmp("--name", argv[0]) == 0
+				|| has_prefix(argv[0], "--name="))) { // tide
+			if (argv[0][strlen("--name")] == '=') {
+				tide_name = argv[0] + strlen("--name=");
+			} else if (argc > 1) {
+				argv++;
+				argc--;
+				tide_name = argv[0];
+			} else {
+				free_sway_binding(binding);
+				return cmd_results_new(CMD_FAILURE, "%s --name needs a name", bindtype);
+			}
+			argv++;
+			argc--;
+			continue;
+		}
 		if (strcmp("--release", argv[0]) == 0) {
 			binding->flags |= BINDING_RELEASE;
 		} else if (strcmp("--locked", argv[0]) == 0) {
@@ -378,6 +404,9 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 			warn = false;
 		} else if (strcmp("--no-repeat", argv[0]) == 0) {
 			binding->flags |= BINDING_NOREPEAT;
+		} else if (!unbind && has_prefix(argv[0], "--")) { // tide
+			free_sway_binding(binding);
+			return cmd_results_new(CMD_FAILURE, "%s has no flag %s", bindtype, argv[0]);
 		} else {
 			break;
 		}
@@ -399,6 +428,9 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 
 	if (argc < minargs) {
 		free_sway_binding(binding);
+		if (!unbind) { // tide: in tidewm's words
+			return cmd_results_new(CMD_FAILURE, "%s needs keys and a command", bindtype);
+		}
 		return cmd_results_new(CMD_FAILURE,
 			"Invalid %s command "
 			"(expected at least %d non-option arguments, got %d)",
@@ -447,8 +479,13 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 		error = identify_key(split->items[i], binding->keys->length == 0,
 				     &key_val, &binding->type);
 		if (error) {
+			// tide: in tidewm's words
+			free_cmd_results(error);
+			error = cmd_results_new(CMD_FAILURE,
+				"%s %s: no modifier or key is called %s", bindtype, argv[0],
+				(char *)split->items[i]);
 			free_sway_binding(binding);
-			list_free(split);
+			list_free_items_and_destroy(split);
 			return error;
 		}
 
@@ -497,6 +534,15 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 
 	binding->command = join_args(argv + 1, argc - 1);
 	binding->order = binding_order++;
+	binding->tide_keys = strdup(argv[0]); // tide: as written, for GET_BINDINGS
+	if (tide_name) {
+		struct cmd_results *named = tide_names_bind(bindtype, tide_name, binding,
+			argv[0], bindcode, (int)(argv - tide_flags), tide_flags);
+		if (named) {
+			free_sway_binding(binding);
+			return named;
+		}
+	}
 	return binding_add(binding, mode_bindings, bindtype, argv[0], warn);
 }
 
@@ -510,7 +556,8 @@ struct cmd_results *cmd_bind_or_unbind_switch(int argc, char **argv,
 	}
 
 	struct cmd_results *error = NULL;
-	if ((error = checkarg(argc, bindtype, EXPECTED_AT_LEAST, minargs))) {
+	// tide: a bindswitch line's count is checked after its flags
+	if (unbind && (error = checkarg(argc, bindtype, EXPECTED_AT_LEAST, minargs))) {
 		return error;
 	}
 	struct sway_switch_binding *binding = calloc(1, sizeof(struct sway_switch_binding));
@@ -537,6 +584,10 @@ struct cmd_results *cmd_bind_or_unbind_switch(int argc, char **argv,
 
 	if (argc < minargs) {
 		free(binding);
+		if (!unbind) { // tide: in tidewm's words
+			return cmd_results_new(CMD_FAILURE,
+				"%s needs a switch and a command", bindtype);
+		}
 		return cmd_results_new(CMD_FAILURE,
 				"Invalid %s command (expected at least %d "
 				"non-option arguments, got %d)", bindtype, minargs, argc);
@@ -545,9 +596,8 @@ struct cmd_results *cmd_bind_or_unbind_switch(int argc, char **argv,
 	list_t *split = split_string(argv[0], ":");
 	if (split->length != 2) {
 		free_switch_binding(binding);
-		return cmd_results_new(CMD_FAILURE,
-				"Invalid %s command (expected binding with the form "
-				"<switch>:<state>)", bindtype);
+		list_free_items_and_destroy(split);
+		return cmd_results_new(CMD_FAILURE, TIDE_BAD_SWITCH, bindtype, argv[0]);
 	}
 	if (strcmp(split->items[0], "tablet") == 0) {
 		binding->type = WLR_SWITCH_TYPE_TABLET_MODE;
@@ -559,10 +609,8 @@ struct cmd_results *cmd_bind_or_unbind_switch(int argc, char **argv,
 #endif
 	} else {
 		free_switch_binding(binding);
-		return cmd_results_new(CMD_FAILURE,
-				"Invalid %s command (expected switch binding: "
-				"unknown switch %s)", bindtype,
-				(const char *)split->items[0]);
+		list_free_items_and_destroy(split);
+		return cmd_results_new(CMD_FAILURE, TIDE_BAD_SWITCH, bindtype, argv[0]);
 	}
 	if (strcmp(split->items[1], "on") == 0) {
 		binding->trigger = SWAY_SWITCH_TRIGGER_ON;
@@ -572,10 +620,8 @@ struct cmd_results *cmd_bind_or_unbind_switch(int argc, char **argv,
 		binding->trigger = SWAY_SWITCH_TRIGGER_TOGGLE;
 	} else {
 		free_switch_binding(binding);
-		return cmd_results_new(CMD_FAILURE,
-				"Invalid %s command "
-				"(expected switch state: unknown state %s)",
-				bindtype, (const char *)split->items[1]);
+		list_free_items_and_destroy(split);
+		return cmd_results_new(CMD_FAILURE, TIDE_BAD_SWITCH, bindtype, argv[0]);
 	}
 	list_free_items_and_destroy(split);
 
@@ -624,6 +670,9 @@ void seat_execute_command(struct sway_seat *seat, struct sway_binding *binding) 
 		}
 		memcpy(deferred, binding, sizeof(struct sway_binding));
 		deferred->command = binding->command ? strdup(binding->command) : NULL;
+		// tide: its own, as free_sway_binding frees them
+		deferred->tide_keys = binding->tide_keys ? strdup(binding->tide_keys) : NULL;
+		deferred->tide_name = binding->tide_name ? strdup(binding->tide_name) : NULL;
 		list_add(seat->deferred_bindings, deferred);
 		return;
 	}

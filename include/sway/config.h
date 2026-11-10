@@ -71,6 +71,8 @@ struct sway_binding {
 	uint32_t modifiers;
 	xkb_layout_index_t group;
 	char *command;
+	char *tide_keys; // tide: its keys as written, for GET_BINDINGS
+	char *tide_name; // tide: its --name, or NULL
 };
 
 enum sway_switch_trigger {
@@ -630,6 +632,8 @@ struct sway_config {
 	double tide_dim_inactive;
 	// tide: each file include lines read, with its text, for GET_CONFIG
 	list_t *tide_included;
+	// tide: its named bindings, as bindsym --name lines first name them
+	list_t *tide_named;
 };
 
 /**

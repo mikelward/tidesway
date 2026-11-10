@@ -3,6 +3,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/ipc-server.h"
+#include "sway/tide/names.h"
 #include "list.h"
 #include "log.h"
 #include "stringop.h"
@@ -13,6 +14,8 @@ static const struct cmd_handler mode_handlers[] = {
 	{ "bindgesture", cmd_bindgesture },
 	{ "bindswitch", cmd_bindswitch },
 	{ "bindsym", cmd_bindsym },
+	{ "include", tide_include_in_mode }, // tide
+	{ "rebind", tide_rebind_in_mode }, // tide
 	{ "set", cmd_set },
 	{ "unbindcode", cmd_unbindcode },
 	{ "unbindgesture", cmd_unbindgesture },
