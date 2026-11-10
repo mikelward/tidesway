@@ -134,6 +134,12 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **On-demand layer surfaces wait for a click** (2026-11-10): one that takes
+  the keyboard on demand, such as a notification's reply field, gets it when
+  clicked, as tide's SPEC §14.1 has it, where sway gave it the keyboard as it
+  opened in the top or overlay layer and as the pointer crossed it. Once it
+  has it, only focus you move (a click, a binding, a command), an exclusive
+  layer surface or the lock takes it, as with a focus grab.
 - **A virtual keyboard or pointer going leaves the seat one** (2026-11-10): the
   seat keeps its keyboard, or pointer, when the last to go was virtual, as
   wtype's is once it has typed, so clients keep theirs, as tidewm's seat

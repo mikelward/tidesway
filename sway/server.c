@@ -62,6 +62,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/input/cursor.h"
+#include "sway/tide/grab.h"
 #include "sway/tree/root.h"
 #include "sway/tree/workspace.h"
 
@@ -121,6 +122,7 @@ static bool is_privileged(const struct wl_global *global) {
 		global == server.security_context_manager_v1->global ||
 		global == server.gamma_control_manager_v1->global ||
 		global == server.layer_shell->global ||
+		tide_grab_is_global(global) || // tide: a grab takes the keyboard and pointer
 		global == server.session_lock.manager->global ||
 		global == server.input->keyboard_shortcuts_inhibit->global ||
 		global == server.input->virtual_keyboard->global ||
@@ -585,6 +587,11 @@ bool server_init(struct sway_server *server) {
 	}
 	if (!wlr_xdg_foreign_v2_create(server->wl_display, foreign_registry)) {
 		sway_log(SWAY_ERROR, "Failed to create XDG foreign v2");
+		return false;
+	}
+
+	// tide: focus grabs, which tide's notification center takes
+	if (!tide_grab_init()) {
 		return false;
 	}
 

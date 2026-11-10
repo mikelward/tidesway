@@ -21,6 +21,7 @@
 #include "sway/ipc-server.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/grab.h"
 #include "sway/input/input-manager.h"
 #include "sway/input/keyboard.h"
 #include "sway/input/seat.h"
@@ -674,7 +675,9 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 			line = strtok(NULL, "\n");
 		}
 
+		tide_grab_ask_begin(); // tide: you asked, so a focus grab ends
 		list_t *res_list = execute_command(buf, NULL, NULL);
+		tide_grab_ask_end();
 		if (modeset_is_pending()) {
 			// IPC expects commands to have taken immediate effect, so we need
 			// to force a modeset after output commands. We do a single modeset

@@ -13,6 +13,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/scene_descriptor.h"
+#include "sway/tide/grab.h"
 #include "sway/tide/split.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
@@ -214,7 +215,7 @@ static void state_add_button(struct seatop_default_event *e, uint32_t button) {
  * Functions used by handle_tablet_tool_tip  /
  *-----------------------------------------*/
 
-static void handle_tablet_tool_tip(struct sway_seat *seat,
+static void handle_tablet_tool_tip_unasked(struct sway_seat *seat,
 		struct sway_tablet_tool *tool, uint32_t time_msec,
 		enum wlr_tablet_tool_tip_state state) {
 	if (state == WLR_TABLET_TOOL_TIP_UP) {
@@ -240,7 +241,8 @@ static void handle_tablet_tool_tip(struct sway_seat *seat,
 #if WLR_HAS_XWAYLAND
 	struct wlr_xwayland_surface *xsurface;
 #endif
-	if ((layer = wlr_layer_surface_v1_try_from_wlr_surface(surface)) &&
+	// tide: its popup's or subsurface's tap too, as a click's
+	if ((layer = toplevel_layer_surface_from_surface(surface)) &&
 			layer->current.keyboard_interactive) {
 		// Handle tapping a layer surface
 		seat_set_focus_layer(seat, layer);
@@ -287,6 +289,29 @@ static void handle_tablet_tool_tip(struct sway_seat *seat,
 	wlr_tablet_tool_v2_start_implicit_grab(tool->tablet_v2_tool);
 }
 
+/* tide: a pen's tap moves focus as you asked, as a click does: one outside
+ * a focus grab ends it and goes no further, and one inside leaves the
+ * keyboard where the grab has it */
+static void handle_tablet_tool_tip(struct sway_seat *seat,
+		struct sway_tablet_tool *tool, uint32_t time_msec,
+		enum wlr_tablet_tool_tip_state state) {
+	if (state != WLR_TABLET_TOOL_TIP_DOWN) {
+		tide_grab_ask_begin();
+		handle_tablet_tool_tip_unasked(seat, tool, time_msec, state);
+		tide_grab_ask_end();
+		return;
+	}
+	struct wlr_surface *surface = NULL;
+	double sx, sy;
+	node_at_coords(seat, seat->cursor->cursor->x, seat->cursor->cursor->y,
+		&surface, &sx, &sy);
+	if (tide_grab_press_begin(seat, surface, 0)) {
+		return;
+	}
+	handle_tablet_tool_tip_unasked(seat, tool, time_msec, state);
+	tide_grab_press_end();
+}
+
 /*----------------------------------\
  * Functions used by handle_button  /
  *--------------------------------*/
@@ -330,7 +355,7 @@ static bool trigger_pointer_button_binding(struct sway_seat *seat,
 	return false;
 }
 
-static void handle_button(struct sway_seat *seat, uint32_t time_msec,
+static void handle_button_unheld(struct sway_seat *seat, uint32_t time_msec,
 		struct wlr_input_device *device, uint32_t button,
 		enum wl_pointer_button_state state) {
 	struct sway_cursor *cursor = seat->cursor;
@@ -545,6 +570,28 @@ static void handle_button(struct sway_seat *seat, uint32_t time_msec,
 	seat_pointer_notify_button(seat, time_msec, button, state);
 }
 
+// tide: a press outside a focus grab ends it and goes no further, nor
+// does its release; one inside it is a press you made, as a click is
+static void handle_button(struct sway_seat *seat, uint32_t time_msec,
+		struct wlr_input_device *device, uint32_t button,
+		enum wl_pointer_button_state state) {
+	if (state == WL_POINTER_BUTTON_STATE_RELEASED) {
+		if (!tide_grab_release(seat, button)) {
+			handle_button_unheld(seat, time_msec, device, button, state);
+		}
+		return;
+	}
+	struct wlr_surface *surface = NULL;
+	double sx, sy;
+	node_at_coords(seat, seat->cursor->cursor->x, seat->cursor->cursor->y,
+		&surface, &sx, &sy);
+	if (tide_grab_press_begin(seat, surface, button)) {
+		return;
+	}
+	handle_button_unheld(seat, time_msec, device, button, state);
+	tide_grab_press_end();
+}
+
 /*------------------------------------------\
  * Functions used by handle_pointer_motion  /
  *----------------------------------------*/
@@ -569,8 +616,10 @@ static void check_focus_follows_mouse(struct sway_seat *seat,
 
 		// Focus topmost layer surface
 		struct wlr_layer_surface_v1 *layer = NULL;
+		// tide: not one that takes the keyboard on demand, as a click does
 		if ((layer = toplevel_layer_surface_from_surface(surface)) &&
-				layer->current.keyboard_interactive) {
+				layer->current.keyboard_interactive
+					== ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE) {
 			seat_set_focus_layer(seat, layer);
 			transaction_commit_dirty();
 			return;
@@ -634,6 +683,9 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 		if (seat_is_input_allowed(seat, surface)) {
 			wlr_seat_pointer_notify_enter(seat->wlr_seat, surface, sx, sy);
 			wlr_seat_pointer_notify_motion(seat->wlr_seat, time_msec, sx, sy);
+		} else {
+			// tide: what a focus grab holds input from doesn't keep the pointer
+			wlr_seat_pointer_notify_clear_focus(seat->wlr_seat);
 		}
 	} else {
 		cursor_update_image(cursor, node);
@@ -685,10 +737,29 @@ static void handle_touch_down(struct sway_seat *seat,
 	double sx, sy;
 	node_at_coords(seat, seat->touch_x, seat->touch_y, &surface, &sx, &sy);
 
+	// tide: a touch outside a focus grab ends it and goes no further
+	if (tide_grab_touch(seat, surface)) {
+		return;
+	}
+
 	if (surface && wlr_surface_accepts_touch(surface, wlr_seat)) {
 		if (seat_is_input_allowed(seat, surface)) {
 			cursor->simulating_pointer_from_touch = false;
+			/* tide: a touch moves focus as you asked, as a click does; inside a
+			 * grab, which tide_grab_touch let through, the keyboard stays
+			 * where the grab has it, as a click's does */
+			tide_grab_press_begin(seat, surface, 0);
+			/* tide: a tapped layer surface that takes the keyboard on demand,
+			 * as a notification's reply field, gets it as a clicked one does;
+			 * the touch's own seatop focuses windows only */
+			struct wlr_layer_surface_v1 *layer =
+				toplevel_layer_surface_from_surface(surface);
+			if (layer && layer->current.keyboard_interactive) {
+				seat_set_focus_layer(seat, layer);
+				transaction_commit_dirty();
+			}
 			seatop_begin_touch_down(seat, surface, event, sx, sy, lx, ly);
+			tide_grab_press_end();
 		}
 	} else if (!cursor->simulating_pointer_from_touch &&
 			(!surface || seat_is_input_allowed(seat, surface))) {
@@ -1134,6 +1205,9 @@ static void handle_rebase(struct sway_seat *seat, uint32_t time_msec) {
 		if (seat_is_input_allowed(seat, surface) && !cursor->hidden) {
 			wlr_seat_pointer_notify_enter(seat->wlr_seat, surface, sx, sy);
 			wlr_seat_pointer_notify_motion(seat->wlr_seat, time_msec, sx, sy);
+		} else if (!seat_is_input_allowed(seat, surface)) {
+			// tide: what a focus grab holds input from doesn't keep the pointer
+			wlr_seat_pointer_notify_clear_focus(seat->wlr_seat);
 		}
 	} else {
 		cursor_update_image(cursor, e->previous_node);

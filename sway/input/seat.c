@@ -29,6 +29,7 @@
 #include "sway/layers.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/grab.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/workspace.h"
 #include "sway/tree/arrange.h"
@@ -1088,7 +1089,8 @@ bool seat_is_input_allowed(struct sway_seat *seat,
 	if (server.session_lock.lock) {
 		return sway_session_lock_has_surface(server.session_lock.lock, surface);
 	}
-	return true;
+	// tide: a focus grab holds the default seat's input
+	return !tide_grab_holds(seat) || tide_grab_accepts(surface);
 }
 
 static void send_unfocus(struct sway_container *con, void *data) {
@@ -1283,6 +1285,10 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 }
 
 void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
+	// tide: a focus grab, or an on-demand layer surface, keeps the keyboard
+	if (tide_grab_keeps(seat, node)) {
+		return;
+	}
 	// Prevents the layer from losing focus if it has keyboard exclusivity
 	if (seat->has_exclusive_layer) {
 		struct wlr_layer_surface_v1 *layer = seat->focused_layer;
@@ -1313,6 +1319,11 @@ void seat_set_focus_workspace(struct sway_seat *seat,
 
 void seat_set_focus_surface(struct sway_seat *seat,
 		struct wlr_surface *surface, bool unfocus) {
+	// tide: a focus grab, or an on-demand layer surface, keeps the keyboard
+	// from a surface given it directly, as an X11 menu that wants it
+	if (tide_grab_keeps_surface(seat, surface)) {
+		return;
+	}
 	if (seat->has_focus && unfocus) {
 		struct sway_node *focus = seat_get_focus(seat);
 		seat_send_unfocus(focus, seat);
@@ -1331,6 +1342,10 @@ void seat_set_focus_surface(struct sway_seat *seat,
 
 void seat_set_focus_layer(struct sway_seat *seat,
 		struct wlr_layer_surface_v1 *layer) {
+	// tide: a focus grab keeps the keyboard, but not from the launcher
+	if (tide_grab_keeps_layer(seat, layer)) {
+		return;
+	}
 	if (!layer && seat->focused_layer) {
 		seat->focused_layer = NULL;
 		struct sway_node *previous = seat_get_focus_inactive(seat, &root->node);

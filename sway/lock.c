@@ -9,6 +9,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/lock.h"
+#include "sway/tide/grab.h"
 
 struct sway_session_lock_output {
 	struct wlr_scene_tree *tree;
@@ -280,6 +281,7 @@ static void handle_session_lock(struct wl_listener *listener, void *data) {
 	wl_list_init(&sway_lock->outputs);
 
 	sway_log(SWAY_DEBUG, "session locked");
+	tide_grab_locked(); // tide: the lock ends a focus grab
 
 	struct sway_seat *seat;
 	wl_list_for_each(seat, &server.input->seats, link) {
