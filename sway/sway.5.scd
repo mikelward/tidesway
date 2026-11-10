@@ -1176,6 +1176,15 @@ reply field, gets it when you click it, not when it opens or the pointer
 crosses it. It keeps it the same way: until you click elsewhere, use a
 binding or a command, or the launcher or the lock takes it.
 
+# TIDE'S WINDOW STATES
+
+*minimize* [enable|disable|toggle]
+	Hides the window, as tidewm does: it leaves the layout, and focus on it
+	goes to the window you were in before. It stays on its workspace, which
+	stays while it waits, and keeps its states. Focusing it by any means
+	brings it back, at the end of the stack. Alone, it toggles. An app's own
+	request to minimize does nothing.
+
 # TIDE'S DIMMING
 
 With *dim\_inactive* above 0, as tidewm has it, every window but the focused

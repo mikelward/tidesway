@@ -44,6 +44,8 @@ struct tide_view {
 	enum tide_held held;
 	uint64_t focus_seq; // when it last had focus, by count; 0 for never
 	int fullscreen; // enum sway_fullscreen_mode it asked for while held
+	bool minimized; // tide's minimize: hidden, out of the layout
+	int minimized_fullscreen; // enum sway_fullscreen_mode it had as it was minimized
 };
 
 // The config file's focus_guard lines

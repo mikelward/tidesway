@@ -8,6 +8,7 @@
 #include "sway/tree/container.h"
 #include "sway/output.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/minimize.h"
 #include "sway/tree/workspace.h"
 #include "sway/tree/view.h"
 #include "list.h"
@@ -221,23 +222,28 @@ static void arrange_floating(list_t *floating) {
 
 static void arrange_children(list_t *children,
 		enum sway_container_layout layout, struct wlr_box *parent) {
+	// tide: a minimized window takes no room
+	list_t *shown = tide_minimize_shown(children);
 	// Calculate x, y, width and height of children
 	switch (layout) {
 	case L_HORIZ:
-		apply_horiz_layout(children, parent);
+		apply_horiz_layout(shown, parent);
 		break;
 	case L_VERT:
-		apply_vert_layout(children, parent);
+		apply_vert_layout(shown, parent);
 		break;
 	case L_TABBED:
-		apply_tabbed_layout(children, parent);
+		apply_tabbed_layout(shown, parent);
 		break;
 	case L_STACKED:
-		apply_stacked_layout(children, parent);
+		apply_stacked_layout(shown, parent);
 		break;
 	case L_NONE:
-		apply_horiz_layout(children, parent);
+		apply_horiz_layout(shown, parent);
 		break;
+	}
+	if (shown != children) {
+		list_free(shown);
 	}
 
 	// Recurse into child containers

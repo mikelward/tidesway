@@ -112,7 +112,9 @@ static void add_leaves(list_t *children, list_t *out) {
 	for (int i = 0; i < children->length; i++) {
 		struct sway_container *child = children->items[i];
 		if (child->view) {
-			if (child->pending.fullscreen_mode == FULLSCREEN_NONE) {
+			// tide: never a minimized window, which only focusing it brings back
+			if (child->pending.fullscreen_mode == FULLSCREEN_NONE
+					&& !tide_focus_passed_by(child)) {
 				list_add(out, child);
 			}
 		} else {

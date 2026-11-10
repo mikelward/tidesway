@@ -603,7 +603,7 @@ bool tide_focus_wants_fullscreen(struct sway_container *con) {
 }
 
 bool tide_focus_passed_by(struct sway_container *con) {
-	return con->view && con->view->tide.held == TIDE_POPUP;
+	return con->view && (con->view->tide.held == TIDE_POPUP || con->view->tide.minimized);
 }
 
 /* A new window took focus with no grant, one the guard let in or any with

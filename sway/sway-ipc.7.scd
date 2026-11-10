@@ -423,6 +423,10 @@ node and will have the following properties:
 |- dimmed
 :  boolean
 :  (Only windows) tidesway's: whether the window is dimmed now
+|- minimized
+:  boolean
+:  (Only windows) tidesway's: whether the window is minimized; a window event
+   with the change _minimize_ says when it is or comes back
 |- inhibit_idle
 :  boolean
 :  (Only windows) Whether the window is inhibiting the idle state

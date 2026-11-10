@@ -11,6 +11,7 @@
 #include "sway/input/input-manager.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/minimize.h"
 #include "sway/tree/container.h"
 #include "sway/tree/node.h"
 #include "sway/tree/view.h"
@@ -290,6 +291,37 @@ static void arrange_container(struct sway_container *con,
 static void arrange_children(enum sway_container_layout layout, list_t *children,
 		struct sway_container *active, struct wlr_scene_tree *content,
 		int width, int height, int gaps) {
+	// tide: a minimized window takes no room and isn't shown, as in arrange.c
+	list_t *shown = tide_minimize_shown(children);
+	if (shown != children) {
+		for (int i = 0; i < children->length; i++) {
+			struct sway_container *child = children->items[i];
+			if (tide_minimized(child)) {
+				arrange_container(child, 0, 0, false, 0);
+			}
+		}
+		/* A tab of minimized windows can't be the shown one: the one
+		 * before it is, or the first */
+		struct sway_container *still = NULL;
+		bool active_shown = false;
+		for (int i = 0; i < shown->length; i++) {
+			active_shown |= shown->items[i] == active;
+		}
+		for (int i = 0; !active_shown && i < children->length
+				&& children->items[i] != active; i++) {
+			for (int j = 0; j < shown->length; j++) {
+				if (shown->items[j] == children->items[i]) {
+					still = children->items[i];
+				}
+			}
+		}
+		if (!active_shown) {
+			active = still ? still : shown->length ? shown->items[0] : NULL;
+		}
+		arrange_children(layout, shown, active, content, width, height, gaps);
+		list_free(shown);
+		return;
+	}
 	int title_bar_height = container_titlebar_height();
 
 	if (layout == L_TABBED) {
@@ -392,6 +424,12 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 
 static void arrange_container(struct sway_container *con,
 		int width, int height, bool title_bar, int gaps) {
+	// tide: a minimized window isn't shown
+	if (tide_minimized(con)) {
+		disable_container(con);
+		wlr_scene_node_set_enabled(&con->scene_tree->node, false);
+		return;
+	}
 	// this container might have previously been in the scratchpad,
 	// make sure it's enabled for viewing
 	wlr_scene_node_set_enabled(&con->scene_tree->node, true);

@@ -32,6 +32,7 @@
 #include "sway/sway_text_node.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/minimize.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
@@ -959,7 +960,8 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 
 	view_execute_criteria(view);
 
-	bool set_focus = should_focus(view);
+	// tide: a rule that minimized it as it opened keeps it so
+	bool set_focus = should_focus(view) && !view->tide.minimized;
 
 #if WLR_HAS_XWAYLAND
 	struct wlr_xwayland_surface *xsurface;
@@ -989,6 +991,7 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 
 void view_unmap(struct sway_view *view) {
 	wl_signal_emit_mutable(&view->events.unmap, view);
+	tide_minimize_unmapped(view); // tide: mapped again, it's a new window
 
 	view->executed_criteria->length = 0;
 
@@ -1174,7 +1177,7 @@ void view_update_title(struct sway_view *view, bool force) {
 }
 
 bool view_is_visible(struct sway_view *view) {
-	if (view->container->node.destroying) {
+	if (view->container->node.destroying || view->tide.minimized) { // tide: minimized
 		return false;
 	}
 	struct sway_workspace *workspace = view->container->pending.workspace;
