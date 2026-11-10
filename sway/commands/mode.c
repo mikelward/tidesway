@@ -14,6 +14,7 @@ static const struct cmd_handler mode_handlers[] = {
 	{ "bindgesture", cmd_bindgesture },
 	{ "bindswitch", cmd_bindswitch },
 	{ "bindsym", cmd_bindsym },
+	{ "floating_modifier", tide_floating_modifier_in_mode }, // tide
 	{ "include", tide_include_in_mode }, // tide
 	{ "rebind", tide_rebind_in_mode }, // tide
 	{ "set", cmd_set },
