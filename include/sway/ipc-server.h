@@ -24,5 +24,6 @@ void ipc_event_input(const char *change, struct sway_input_device *device);
 void ipc_event_output(void);
 // tide: ws's layout, as tidewm's layout event has it
 void ipc_event_layout(struct sway_workspace *ws);
+void ipc_event_capture(const char *change, size_t con_id);
 
 #endif

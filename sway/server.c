@@ -62,6 +62,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/input/cursor.h"
+#include "sway/tide/capture.h"
 #include "sway/tide/dialog.h"
 #include "sway/tide/grab.h"
 #include "sway/tree/root.h"
@@ -517,6 +518,7 @@ bool server_init(struct sway_server *server) {
 		sway_log(SWAY_ERROR, "Failed to create ext image copy capture manager");
 		return false;
 	}
+	tide_capture_init(server->ext_image_copy_capture_manager_v1); // tide: capture events
 	if (!wlr_ext_output_image_capture_source_manager_v1_create(server->wl_display, 1)) {
 		sway_log(SWAY_ERROR, "Failed to create ext output image capture source manager");
 		return false;
@@ -747,6 +749,7 @@ void server_fini(struct sway_server *server) {
 	wl_list_remove(&server->new_foreign_toplevel_capture_request.link);
 	wl_list_remove(&server->workspace_manager_v1_commit.link);
 	input_manager_finish(server->input);
+	tide_capture_fini(); // tide
 
 	// TODO: free sway-specific resources
 #if WLR_HAS_XWAYLAND

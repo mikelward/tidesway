@@ -209,6 +209,7 @@ sway_sources = files(
 	'commands/output/unplug.c',
 	'commands/output/color_profile.c',
 
+	'tide/capture.c',
 	'tide/commands.c',
 	'tide/dialog.c',
 	'tide/floatplace.c',

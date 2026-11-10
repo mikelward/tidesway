@@ -2,6 +2,11 @@
 # suite's results.json names it, sorted. CI's `test` job fails if one of these
 # doesn't pass (tests/tidewm-harness/gate), unless it's in flaky.txt. Add a test
 # in the pull request that makes it pass for good.
+test_capture.CaptureTest.test_a_capture_stops_when_its_client_goes
+test_capture.CaptureTest.test_a_stream_of_just_the_cursor_isnt_a_capture
+test_capture.CaptureTest.test_a_window_capture_says_which_window
+test_capture.CaptureTest.test_a_window_capture_stops_when_the_window_closes
+test_capture.CaptureTest.test_an_output_capture_names_no_window
 test_commands.CommandTest.test_a_new_window_joins_the_end_of_the_stack
 test_commands.CommandTest.test_a_window_moved_back_from_another_workspace_counts_as_new
 test_commands.CommandTest.test_a_window_tiled_again_after_floating_counts_as_new
