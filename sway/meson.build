@@ -227,6 +227,7 @@ sway_sources = files(
 	'tide/shortcut.c',
 	'tide/split.c',
 	'tide/stack.c',
+	'tide/unlock.c',
 	'tide/workspace.c',
 
 	'tree/arrange.c',

@@ -172,6 +172,7 @@ sway_cmd cmd_resize_grab;
 sway_cmd cmd_single_width;
 sway_cmd cmd_single_window;
 sway_cmd cmd_ultrawide_aspect;
+sway_cmd cmd_unlock;
 sway_cmd cmd_unpersist;
 sway_cmd cmd_zoom;
 sway_cmd cmd_log_colors;
