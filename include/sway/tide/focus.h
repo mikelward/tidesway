@@ -24,6 +24,7 @@
 #include <json-c/json.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <wlr/util/box.h>
 
 struct cmd_results;
 struct sway_container;
@@ -53,6 +54,7 @@ struct tide_view {
 	bool urgency_hint; // an X11 window's urgency hint, as last heard
 	struct sway_workspace *follow_ws; // its workspace, as its dialogs last knew it
 	bool mapping; // mapping, its rules running: its events wait for its new one
+	struct wlr_box place_seen; // its floating place, as its app's last saw it
 };
 
 // The config file's focus_guard lines

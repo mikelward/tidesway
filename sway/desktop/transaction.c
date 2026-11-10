@@ -12,6 +12,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/dialog.h"
+#include "sway/tide/floatplace.h"
 #include "sway/tide/minimize.h"
 #include "sway/tide/maximize.h"
 #include "sway/tree/container.h"
@@ -1066,6 +1067,7 @@ static void _transaction_commit_dirty(bool server_request) {
 		return;
 	}
 	tide_dialog_follow(); // tide: dialogs go where their windows went
+	tide_floatplace_remember(); // tide: an app's floating windows' place
 
 	if (!server.pending_transaction) {
 		server.pending_transaction = transaction_create();

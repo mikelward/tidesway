@@ -4,6 +4,7 @@
 #include "sway/input/seat.h"
 #include "sway/ipc-server.h"
 #include "sway/output.h"
+#include "sway/tide/floatplace.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
@@ -45,10 +46,17 @@ struct cmd_results *cmd_floating(int argc, char **argv) {
 		}
 	}
 
-	bool wants_floating =
-		parse_boolean(argv[0], container_is_floating(container));
+	bool was_floating = container_is_floating(container);
+	bool wants_floating = parse_boolean(argv[0], was_floating);
+	struct wlr_box tiled = { (int)container->pending.x, (int)container->pending.y,
+		(int)container->pending.width, (int)container->pending.height };
 
 	container_set_floating(container, wants_floating);
+	// tide: floated by hand, it goes to its app's place, or stays where it
+	// was tiled
+	if (wants_floating && !was_floating) {
+		tide_floatplace_by_hand(container, &tiled);
+	}
 
 	// Floating containers in the scratchpad should be ignored
 	if (container->pending.workspace) {
