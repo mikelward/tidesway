@@ -1668,8 +1668,10 @@ The following change types are currently available:
 
 Sent whenever an output is added, removed, or its configuration is changed.
 The event is a single object with the property _change_, which is a string
-containing the reason for the change. Currently, the only value for _change_ is
-_unspecified_.
+containing the reason for the change. In sway, the only value for _change_ is
+_unspecified_. tidesway, as tidewm, also sends _focus_ when focus moves to
+another output, by the pointer, a click, a key or a command, or as the
+focused one goes, with _output_, its name, or null with none left.
 
 *Example Event:*
 ```

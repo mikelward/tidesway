@@ -555,6 +555,21 @@ void ipc_event_capture(const char *change, size_t con_id) {
 	json_object_put(json);
 }
 
+// tide: tidewm's output event as focus moves to another output, or to none
+void ipc_event_output_focus(struct sway_output *output) {
+	if (!ipc_has_event_listeners(IPC_EVENT_OUTPUT)) {
+		return;
+	}
+	sway_log(SWAY_DEBUG, "Sending output::focus event");
+	json_object *json = json_object_new_object();
+	json_object_object_add(json, "change", json_object_new_string("focus"));
+	json_object_object_add(json, "output", output && output->wlr_output
+		? json_object_new_string(output->wlr_output->name) : NULL);
+	const char *json_string = json_object_to_json_string(json);
+	ipc_send_event(json_string, IPC_EVENT_OUTPUT);
+	json_object_put(json);
+}
+
 void ipc_event_output(void) {
 	if (!ipc_has_event_listeners(IPC_EVENT_OUTPUT)) {
 		return;
