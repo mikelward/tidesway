@@ -18,6 +18,7 @@
 #include "sway/server.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/stack.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
@@ -1641,6 +1642,8 @@ void container_raise_floating(struct sway_container *con) {
 
 		list_move_to_end(floater->pending.workspace->floating, floater);
 		node_set_dirty(&floater->pending.workspace->node);
+		// tide: its dialogs stay above it
+		tide_stack_raise_dialogs(floater);
 	}
 }
 
