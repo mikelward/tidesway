@@ -118,6 +118,11 @@ struct sway_node *node_at_coords(
 		}
 	}
 
+	// tide: a layer surface's popup, as a notification center's menu, is
+	// its layer surface's, not a window's still drawing itself under it
+	if (*surface && toplevel_layer_surface_from_surface(*surface)) {
+		return NULL;
+	}
 	// tide: a window still drawing itself at its place has that place
 	struct sway_container *unready = tide_focus_unready_at(lx, ly, surface, sx, sy);
 	if (unready) {
