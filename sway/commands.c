@@ -129,6 +129,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "exit", cmd_exit },
 	{ "floating", cmd_floating },
 	{ "fullscreen", cmd_fullscreen },
+	{ "gesture", cmd_gesture }, // tide
 	{ "grant", cmd_grant }, // tide
 	{ "inhibit_idle", cmd_inhibit_idle },
 	{ "keep_open", cmd_keep_open }, // tide
