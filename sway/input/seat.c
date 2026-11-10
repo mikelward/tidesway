@@ -30,6 +30,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/grab.h"
+#include "sway/tide/minimize.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/workspace.h"
 #include "sway/tree/arrange.h"
@@ -1112,6 +1113,16 @@ static void seat_send_unfocus(struct sway_node *node, struct sway_seat *seat) {
 	}
 }
 
+void seat_tide_forget(struct sway_seat *seat, struct sway_node *node) {
+	struct sway_seat_node *seat_node;
+	wl_list_for_each(seat_node, &seat->focus_stack, link) {
+		if (seat_node->node == node) {
+			seat_node_destroy(seat_node);
+			return;
+		}
+	}
+}
+
 static int handle_urgent_timeout(void *data) {
 	struct sway_view *view = data;
 	view_set_urgent(view, false);
@@ -1289,6 +1300,7 @@ void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
 	if (tide_grab_keeps(seat, node)) {
 		return;
 	}
+	tide_minimize_focusing(node); // tide: a minimized window comes back
 	// Prevents the layer from losing focus if it has keyboard exclusivity
 	if (seat->has_exclusive_layer) {
 		struct wlr_layer_surface_v1 *layer = seat->focused_layer;

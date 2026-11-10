@@ -162,6 +162,7 @@ sway_cmd cmd_grant;
 sway_cmd cmd_layout_cycle;
 sway_cmd cmd_layout_defaults;
 sway_cmd cmd_mfact;
+sway_cmd cmd_minimize;
 sway_cmd cmd_movestack;
 sway_cmd cmd_nmaster;
 sway_cmd cmd_persist;

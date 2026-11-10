@@ -149,9 +149,10 @@ enum tide_layout tide_workspace_layout(struct sway_workspace *ws) {
 	return t->off ? TIDE_NONE : t->lt[t->sellt];
 }
 
-// Whether con is a tile tide lays out: not fullscreen
+// Whether con is a tile tide lays out: not fullscreen, nor minimized
 static bool tiles(struct sway_container *con) {
-	return con->pending.fullscreen_mode == FULLSCREEN_NONE;
+	return con->pending.fullscreen_mode == FULLSCREEN_NONE
+		&& !(con->view && con->view->tide.minimized);
 }
 
 /* ws's tiled windows in tree order, into out; with all, the fullscreen
