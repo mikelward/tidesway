@@ -42,6 +42,15 @@ static void tell(struct sway_view *view, bool maximized) {
 	}
 }
 
+// The window area con's workspace has, or an empty box
+static struct wlr_box area_of(struct sway_container *con) {
+	struct wlr_box area = {0};
+	if (con->pending.workspace) {
+		workspace_get_box(con->pending.workspace, &area);
+	}
+	return area;
+}
+
 static void set(struct sway_container *con, bool maximized, bool event) {
 	struct sway_view *view = con->view;
 	if (view->tide.maximized == maximized) {
@@ -49,6 +58,9 @@ static void set(struct sway_container *con, bool maximized, bool event) {
 	}
 	view->tide.maximized = maximized;
 	bool floating = container_is_floating(con);
+	if (maximized && floating) {
+		view->tide.max_area = area_of(con);
+	}
 	if (maximized && floating && con->pending.fullscreen_mode != FULLSCREEN_NONE) {
 		// Its floating place is the one it had as it went fullscreen
 		view->tide.max_x = con->saved_x;
@@ -76,6 +88,12 @@ static void set(struct sway_container *con, bool maximized, bool event) {
 		con->pending.y = view->tide.max_y;
 		con->pending.width = view->tide.max_width;
 		con->pending.height = view->tide.max_height;
+		// Moved to another output since, it keeps its place there
+		struct wlr_box now = area_of(con);
+		if (now.width > 0 && now.height > 0 && view->tide.max_area.width > 0
+				&& !wlr_box_equal(&now, &view->tide.max_area)) {
+			floating_fix_coordinates(con, &view->tide.max_area, &now);
+		}
 	}
 	tell(view, maximized);
 	if (con->pending.workspace) {
@@ -179,6 +197,7 @@ void tide_maximize_opening(struct sway_view *view) {
 		// Its place after is the middle of the window area, at its size
 		struct wlr_box area;
 		workspace_get_box(ws, &area);
+		view->tide.max_area = area;
 		view->tide.max_x = area.x + (area.width - view->tide.max_width) / 2;
 		view->tide.max_y = area.y + (area.height - view->tide.max_height) / 2;
 	}

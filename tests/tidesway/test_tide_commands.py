@@ -7,7 +7,7 @@ import select
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
-from harness import EVENT_WINDOW, RUN_COMMAND, TIMEOUT, TidewmTest
+from harness import EVENT_WINDOW, GET_OUTPUTS, RUN_COMMAND, TIMEOUT, TidewmTest
 
 
 class CommandTableTest(TidewmTest):
@@ -57,6 +57,25 @@ class FloatedWhileMaximizedTest(TidewmTest):
         rect = self.windows()[con]["rect"]
         self.assertGreater(rect["width"], 0, rect)
         self.assertGreater(rect["height"], 0, rect)
+
+
+class MaximizedOnAnotherOutputTest(TidewmTest):
+    OUTPUTS = 2
+
+    def test_a_window_unmaximized_on_another_output_comes_back_there(self):
+        ipc = self.connect()
+        ipc.subscribe("window")
+        first, second = sorted(self.connect().request(GET_OUTPUTS), key=lambda o: o["rect"]["x"])
+        self.command(self.connect(), f"focus output {first['name']}")
+        self.wm.open_window("test.app", "test.app")
+        con = ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "new")["container"]["id"]
+        for command in ["floating enable", "resize set 300 200", "move position 100 100",
+                        "maximize enable", f"move container to output {second['name']}",
+                        "maximize disable"]:
+            self.command(self.connect(), f"[con_id={con}] {command}")
+        rect, area = self.windows()[con]["rect"], second["rect"]
+        self.assertGreaterEqual(rect["x"], area["x"], rect)
+        self.assertLessEqual(rect["x"] + rect["width"], area["x"] + area["width"], rect)
 
 
 if __name__ == "__main__":
