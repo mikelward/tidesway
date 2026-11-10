@@ -833,6 +833,13 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	view->surface = wlr_surface;
 	view_populate_pid(view);
 	view->container = container_create(view);
+	/* tide: a window that maps again keeps its id, as tidewm's does, so a
+	 * shell that knows it by id still does */
+	if (view->tide.id) {
+		view->container->node.id = view->tide.id;
+	} else {
+		view->tide.id = view->container->node.id;
+	}
 	tide_focus_open(view); // tide: held or granted, before it's placed
 	view->tide.mapping = true; // tide: no events of its own before its new one
 
@@ -988,6 +995,8 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	// tide: an app that asked to be maximized before it mapped opens so
 	if (view->type == SWAY_VIEW_XDG_SHELL && view->wlr_xdg_toplevel->requested.maximized) {
 		tide_maximize_opening(view);
+	} else {
+		tide_maximize_mapped(view); // tide: mapped again, it isn't
 	}
 
 	if (view->ext_foreign_toplevel) {

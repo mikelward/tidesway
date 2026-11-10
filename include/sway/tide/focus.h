@@ -55,6 +55,7 @@ struct tide_view {
 	struct sway_workspace *follow_ws; // its workspace, as its dialogs last knew it
 	bool mapping; // mapping, its rules running: its events wait for its new one
 	struct wlr_box place_seen; // its floating place, as its app's last saw it
+	size_t id; // its container's id when first mapped, which it keeps
 };
 
 // The config file's focus_guard lines
