@@ -1194,6 +1194,12 @@ each way in the window area's bottom right corner, and is sticky. A dialog
 stays above its parent, and follows it to another workspace or output, to
 the middle of it there, unless it's sticky itself.
 
+A floating window's place is remembered for its app for the session:
+wherever one of its floating windows last opened, moved or was resized to,
+floating a window of that app by hand puts it, kept in the window area. With
+no place yet, it stays where it was tiled. Dialogs, fixed-size and modal
+windows and picture-in-picture place themselves, so theirs isn't kept.
+
 # TIDE'S WINDOW STATES
 
 *maximize* [enable|disable|toggle]
