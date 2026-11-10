@@ -66,6 +66,11 @@ static void set(struct sway_container *con, bool maximized, bool event) {
 		con->saved_y = view->tide.max_y;
 		con->saved_width = view->tide.max_width;
 		con->saved_height = view->tide.max_height;
+	} else if (floating && (view->tide.max_width <= 0 || view->tide.max_height <= 0)) {
+		/* It floated while maximized, so it had no floating place: it takes
+		 * the size and place a window floating anew does */
+		container_floating_set_default_size(con);
+		container_floating_move_to_center(con);
 	} else if (floating) {
 		con->pending.x = view->tide.max_x;
 		con->pending.y = view->tide.max_y;
@@ -184,7 +189,8 @@ void tide_maximize_unmapped(struct sway_view *view) {
 }
 
 void tide_maximize_mapped(struct sway_view *view) {
-	if (view->type != SWAY_VIEW_XDG_SHELL) {
+	// A rule that maximized it as it mapped told it so already
+	if (view->type != SWAY_VIEW_XDG_SHELL || view->tide.maximized) {
 		return;
 	}
 	struct wlr_xdg_toplevel *toplevel = view->wlr_xdg_toplevel;

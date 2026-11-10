@@ -972,6 +972,14 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 	view_execute_criteria(view);
 	tide_dialog_place(view); // tide: one floating as it opens takes its place
 
+	/* tide: an app that asked to be maximized before it mapped opens so,
+	 * which its new event says */
+	if (view->type == SWAY_VIEW_XDG_SHELL && view->wlr_xdg_toplevel->requested.maximized) {
+		tide_maximize_opening(view);
+	} else {
+		tide_maximize_mapped(view); // tide: mapped again, it isn't
+	}
+
 	// tide: the new event once the window has its place, the rules have run
 	// and it has its workspace and floating state, as tidewm's has it
 	view->tide.mapping = false;
@@ -992,12 +1000,6 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		input_manager_set_focus(&view->container->node);
 	}
 	tide_focus_opened(view); // tide: its urgency, or its grant's focus
-	// tide: an app that asked to be maximized before it mapped opens so
-	if (view->type == SWAY_VIEW_XDG_SHELL && view->wlr_xdg_toplevel->requested.maximized) {
-		tide_maximize_opening(view);
-	} else {
-		tide_maximize_mapped(view); // tide: mapped again, it isn't
-	}
 
 	if (view->ext_foreign_toplevel) {
 		update_ext_foreign_toplevel(view);
