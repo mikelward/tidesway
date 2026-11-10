@@ -300,6 +300,7 @@ set|plus|minus|toggle <amount>
 	otherwise according to the priority stated in *sway*(1). In tidesway, as
 	in tidewm, a file with an error, or including one, fails the reload,
 	naming the first error's file and line, and the config stays as it was.
+	A reload sent over IPC has happened by the time its reply comes.
 
 *rename* workspace [<old_name>] to <new_name>
 	Rename either <old_name> or the focused workspace to the <new_name>

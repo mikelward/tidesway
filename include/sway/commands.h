@@ -191,6 +191,9 @@ sway_cmd cmd_popup_during_fullscreen;
 sway_cmd cmd_primary_selection;
 sway_cmd cmd_reject;
 sway_cmd cmd_reload;
+/* tide: whether a reload was scheduled since the last call, so the IPC
+ * runs it before it answers, as tidewm's reload has happened by then */
+bool tide_reload_take_scheduled(void);
 sway_cmd cmd_rename;
 sway_cmd cmd_resize;
 sway_cmd cmd_scratchpad;

@@ -713,6 +713,12 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 		tide_grab_ask_begin(); // tide: you asked, so a focus grab ends
 		list_t *res_list = execute_command(buf, NULL, NULL);
 		tide_grab_ask_end();
+		// tide: a reload has happened by the time its answer comes, as
+		// tidewm's has: its idle event, once the commands are done with
+		// the config it frees, runs now
+		if (tide_reload_take_scheduled()) {
+			wl_event_loop_dispatch_idle(server.wl_event_loop);
+		}
 		if (modeset_is_pending()) {
 			// IPC expects commands to have taken immediate effect, so we need
 			// to force a modeset after output commands. We do a single modeset

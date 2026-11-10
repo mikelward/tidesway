@@ -12,6 +12,15 @@ static void title_bar_update_iterator(struct sway_container *con, void *data) {
 	container_update_title_bar(con);
 }
 
+// tide: whether a reload waits on its idle event
+static bool reload_scheduled;
+
+bool tide_reload_take_scheduled(void) {
+	bool scheduled = reload_scheduled;
+	reload_scheduled = false;
+	return scheduled;
+}
+
 static void do_reload(void *data) {
 	// store bar ids to check against new bars for barconfig_update events
 	list_t *bar_ids = create_list();
@@ -72,6 +81,7 @@ struct cmd_results *cmd_reload(int argc, char **argv) {
 	// The reload command frees a lot of stuff, so to avoid use-after-frees
 	// we schedule the reload to happen using an idle event.
 	wl_event_loop_add_idle(server.wl_event_loop, do_reload, NULL);
+	reload_scheduled = true;
 
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
