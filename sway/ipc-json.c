@@ -14,6 +14,7 @@
 #include "sway/ipc-json.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/output.h"
 #include "sway/tide/workspace.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
@@ -408,6 +409,8 @@ static void ipc_json_describe_enabled_output(struct sway_output *output,
 				* ((double)output->height / parent_box.height);
 		json_object_object_add(object, "percent", json_object_new_double(percent));
 	}
+
+	tide_output_describe_layers(output, object); // tide: tidewm's layers and window_area
 
 	json_object_object_add(object, "max_render_time", json_object_new_int(output->max_render_time));
 	json_object_object_add(object, "allow_tearing", json_object_new_boolean(output->allow_tearing));
