@@ -129,6 +129,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "fullscreen", cmd_fullscreen },
 	{ "grant", cmd_grant }, // tide
 	{ "inhibit_idle", cmd_inhibit_idle },
+	{ "keep_open", cmd_keep_open }, // tide
 	{ "kill", cmd_kill },
 	{ "layout", cmd_layout },
 	{ "mark", cmd_mark },
@@ -319,7 +320,7 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 			}
 		} else if (containers->length == 0) {
 			list_add(res_list,
-					cmd_results_new(CMD_FAILURE, "No matching node."));
+					cmd_results_new(CMD_FAILURE, "No window matches the criteria")); // tide: tidewm's words
 		} else {
 			struct cmd_results *fail_res = NULL;
 			for (int i = 0; i < containers->length; ++i) {

@@ -134,10 +134,16 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
-- **No maximize in a floating layout, nor across a remap** (2026-11-10):
+- **A binding's event when its command fails** (2026-11-10): a binding sends
+  its binding event whether or not its command succeeds, as tidewm's does,
+  where sway sent it only on success; a key bound to `kill` in a window kept
+  open says it ran. Criteria that match nothing fail with tidewm's "No
+  window matches the criteria", where sway said "No matching node."
+- **No maximize in a floating layout, nor ids across a remap** (2026-11-10):
   tidewm's maximize tests that use its floating layout fail here, as
-  tidesway has none (above), and so does one that remaps a window, since
-  sway makes a new container, with a new id, for a window that maps again.
+  tidesway has none (above), and so do its maximize and keep_open tests that
+  remap a window, since sway makes a new container, with a new id, for a
+  window that maps again.
 - **On-demand layer surfaces wait for a click** (2026-11-10): one that takes
   the keyboard on demand, such as a notification's reply field, gets it when
   clicked, as tide's SPEC §14.1 has it, where sway gave it the keyboard as it

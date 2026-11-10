@@ -74,7 +74,7 @@ static bool binding_key_compare(struct sway_binding *binding_a,
 
 	uint32_t conflict_generating_flags = BINDING_RELEASE | BINDING_BORDER
 			| BINDING_CONTENTS | BINDING_TITLEBAR | BINDING_LOCKED
-			| BINDING_INHIBITED;
+			| BINDING_INHIBITED | BINDING_KEPT_OPEN;
 	if ((binding_a->flags & conflict_generating_flags) !=
 			(binding_b->flags & conflict_generating_flags)) {
 		return false;
@@ -358,6 +358,8 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 			binding->flags |= BINDING_LOCKED;
 		} else if (strcmp("--inhibited", argv[0]) == 0) {
 			binding->flags |= BINDING_INHIBITED;
+		} else if (strcmp("--kept-open", argv[0]) == 0) { // tide
+			binding->flags |= BINDING_KEPT_OPEN;
 		} else if (strcmp("--whole-window", argv[0]) == 0) {
 			binding->flags |= BINDING_BORDER | BINDING_CONTENTS | BINDING_TITLEBAR;
 		} else if (strcmp("--border", argv[0]) == 0) {
@@ -386,6 +388,13 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 			|| exclude_titlebar) {
 		binding->type = binding->type == BINDING_KEYCODE ?
 			BINDING_MOUSECODE : BINDING_MOUSESYM;
+	}
+	// tide: a window kept open takes its close keys; a button has none
+	if ((binding->flags & BINDING_KEPT_OPEN) && (binding->type == BINDING_MOUSECODE
+			|| binding->type == BINDING_MOUSESYM)) {
+		free_sway_binding(binding);
+		return cmd_results_new(CMD_FAILURE, "%s: --kept-open is for keys, not buttons",
+			bindtype);
 	}
 
 	if (argc < minargs) {
@@ -636,20 +645,18 @@ void seat_execute_command(struct sway_seat *seat, struct sway_binding *binding) 
 	tide_grab_ask_begin(); // tide: you asked, so a focus grab ends
 	list_t *res_list = execute_command(binding->command, seat, con);
 	tide_grab_ask_end();
-	bool success = true;
 	for (int i = 0; i < res_list->length; ++i) {
 		struct cmd_results *results = res_list->items[i];
 		if (results->status != CMD_SUCCESS) {
 			sway_log(SWAY_DEBUG, "could not run command for binding: %s (%s)",
 				binding->command, results->error);
-			success = false;
 		}
 		free_cmd_results(results);
 	}
 	list_free(res_list);
-	if (success) {
-		ipc_event_binding(binding);
-	}
+	// tide: the binding ran, as tidewm says, whether or not its command
+	// did what it asked, as kill on a window kept open doesn't
+	ipc_event_binding(binding);
 
 	transaction_commit_dirty();
 }
