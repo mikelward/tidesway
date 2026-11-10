@@ -177,6 +177,10 @@ void seat_configure_xcursor(struct sway_seat *seat);
 
 void seat_set_focus(struct sway_seat *seat, struct sway_node *node);
 
+// tide: seat's sway_keyboard for wlr_keyboard, or NULL
+struct sway_keyboard *sway_keyboard_for_wlr_keyboard(
+		struct sway_seat *seat, struct wlr_keyboard *wlr_keyboard);
+
 /* tide: drops node from the seat's focus history, so focus that goes back
  * to the last window there passes it by, as a minimized window is */
 void seat_tide_forget(struct sway_seat *seat, struct sway_node *node);
