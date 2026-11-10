@@ -157,7 +157,10 @@ static void handle_button(struct sway_seat *seat, uint32_t time_msec,
 
 static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 	struct seatop_down_event *e = seat->seatop_data;
-	if (seat_is_input_allowed(seat, e->surface)) {
+	/* tide: the surface pressed, as a menu, where e->surface is its
+	 * window's: a focus grab may hold the menu and not the window */
+	struct wlr_surface *pressed = seat->wlr_seat->pointer_state.focused_surface;
+	if (seat_is_input_allowed(seat, pressed ? pressed : e->surface)) {
 		double moved_x = seat->cursor->cursor->x - e->ref_lx;
 		double moved_y = seat->cursor->cursor->y - e->ref_ly;
 		double sx = e->ref_con_lx + moved_x;
@@ -178,7 +181,9 @@ static void handle_tablet_tool_tip(struct sway_seat *seat,
 static void handle_tablet_tool_motion(struct sway_seat *seat,
 		struct sway_tablet_tool *tool, uint32_t time_msec) {
 	struct seatop_down_event *e = seat->seatop_data;
-	if (seat_is_input_allowed(seat, e->surface)) {
+	// tide: the surface the pen is down on, as for the pointer's
+	struct wlr_surface *pressed = tool->tablet_v2_tool->focused_surface;
+	if (seat_is_input_allowed(seat, pressed ? pressed : e->surface)) {
 		double moved_x = seat->cursor->cursor->x - e->ref_lx;
 		double moved_y = seat->cursor->cursor->y - e->ref_ly;
 		double sx = e->ref_con_lx + moved_x;

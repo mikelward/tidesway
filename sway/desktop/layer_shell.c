@@ -132,7 +132,12 @@ void arrange_layers(struct sway_output *output) {
 			seat_set_focus_layer(seat, topmost->layer_surface);
 		} else if (seat->focused_layer &&
 				seat->focused_layer->current.keyboard_interactive
-					!= ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE) {
+					!= ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE &&
+				// tide: one that took the keyboard on demand keeps it, as
+				// long as it still takes it and is shown
+				!(seat->focused_layer->current.keyboard_interactive
+					== ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_ON_DEMAND
+				&& seat->focused_layer->surface->mapped)) {
 			seat_set_focus_layer(seat, NULL);
 		}
 	}
@@ -283,8 +288,10 @@ static void handle_map(struct wl_listener *listener, void *data) {
 	struct wlr_layer_surface_v1 *layer_surface =
 				surface->scene->layer_surface;
 
-	// focus on new surface
-	if (layer_surface->current.keyboard_interactive &&
+	// focus on new surface; tide: one that takes the keyboard on demand
+	// waits for a click
+	if (layer_surface->current.keyboard_interactive
+			== ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE &&
 			(layer_surface->current.layer == ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY ||
 			layer_surface->current.layer == ZWLR_LAYER_SHELL_V1_LAYER_TOP)) {
 		struct sway_seat *seat;

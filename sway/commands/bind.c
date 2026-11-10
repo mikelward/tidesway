@@ -11,6 +11,7 @@
 #include "sway/input/cursor.h"
 #include "sway/input/keyboard.h"
 #include "sway/ipc-server.h"
+#include "sway/tide/grab.h"
 #include "list.h"
 #include "log.h"
 #include "stringop.h"
@@ -632,7 +633,9 @@ void seat_execute_command(struct sway_seat *seat, struct sway_binding *binding) 
 		}
 	}
 
+	tide_grab_ask_begin(); // tide: you asked, so a focus grab ends
 	list_t *res_list = execute_command(binding->command, seat, con);
+	tide_grab_ask_end();
 	bool success = true;
 	for (int i = 0; i < res_list->length; ++i) {
 		struct cmd_results *results = res_list->items[i];

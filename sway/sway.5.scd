@@ -1161,6 +1161,21 @@ press or click as _type_ ("key" or "button"), _window_ (the id of the window
 it went to, or null) and _msec\_ago_, or null before any, and
 _prompt\_may\_focus_, whether a polkit prompt opening now may take focus.
 
+# TIDE'S FOCUS GRABS
+
+tidesway offers hyprland-focus-grab-v1, as tidewm does, which tide's
+notification center takes through Quickshell. While a grab holds, the
+keyboard stays on its surfaces and the pointer enters only them. A click
+anywhere else ends it and goes no further. So does focus you move, by a
+binding or a command, an exclusive layer surface such as the launcher
+opening, or the lock. A window opening doesn't take the keyboard meanwhile.
+A second grab ends the first, and none can start under the lock.
+
+A layer surface that takes the keyboard on demand, such as a notification's
+reply field, gets it when you click it, not when it opens or the pointer
+crosses it. It keeps it the same way: until you click elsewhere, use a
+binding or a command, or the launcher or the lock takes it.
+
 # TIDE'S DIMMING
 
 With *dim\_inactive* above 0, as tidewm has it, every window but the focused

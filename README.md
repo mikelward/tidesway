@@ -18,6 +18,9 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   of the current one, and they all switch together, with tidewm's `persist`
   and `unpersist` commands and its workspace IPC (`man 5 sway`, "TIDE'S
   WORKSPACES");
+* tide's focus grabs, over hyprland-focus-grab-v1, for its notification
+  center, and on-demand layer surfaces that keep the keyboard until you
+  move it (`man 5 sway`, "TIDE'S FOCUS GRABS");
 * fixes for what tide hit in sway: a floating window's dialogs stay above it,
   and an X11 window always shows up, past two races in wlroots that could
   leave one unmapped.
