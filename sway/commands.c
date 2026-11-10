@@ -133,6 +133,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "layout", cmd_layout },
 	{ "mark", cmd_mark },
 	{ "max_render_time", cmd_max_render_time },
+	{ "maximize", cmd_maximize }, // tide
 	{ "mfact", cmd_mfact }, // tide
 	{ "minimize", cmd_minimize }, // tide
 	{ "move", cmd_move },

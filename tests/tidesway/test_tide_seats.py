@@ -5,6 +5,7 @@ its new place only once its client has drawn it there, so a click there
 straight away used to find nothing."""
 
 import os
+import select
 import subprocess
 import unittest
 
@@ -71,6 +72,86 @@ class ClickTest(ClickHelpers):
         self.open("test.right")
         self.click(left)
         self.assertEqual(self.went_to(), ("button", left))
+
+
+    def open_talking(self, app_id):
+        """A window that says when it's maximized, and answers a ping"""
+        client = self.wm.open_window(app_id, app_id, stdin=True, stdout=True)
+        self.addCleanup(client.stdout.close)
+        con = self.ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "new"
+                                  and e["container"]["app_id"] == app_id)["container"]["id"]
+        return con, client
+
+    def settled(self, *clients):
+        """Waits till each client has drawn whatever it was last told"""
+        for each in clients:
+            each.stdin.write(b"ping\n")
+            each.stdin.flush()
+            while self.line(each) != b"pong\n":
+                pass
+
+    def maximized_and_drawn(self, client, *others):
+        """Waits till client has drawn itself maximized, and the others have
+        drawn whatever they were told: a pong comes once the compositor has
+        handled what its window sent before, a new size too"""
+        while self.line(client) != b"maximized\n":
+            pass
+        self.settled(client, *others)
+
+    def line(self, client):
+        self.assertTrue(select.select([client.stdout], [], [], TIMEOUT)[0], "it said nothing")
+        line = client.stdout.readline()
+        self.assertTrue(line, "the client went")
+        return line
+
+    def test_a_click_reaches_a_window_maximized_in_sways_layouts(self):
+        # sway's own layout placed a maximized window after the ones before it
+        self.command(self.connect(), "layout splith")
+        left, left_client = self.open_talking("test.left")
+        right, client = self.open_talking("test.right")
+        rect = self.windows()[left]["rect"]
+        # Nothing else in flight, so its new state and size come together
+        self.settled(left_client, client)
+        self.command(self.connect(), f"[con_id={right}] maximize enable")
+        self.maximized_and_drawn(client, left_client)
+        self.click_at(rect["x"] + 50, rect["y"] + 50)  # where left was
+        self.assertEqual(self.went_to(), ("button", right))
+
+    def test_a_click_reaches_a_window_maximized_in_a_nested_split(self):
+        # Its split was under the focused window beside it
+        self.command(self.connect(), "layout splith")
+        _, top_client = self.open_talking("test.top")
+        self.command(self.connect(), "splitv")
+        nested, client = self.open_talking("test.nested")
+        beside, beside_client = self.open_talking("test.beside")
+        self.command(self.connect(), f"[con_id={beside}] move right")
+        self.command(self.connect(), f"[con_id={beside}] focus")
+        rect = self.windows()[beside]["rect"]
+        # Nothing else in flight, as the focus moving, so its new state
+        # and size come together
+        self.settled(top_client, client, beside_client)
+        self.command(self.connect(), f"[con_id={nested}] maximize enable")
+        self.maximized_and_drawn(client, top_client, beside_client)
+        self.click_at(rect["x"] + 50, rect["y"] + 50)
+        self.assertEqual(self.went_to(), ("button", nested))
+
+    def test_a_click_reaches_the_tab_left_when_the_shown_ones_minimize(self):
+        # The split shown, its windows minimized under a floating window,
+        # stayed the active tab, so no tab was shown
+        self.command(self.connect(), "layout tabbed")
+        tab, tab_client = self.open_talking("test.tab")
+        first, first_client = self.open_talking("test.first")
+        self.command(self.connect(), "splitv")
+        second, second_client = self.open_talking("test.second")
+        rect = self.windows()[tab]["rect"]
+        floating, floating_client = self.open_talking("test.floating")
+        for command in ["floating enable", "resize set 100 100", "move position 600 400"]:
+            self.command(self.connect(), f"[con_id={floating}] {command}")
+        for each in (first, second):
+            self.command(self.connect(), f"[con_id={each}] minimize enable")
+        self.settled(tab_client, first_client, second_client, floating_client)
+        self.click_at(rect["x"] + 50, rect["y"] + 50)
+        self.assertEqual(self.went_to(), ("button", tab))
 
 
 class DimmedClickTest(ClickHelpers):

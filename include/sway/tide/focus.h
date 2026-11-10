@@ -46,6 +46,8 @@ struct tide_view {
 	int fullscreen; // enum sway_fullscreen_mode it asked for while held
 	bool minimized; // tide's minimize: hidden, out of the layout
 	int minimized_fullscreen; // enum sway_fullscreen_mode it had as it was minimized
+	bool maximized; // tide's maximize: covering its output's window area
+	double max_x, max_y, max_width, max_height; // a floating one's place before
 };
 
 // The config file's focus_guard lines

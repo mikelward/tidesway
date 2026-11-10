@@ -1178,6 +1178,14 @@ binding or a command, or the launcher or the lock takes it.
 
 # TIDE'S WINDOW STATES
 
+*maximize* [enable|disable|toggle]
+	Makes the window cover its output's window area, above the other tiles,
+	which stay where they are, with the bar still showing, as tidewm does.
+	It lasts until it's turned off, the window closes, or another window on
+	its workspace takes focus (not a dialog of it). An app's own request
+	maximizes it too. Fullscreen covers it while it lasts, and a floating
+	window gets its place back after. Alone, it toggles.
+
 *minimize* [enable|disable|toggle]
 	Hides the window, as tidewm does: it leaves the layout, and focus on it
 	goes to the window you were in before. It stays on its workspace, which
