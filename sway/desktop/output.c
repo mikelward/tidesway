@@ -27,6 +27,7 @@
 #include "sway/ipc-server.h"
 #include "sway/layers.h"
 #include "sway/output.h"
+#include "sway/tide/output.h"
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
 #include "sway/tree/arrange.h"
@@ -48,7 +49,11 @@ bool output_match_name_or_id(struct sway_output *output,
 
 	char identifier[128];
 	output_get_identifier(identifier, sizeof(identifier), output);
+	// tide: or Hyprland's description, as tidewm takes it
+	char description[128];
+	tide_output_description(description, sizeof(description), output);
 	return strcasecmp(identifier, name_or_id) == 0
+		|| (*description && strcasecmp(description, name_or_id) == 0)
 		|| strcasecmp(output->wlr_output->name, name_or_id) == 0;
 }
 

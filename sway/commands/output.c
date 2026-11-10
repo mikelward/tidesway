@@ -52,6 +52,12 @@ struct cmd_results *cmd_output(int argc, char **argv) {
 		return tide;
 	}
 
+	// tide: at runtime, a name no output has is an error, as tidewm's
+	if (!config->reading && strcmp(argv[0], "-") != 0 && strcmp(argv[0], "--") != 0
+			&& !tide_output_named(argv[0])) {
+		return cmd_results_new(CMD_FAILURE, "No output is called %s", argv[0]);
+	}
+
 	struct output_config *output = NULL;
 	if (strcmp(argv[0], "-") == 0 || strcmp(argv[0], "--") == 0) {
 		if (config->reading) {

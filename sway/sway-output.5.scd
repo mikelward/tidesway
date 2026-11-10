@@ -22,6 +22,14 @@ must be separated by one space. For example:
 
 	output "Some Company ABC123 0x00000000" pos 1920 0
 
+tidesway, as tidewm, writes _Unknown_ for a value the output doesn't give, and
+*get_outputs* gives it as an empty string. It also takes Hyprland's
+description, as tide's Displays page names an output: the values it gives,
+with no commas, as "Some Company ABC123" for one with no serial. In the
+config file, a line naming what an output is overrides one naming its
+connector, whatever their order; of those, the later wins. At runtime, the
+output command fails for a name no output has.
+
 # COMMANDS
 
 *output* <name> mode|resolution|res [--custom] <width>x<height>[@<rate>Hz]

@@ -304,12 +304,13 @@ static json_object *ipc_json_create_node(int id, const char* type, char *name,
 
 static void ipc_json_describe_wlr_output(struct wlr_output *wlr_output, json_object *object) {
 	json_object_object_add(object, "primary", json_object_new_boolean(false));
+	// tide: "" for what it doesn't give, as tidewm says it
 	json_object_object_add(object, "make",
-			json_object_new_string(wlr_output->make ? wlr_output->make : "Unknown"));
+			json_object_new_string(wlr_output->make ? wlr_output->make : ""));
 	json_object_object_add(object, "model",
-			json_object_new_string(wlr_output->model ? wlr_output->model : "Unknown"));
+			json_object_new_string(wlr_output->model ? wlr_output->model : ""));
 	json_object_object_add(object, "serial",
-			json_object_new_string(wlr_output->serial ? wlr_output->serial : "Unknown"));
+			json_object_new_string(wlr_output->serial ? wlr_output->serial : ""));
 
 	json_object *modes_array = json_object_new_array();
 	struct wlr_output_mode *mode;

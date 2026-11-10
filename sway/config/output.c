@@ -2,6 +2,7 @@
 #include <drm_fourcc.h>
 #include <stdbool.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -270,8 +271,15 @@ void store_output_config(struct output_config *oc) {
 		}
 
 		// If the new config matches an output's name, and the old config
-		// matches on that output's identifier, supersede it.
-		if (output && strcmp(old->name, id) == 0 &&
+		// matches on that output's identifier, supersede it. tide: not in
+		// the file, where one naming what it is overrides one naming its
+		// connector, as tidewm has it; and by its description too
+		char desc[128] = "";
+		if (output) {
+			tide_output_description(desc, sizeof(desc), output);
+		}
+		if (output && !config->reading && (strcmp(old->name, id) == 0
+					|| (*desc && strcasecmp(old->name, desc) == 0)) &&
 				strcmp(oc->name, output->wlr_output->name) == 0) {
 			supersede_output_config(old, oc);
 		}
@@ -718,18 +726,29 @@ static struct output_config *find_output_config_from_list(
 
 	char id[128];
 	output_get_identifier(id, sizeof(id), sway_output);
+	// tide: and by Hyprland's description, as tidewm takes it
+	char desc[128];
+	tide_output_description(desc, sizeof(desc), sway_output);
 
 	// We take a new config and merge on top, in order, the wildcard config,
 	// output config by name, and output config by identifier to form the final
 	// config. If there are multiple matches, they are merged in order.
 	struct output_config *oc = NULL;
-	const char *names[] = {"*", name, id, NULL};
+	const char *names[] = {"*", name, NULL};
 	for (const char **name = &names[0]; *name; name++) {
 		for (size_t idx = 0; idx < configs_len; idx++) {
 			oc = configs[idx];
 			if (strcmp(oc->name, *name) == 0) {
 				merge_output_config(result, oc);
 			}
+		}
+	}
+	// tide: those naming what it is, by identifier or description, in the
+	// order they came, so the later wins, as tidewm has it
+	for (size_t idx = 0; idx < configs_len; idx++) {
+		oc = configs[idx];
+		if (strcmp(oc->name, id) == 0 || (*desc && strcmp(oc->name, desc) == 0)) {
+			merge_output_config(result, oc);
 		}
 	}
 

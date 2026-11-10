@@ -198,3 +198,30 @@ void tide_output_place_beside(void) {
 	}
 	list_free(placed);
 }
+
+void tide_output_description(char *buf, size_t len, struct sway_output *output) {
+	struct wlr_output *wlr = output->wlr_output;
+	const char *parts[] = { wlr->make, wlr->model, wlr->serial };
+	size_t at = 0;
+	if (len) {
+		buf[0] = '\0';
+	}
+	for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); i++) {
+		if (!parts[i] || !*parts[i]) {
+			continue;
+		}
+		if (at && at + 1 < len) {
+			buf[at++] = ' ';
+		}
+		for (const char *c = parts[i]; *c && at + 1 < len; c++) {
+			if (*c != ',') { // Hyprland's has none
+				buf[at++] = *c;
+			}
+		}
+		buf[at] = '\0';
+	}
+}
+
+bool tide_output_named(const char *name) {
+	return strcmp(name, "*") == 0 || all_output_by_name_or_id(name) != NULL;
+}

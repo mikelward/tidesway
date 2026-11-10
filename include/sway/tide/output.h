@@ -12,6 +12,7 @@
 
 #include <json-c/json.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 struct cmd_results;
 struct sway_output;
@@ -31,5 +32,13 @@ void tide_output_describe_layers(struct sway_output *output, json_object *object
  * put at positions and those placed before it, past their far edge that
  * way, at 0 across, or at the origin alone */
 void tide_output_place_beside(void);
+
+/* Hyprland's description of an output, as tidewm names it too: its make,
+ * model and serial, those it gives, joined by spaces, with no commas; ""
+ * if it gives none */
+void tide_output_description(char *buf, size_t len, struct sway_output *output);
+
+// Whether an output, enabled or not, is called name, as the output command takes it
+bool tide_output_named(const char *name);
 
 #endif
