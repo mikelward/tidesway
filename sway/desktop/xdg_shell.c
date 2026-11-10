@@ -323,7 +323,10 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 		// containers, we resize the container to match. For tiling containers,
 		// we only recenter the surface.
 		memcpy(&view->geometry, new_geo, sizeof(struct wlr_box));
-		if (container_is_floating(view->container)) {
+		// tide: not while a newer configure is unanswered, as when a
+		// tile's size arrives after the window floated
+		if (container_is_floating(view->container) &&
+				wl_list_empty(&xdg_surface->configure_list)) {
 			view_update_size(view);
 			// Only set the toplevel size the current container actually has a size.
 			if (view->container->current.width) {
