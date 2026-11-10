@@ -125,6 +125,15 @@ Each patch's PR says how far it moves this.
   workspace on the first output left, as new windows go there, tiled or
   floating, each with a `move` window event. sway would move its whole
   workspaces over.
+- **A floating window's own resize during a configure** (2026-11-10, deferred
+  from #13's review): a floating window takes a size its client chose only
+  once the client has answered every configure, so a tile's size arriving
+  late isn't taken. A client that resizes itself while an unrelated
+  configure, such as an activation's, is unanswered, then commits the same
+  size again, keeps its old box until its next change of size. Taking the
+  size once the configures drain instead let a tile's late size in (3 of 60
+  runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
+  tell a client's own size from a stale one sway sent.
 - **Focus doesn't follow a jump** (2026-11-10): a pointer motion with no
   time, as a virtual pointer's, moves the pointer without
   `focus_follows_mouse` focusing what it lands on, as in tidewm, and the
