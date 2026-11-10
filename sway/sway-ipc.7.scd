@@ -1197,12 +1197,16 @@ following properties:
 |- identifier
 :  string
 :[ The identifier for the input device
+|- hyprland_name
+:  string
+:  tidesway's, as tidewm's: the name Hyprland would give the device, which
+   input lines take too
 |- name
 :  string
 :  The human readable name for the device
 |- vendor
 :  integer
-:  The vendor code for the input device
+:  The vendor code for the input device, 0 for one that isn't libinput's
 |- product
 :  integer
 :  The product code for the input device

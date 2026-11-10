@@ -12,6 +12,7 @@
 #include "log.h"
 #include "sway/config.h"
 #include "sway/ipc-json.h"
+#include "sway/tide/inputname.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/keepopen.h"
@@ -1182,6 +1183,11 @@ json_object *ipc_json_describe_input(struct sway_input_device *device) {
 
 	json_object_object_add(object, "identifier",
 		json_object_new_string(device->identifier));
+	// tide: the name Hyprland would give it, which input lines take too
+	char *hyprland_name = tide_input_hyprland_name(device);
+	json_object_object_add(object, "hyprland_name",
+		hyprland_name ? json_object_new_string(hyprland_name) : NULL);
+	free(hyprland_name);
 	json_object_object_add(object, "name",
 		json_object_new_string(device->wlr_device->name));
 	json_object_object_add(object, "type",
@@ -1245,6 +1251,11 @@ json_object *ipc_json_describe_input(struct sway_input_device *device) {
 			json_object_new_int(libinput_device_get_id_product(libinput_dev)));
 	}
 #endif
+	// tide: 0 for a device that isn't libinput's, as tidewm says
+	if (!json_object_object_get_ex(object, "vendor", NULL)) {
+		json_object_object_add(object, "vendor", json_object_new_int(0));
+		json_object_object_add(object, "product", json_object_new_int(0));
+	}
 
 	return object;
 }

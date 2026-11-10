@@ -11,7 +11,10 @@ To obtain a list of available device identifiers, run *swaymsg -t get_inputs*.
 Settings can also be applied to all input devices by using the wildcard, _\*_,
 in place of _\<identifier\>_ in the commands below. In addition, the settings
 can be applied to a type of device, by using _type:\<input_type\>_ in place
-of _\<identifier\>_.
+of _\<identifier\>_. tidesway, as tidewm, also takes the name Hyprland would
+give a device, its *hyprland_name* in *get_inputs*: its name in lower case,
+with a space, newline or comma as _-_, and _-1_, _-2_ and so on after a
+second or later device of that name.
 
 In the configuration file, settings with a more specific selector take
 precedence over more general ones: _\<identifier\>_ \> _type:\<input_type\>_ \>
