@@ -423,6 +423,10 @@ node and will have the following properties:
 |- dimmed
 :  boolean
 :  (Only windows) tidesway's: whether the window is dimmed now
+|- maximized
+:  boolean
+:  (Only windows) tidesway's: whether the window is maximized; a window event
+   with the change _maximize_ says when it is or isn't
 |- minimized
 :  boolean
 :  (Only windows) tidesway's: whether the window is minimized; a window event

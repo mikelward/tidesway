@@ -8,6 +8,7 @@
 #include "sway/tree/container.h"
 #include "sway/output.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/maximize.h"
 #include "sway/tide/minimize.h"
 #include "sway/tree/workspace.h"
 #include "sway/tree/view.h"
@@ -331,6 +332,7 @@ void arrange_workspace(struct sway_workspace *workspace) {
 			arrange_children(workspace->tiling, workspace->layout, &box);
 		}
 		arrange_floating(workspace->floating);
+		tide_maximize_arrange(workspace, &box); // tide: a maximized window covers it
 	}
 }
 

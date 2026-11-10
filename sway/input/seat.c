@@ -30,6 +30,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/grab.h"
+#include "sway/tide/maximize.h"
 #include "sway/tide/minimize.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/workspace.h"
@@ -1293,6 +1294,7 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 		arrange_workspace(new_workspace);
 	}
 	tide_focus_focused(node); // tide: the focus guard's grants and held windows
+	tide_maximize_focused(node); // tide: another window's focus ends a maximize
 }
 
 void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {

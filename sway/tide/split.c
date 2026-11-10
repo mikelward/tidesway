@@ -6,8 +6,8 @@
  * from either side, and a lone window's sides drag its width, centered.
  * Anything over the edge takes the press as usual: a floating window, a
  * layer surface or a window's popup; so does a press on an output that
- * isn't focused, under a fullscreen window, or while a popup grabs the
- * pointer.
+ * isn't focused, under a fullscreen or maximized window, or while a popup
+ * grabs the pointer.
  */
 #include <math.h>
 #include <stdlib.h>
@@ -22,6 +22,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/maximize.h"
 #include "sway/tide/split.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
@@ -110,11 +111,13 @@ static void begin(struct sway_seat *seat, struct sway_workspace *ws,
 }
 
 /* The focused workspace, if the cursor's on its output's window area and
- * nothing covers its tiles: no fullscreen window, lock or pointer grab */
+ * nothing covers its tiles: no fullscreen or maximized window, lock or
+ * pointer grab */
 static struct sway_workspace *pressed_workspace(struct sway_seat *seat) {
 	struct wlr_cursor *cursor = seat->cursor->cursor;
 	struct sway_workspace *ws = seat_get_focused_workspace(seat);
 	if (!ws || !ws->output || ws->fullscreen || root->fullscreen_global
+			|| tide_maximize_covers(ws)
 			|| server.session_lock.lock
 			|| seat->wlr_seat->pointer_state.grab
 				!= seat->wlr_seat->pointer_state.default_grab
@@ -168,7 +171,8 @@ bool tide_split_press(struct sway_seat *seat, struct sway_node *node,
 bool tide_split_press_tile(struct sway_seat *seat, struct sway_container *con) {
 	struct sway_workspace *ws = con->pending.workspace;
 	if (!ws || !con->view || container_is_floating_or_child(con)
-			|| tide_workspace_layout(ws) == TIDE_NONE || ws->fullscreen) {
+			|| tide_workspace_layout(ws) == TIDE_NONE || ws->fullscreen
+			|| tide_maximize_covers(ws)) {
 		return false;
 	}
 	struct tide_edge edges[2];

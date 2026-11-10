@@ -32,6 +32,7 @@
 #include "sway/sway_text_node.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/maximize.h"
 #include "sway/tide/minimize.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
@@ -975,6 +976,10 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		input_manager_set_focus(&view->container->node);
 	}
 	tide_focus_opened(view); // tide: its urgency, or its grant's focus
+	// tide: an app that asked to be maximized before it mapped opens so
+	if (view->type == SWAY_VIEW_XDG_SHELL && view->wlr_xdg_toplevel->requested.maximized) {
+		tide_maximize_opening(view);
+	}
 
 	if (view->ext_foreign_toplevel) {
 		update_ext_foreign_toplevel(view);
@@ -991,7 +996,8 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 
 void view_unmap(struct sway_view *view) {
 	wl_signal_emit_mutable(&view->events.unmap, view);
-	tide_minimize_unmapped(view); // tide: mapped again, it's a new window
+	tide_maximize_unmapped(view); // tide: mapped again, it's a new window
+	tide_minimize_unmapped(view);
 
 	view->executed_criteria->length = 0;
 

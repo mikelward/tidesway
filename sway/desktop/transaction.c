@@ -12,6 +12,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/minimize.h"
+#include "sway/tide/maximize.h"
 #include "sway/tree/container.h"
 #include "sway/tree/node.h"
 #include "sway/tree/view.h"
@@ -296,8 +297,13 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 	if (shown != children) {
 		for (int i = 0; i < children->length; i++) {
 			struct sway_container *child = children->items[i];
-			if (tide_minimized(child)) {
-				arrange_container(child, 0, 0, false, 0);
+			bool listed = false;
+			for (int j = 0; j < shown->length && !listed; j++) {
+				listed = shown->items[j] == child;
+			}
+			if (!listed) {
+				disable_container(child);
+				wlr_scene_node_set_enabled(&child->scene_tree->node, false);
 			}
 		}
 		/* A tab of minimized windows can't be the shown one: the one
@@ -591,6 +597,19 @@ static void arrange_workspace_floating(struct sway_workspace *ws) {
 /* tide: a tide layout's windows, each where its geometry says, relative to
  * x, y, the workspace's corner; split containers cover the workspace, so
  * their windows are too. The focused one is on top, for monocle. */
+// tide: whether a window in children, or under them, is maximized
+static bool any_maximized(list_t *children) {
+	for (int i = 0; children && i < children->length; i++) {
+		struct sway_container *child = children->items[i];
+		// a minimized one, though still maximized, covers nothing
+		if ((tide_maximized(child) && !tide_minimized(child))
+				|| any_maximized(child->current.children)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void arrange_tide_children(list_t *children,
 		struct sway_container *active, struct wlr_scene_tree *content,
 		double x, double y) {
@@ -617,11 +636,23 @@ static void arrange_tide_children(list_t *children,
 	if (active) {
 		wlr_scene_node_raise_to_top(&active->scene_tree->node);
 	}
+	// tide: a maximized window is above the other tiles, and so is the
+	// split it's in, so nothing beside that split covers it
+	for (int i = 0; i < children->length; i++) {
+		struct sway_container *child = children->items[i];
+		if (tide_maximized(child) || any_maximized(child->current.children)) {
+			wlr_scene_node_raise_to_top(&child->scene_tree->node);
+		}
+	}
 }
+
 
 static void arrange_workspace_tiling(struct sway_workspace *ws,
 		int width, int height) {
-	if (ws->current.tide_layout != TIDE_NONE) { // tide
+	/* tide: a tide layout's tiles go where their geometry puts them, and so
+	 * do sway's layouts' while a window covers the window area maximized:
+	 * sway's would place it after the windows before it */
+	if (ws->current.tide_layout != TIDE_NONE || any_maximized(ws->current.tiling)) {
 		arrange_tide_children(ws->current.tiling,
 			ws->current.focused_inactive_child, ws->layers.tiling,
 			ws->current.x, ws->current.y);

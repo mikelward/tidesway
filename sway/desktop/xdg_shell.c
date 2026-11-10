@@ -13,6 +13,7 @@
 #include "sway/input/input-manager.h"
 #include "sway/input/seat.h"
 #include "sway/output.h"
+#include "sway/tide/maximize.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
@@ -300,8 +301,10 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 		}
 		// XXX: https://github.com/swaywm/sway/issues/2176
 		wlr_xdg_surface_schedule_configure(xdg_surface);
+		// tide: and maximize, as tidewm
 		wlr_xdg_toplevel_set_wm_capabilities(view->wlr_xdg_toplevel,
-			WLR_XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN);
+			WLR_XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN
+			| WLR_XDG_TOPLEVEL_WM_CAPABILITIES_MAXIMIZE);
 		// TODO: wlr_xdg_toplevel_set_bounds()
 		return;
 	}
@@ -324,9 +327,11 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 		// we only recenter the surface.
 		memcpy(&view->geometry, new_geo, sizeof(struct wlr_box));
 		// tide: not while a newer configure is unanswered, as when a
-		// tile's size arrives after the window floated
+		// tile's size arrives after the window floated, nor while it's
+		// maximized, when it covers the window area whatever it draws
 		if (container_is_floating(view->container) &&
-				wl_list_empty(&xdg_surface->configure_list)) {
+				wl_list_empty(&xdg_surface->configure_list) &&
+				!tide_maximized(view->container)) {
 			view_update_size(view);
 			// Only set the toplevel size the current container actually has a size.
 			if (view->container->current.width) {
@@ -394,7 +399,10 @@ static void handle_request_maximize(struct wl_listener *listener, void *data) {
 	if (!toplevel->base->surface->mapped) {
 		return;
 	}
+	// tide: the app maximizes itself, or not, as with the maximize command
+	tide_maximize_request(&xdg_shell_view->view, toplevel->requested.maximized);
 	wlr_xdg_surface_schedule_configure(toplevel->base);
+	transaction_commit_dirty();
 }
 
 static void handle_request_fullscreen(struct wl_listener *listener, void *data) {
