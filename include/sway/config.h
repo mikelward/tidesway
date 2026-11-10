@@ -626,10 +626,15 @@ struct sway_config {
  */
 bool load_main_config(const char *path, bool is_active, bool validating);
 
+/* tide: the first error the last load_main_config met, as "FILE:LINE:
+ * ERROR", naming an included file's own, or NULL */
+const char *config_first_error(void);
+
 /**
  * Loads an included config. Can only be used after load_main_config.
  */
-void load_include_configs(const char *path, struct sway_config *config,
+// tide: whether the files had no errors
+bool load_include_configs(const char *path, struct sway_config *config,
 		struct swaynag_instance *swaynag);
 
 /**

@@ -297,7 +297,9 @@ set|plus|minus|toggle <amount>
 *reload*
 	Reloads the sway config file and applies any changes. The config file is
 	located at path specified by the command line arguments when started,
-	otherwise according to the priority stated in *sway*(1).
+	otherwise according to the priority stated in *sway*(1). In tidesway, as
+	in tidewm, a file with an error, or including one, fails the reload,
+	naming the first error's file and line, and the config stays as it was.
 
 *rename* workspace [<old_name>] to <new_name>
 	Rename either <old_name> or the focused workspace to the <new_name>

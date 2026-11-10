@@ -134,6 +134,11 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **A reload with an error fails** (2026-11-10): `reload` fails on the first
+  error, as "FILE:LINE: ERROR", an included file's included, and keeps the
+  config it had, as tidewm's does; sway's always succeeded, showing errors
+  in swaynag, and skipped an included file's. A missing included file is
+  still skipped.
 - **Known flaky: maximize ended by focus** (2026-11-10):
   `test_maximize.MaximizeTest.test_another_window_on_the_workspace_taking_focus_ends_it`
   fails 2 runs in 60 under load: the test client prints "maximized" but

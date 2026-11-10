@@ -63,7 +63,10 @@ struct cmd_results *cmd_reload(int argc, char **argv) {
 	}
 
 	if (!load_main_config(path, true, true)) {
-		return cmd_results_new(CMD_FAILURE, "Error(s) reloading config.");
+		// tide: the first error, naming its file and line, as tidewm's
+		const char *error = config_first_error();
+		return cmd_results_new(CMD_FAILURE, "%s",
+			error ? error : "Error(s) reloading config.");
 	}
 
 	// The reload command frees a lot of stuff, so to avoid use-after-frees
