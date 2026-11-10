@@ -8,7 +8,9 @@
 #include <wlr/types/wlr_output.h>
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/layers.h"
 #include "sway/output.h"
+#include "sway/scene_descriptor.h"
 #include "sway/tide/output.h"
 #include "sway/tree/node.h"
 #include "sway/tree/root.h"
@@ -82,4 +84,46 @@ bool tide_output_power(int argc, char **argv, struct cmd_results **result) {
 		*result = cmd_results_new(CMD_SUCCESS, NULL);
 	}
 	return true;
+}
+
+static json_object *rect(int x, int y, int width, int height) {
+	json_object *r = json_object_new_object();
+	json_object_object_add(r, "x", json_object_new_int(x));
+	json_object_object_add(r, "y", json_object_new_int(y));
+	json_object_object_add(r, "width", json_object_new_int(width));
+	json_object_object_add(r, "height", json_object_new_int(height));
+	return r;
+}
+
+static void describe_tree(struct sway_output *output, struct wlr_scene_tree *tree,
+		const char *name, json_object *layers) {
+	struct wlr_scene_node *node;
+	wl_list_for_each(node, &tree->children, link) {
+		struct sway_layer_surface *surface = scene_descriptor_try_get(node,
+			SWAY_SCENE_DESC_LAYER_SHELL);
+		if (!surface || !surface->layer_surface->surface->mapped) {
+			continue;
+		}
+		struct wlr_layer_surface_v1 *layer = surface->layer_surface;
+		json_object *o = json_object_new_object();
+		json_object_object_add(o, "namespace", json_object_new_string(layer->namespace));
+		json_object_object_add(o, "layer", json_object_new_string(name));
+		json_object_object_add(o, "exclusive_zone",
+			json_object_new_int(layer->current.exclusive_zone));
+		json_object_object_add(o, "rect", rect(output->lx + node->x, output->ly + node->y,
+			(int)layer->current.actual_width, (int)layer->current.actual_height));
+		json_object_array_add(layers, o);
+	}
+}
+
+void tide_output_describe_layers(struct sway_output *output, json_object *object) {
+	json_object *layers = json_object_new_array();
+	describe_tree(output, output->layers.shell_background, "background", layers);
+	describe_tree(output, output->layers.shell_bottom, "bottom", layers);
+	describe_tree(output, output->layers.shell_top, "top", layers);
+	describe_tree(output, output->layers.shell_overlay, "overlay", layers);
+	json_object_object_add(object, "layers", layers);
+	struct wlr_box *a = &output->usable_area;
+	json_object_object_add(object, "window_area",
+		rect(output->lx + a->x, output->ly + a->y, a->width, a->height));
 }

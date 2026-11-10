@@ -253,6 +253,15 @@ following properties:
 |- hdr
 :  boolean
 :  Whether HDR is enabled
+|- layers
+:  array
+:  tidesway's: the output's mapped layer surfaces, from the bottom layer up,
+   each with _namespace_, _layer_ ("background", "bottom", "top" or
+   "overlay"), _exclusive\_zone_ and _rect_
+|- window_area
+:  object
+:  tidesway's: the part of _rect_ left for windows once layer surfaces have
+   taken their exclusive zones
 
 
 *Example Reply:*
