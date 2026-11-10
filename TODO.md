@@ -134,6 +134,11 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **floating_modifier resizes by the corner** (2026-11-10): the modifier and
+  the resize button resize a floating window by its bottom right corner,
+  which the pointer jumps to, as tidewm's and dwl's do, where sway resized
+  by the corner nearest the pointer. The harness's config has
+  `floating_modifier Mod1`, as tidewm's built-in mouse does.
 - **No events before a window's new one** (2026-11-10): a window's `new`
   event now comes once its `for_window` rules have run and it has its place,
   as tidewm sends it, and the events its rules would cause before then

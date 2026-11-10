@@ -9,6 +9,7 @@ this checkout, where `meson setup build && ninja -C build` puts it.
 """
 
 import os
+import re
 import shlex
 import sys
 
@@ -32,6 +33,21 @@ def parse(argv):
     return config, startup
 
 
+MOUSE = re.compile(r"^\s*(floating_modifier\b|bind(sym|code)\b.*(--whole-window|\bbutton\d))",
+                   re.MULTILINE)
+
+
+def says_what_the_mouse_does(config):
+    """Whether the config file says what the mouse does, by a
+    floating_modifier line or a button's binding, as tidewm reads it: then
+    tidewm's built-in mouse is out"""
+    try:
+        with open(config) as f:
+            return bool(MOUSE.search(f.read()))
+    except OSError:
+        return False
+
+
 def main(argv):
     config, startup = parse(argv)
     if config is None:
@@ -49,6 +65,11 @@ def main(argv):
     base = os.path.join(state, "sway.conf")
     with open(base, "w") as f, open(os.path.join(HERE, "look.conf")) as look:
         f.write(look.read())
+        if not says_what_the_mouse_does(config):
+            # tidewm's built-in mouse, which a config file saying what the
+            # mouse does replaces: Alt and the left button drag a floating
+            # window, and Alt and the right one resize it
+            f.write("floating_modifier Mod1 normal\n")
         # Included by path, not copied, so a test that writes its config
         # later and reloads gets it. sway skips an include that's missing.
         f.write(f"include {shlex.quote(config)}\n")

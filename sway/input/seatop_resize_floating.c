@@ -193,3 +193,18 @@ void seatop_begin_resize_floating(struct sway_seat *seat,
 	cursor_set_image(seat->cursor, image, NULL);
 	wlr_seat_pointer_notify_clear_focus(seat->wlr_seat);
 }
+
+void seatop_begin_resize_floating_corner(struct sway_seat *seat,
+		struct sway_container *con) {
+	double x = con->pending.x + con->pending.width;
+	double y = con->pending.y + con->pending.height;
+	seatop_begin_resize_floating(seat, con, WLR_EDGE_RIGHT | WLR_EDGE_BOTTOM);
+	// tide: from its corner, where the pointer jumps to as near as it can,
+	// so the corner ends where the pointer does, as tidewm's and dwl's
+	if (seat->seatop_impl == &seatop_impl) {
+		struct seatop_resize_floating_event *e = seat->seatop_data;
+		e->ref_lx = x;
+		e->ref_ly = y;
+		wlr_cursor_warp_closest(seat->cursor->cursor, NULL, x, y);
+	}
+}
