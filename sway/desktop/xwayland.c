@@ -19,6 +19,7 @@
 #include "sway/tree/container.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/xwayland.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
 
@@ -136,6 +137,7 @@ static void unmanaged_handle_associate(struct wl_listener *listener, void *data)
 	surface->map.notify = unmanaged_handle_map;
 	wl_signal_add(&xsurface->surface->events.unmap, &surface->unmap);
 	surface->unmap.notify = unmanaged_handle_unmap;
+	tide_xwayland_paired(xsurface); // tide: X events the pairing left waiting
 }
 
 static void unmanaged_handle_dissociate(struct wl_listener *listener, void *data) {
@@ -786,6 +788,7 @@ static void handle_associate(struct wl_listener *listener, void *data) {
 	xwayland_view->unmap.notify = handle_unmap;
 	wl_signal_add(&xsurface->surface->events.map, &xwayland_view->map);
 	xwayland_view->map.notify = handle_map;
+	tide_xwayland_paired(xsurface); // tide: X events the pairing left waiting
 }
 
 static void handle_dissociate(struct wl_listener *listener, void *data) {

@@ -36,8 +36,8 @@ this order, one PR each; each makes more of tidewm's suite pass.
 
 `tests/tidewm-harness/passing.txt` is the baseline CI holds tidesway to: the 341
 tests that pass on main (2026-11-09, `9612edaf`, tidewm main at `1f47ac2`), less
-the 9 in `flaky.txt`, and since then `GrantTest`'s grant on a workspace, once its
-crash was fixed. A PR that makes a test pass for good adds it there. CI runs
+the 9 then in `flaky.txt`, and since then `GrantTest`'s grant on a workspace, once
+its crash was fixed, and each test a later PR made pass. A PR that makes a test pass for good adds it there. CI runs
 tidewm's suite at the commit `ci.yml`'s `TIDEWM_REF` pins, `1f47ac2`, so tidewm's
 changes reach it only through a PR that moves the pin and updates the lists.
 
@@ -150,7 +150,9 @@ Each patch's PR says how far it moves this.
   five X11 first-map timeouts, `FollowTest`'s dialog stacking, `HeldCloseTest`
   (above, tidesway#7), and two seen once each with no known cause (`GrantTest`'s
   closed IPC connection, `TwoMonitorsTest`'s resize). `GrantTest`'s was a crash,
-  since fixed, and it's back in `passing.txt`.
+  since fixed, and it's back in `passing.txt`. By 2026-11-10 each had its cause
+  fixed and moved to `passing.txt`, leaving `flaky.txt` empty: the X11 ones
+  were two races in wlroots (`sway/tide/xwayland.c`).
 - **`passing.txt` by hand** (2026-11-09): nothing rewrites it. The PR that makes a
   test pass adds it, from the "Newly passing" list in the `test` job's summary,
   so each addition is reviewed. tidewm is pinned (`TIDEWM_REF` in `ci.yml`), so

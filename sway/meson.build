@@ -249,6 +249,7 @@ sway_deps = [
 
 if wlroots_features['xwayland']
 	sway_sources += 'desktop/xwayland.c'
+	sway_sources += 'tide/xwayland.c'
 endif
 
 if wlroots_features['libinput_backend']

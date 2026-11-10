@@ -17,7 +17,10 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
 * tide's workspaces, which span every monitor: each output shows its own part
   of the current one, and they all switch together, with tidewm's `persist`
   and `unpersist` commands and its workspace IPC (`man 5 sway`, "TIDE'S
-  WORKSPACES").
+  WORKSPACES");
+* fixes for what tide hit in sway: a floating window's dialogs stay above it,
+  and an X11 window always shows up, past two races in wlroots that could
+  leave one unmapped.
 
 How it compares with tidewm, in latency, flicker and tidewm's tests, is in
 [MEASUREMENTS.md](MEASUREMENTS.md).
