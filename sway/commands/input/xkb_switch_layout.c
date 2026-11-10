@@ -111,6 +111,14 @@ struct cmd_results *input_cmd_xkb_switch_layout(int argc, char **argv) {
 			action->layout = get_layout_relative(action->keyboard, relative);
 		} else {
 			action->layout = layout;
+			// tide: an index past its layouts fails, as in tidewm
+			xkb_layout_index_t nlayouts = xkb_keymap_num_layouts(keyboard->keymap);
+			if ((xkb_layout_index_t)layout >= nlayouts) {
+				free(actions);
+				return cmd_results_new(CMD_FAILURE,
+					"input %s: xkb_switch_layout %d: its keymap has %u layouts",
+					ic->identifier, layout, nlayouts);
+			}
 		}
 	}
 

@@ -37,9 +37,11 @@ this order, one PR each; each makes more of tidewm's suite pass.
   only Xwayland sees, giving each output's box spread by the largest scale; X11
   configures and input points translated to and from those boxes; and the scene
   showing an X11 buffer one pixel to one. 8 of tidewm's tests (`test_xwayland`).
-- **Input lines in tidewm's words**. The input command failing when no device
-  matches, an unknown `type:`, `xkb_switch_layout` past the keymap's layouts, and
-  XKB's errors as "XKB can't make a keymap of its xkb_ settings".
+- ~~**Input lines in tidewm's words**~~. Done: the input command failing when no
+  device matches, an unknown `type:`, `xkb_switch_layout` past the keymap's
+  layouts, and XKB's errors as "XKB can't make a keymap of its xkb_ settings".
+  Still sway's: a keymap that fails only once a later line merges into it is
+  blamed on that later line, not on the line that set its layout as tidewm's is.
 
 ## Baseline
 
@@ -251,3 +253,9 @@ Each patch's PR says how far it moves this.
   so each addition is reviewed. tidewm is pinned (`TIDEWM_REF` in `ci.yml`), so
   a test it renames or removes fails the gate as missing only in the PR that
   moves the pin, which updates the list.
+- **Input lines checked as tidewm checks them** (2026-11-10): an on or off input
+  setting such as `tap` takes only what sway's `parse_boolean` reads, so `tap
+  maybe`, which sway took as off, fails. An input line in the config file with a
+  quote it doesn't close fails. The `input` command over IPC fails when no device
+  matches, as tidewm's does, where sway kept it for a device that came later; the
+  config file's lines still wait for one.

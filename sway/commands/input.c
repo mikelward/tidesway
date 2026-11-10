@@ -5,6 +5,7 @@
 #include "sway/input/keyboard.h"
 #include "log.h"
 #include "stringop.h"
+#include "sway/tide/inputcheck.h"
 
 // must be in order for the bsearch
 static const struct cmd_handler input_handlers[] = {
@@ -49,9 +50,19 @@ static const struct cmd_handler input_config_handlers[] = {
 	{ "xkb_numlock", input_cmd_xkb_numlock },
 };
 
+// tide: whether setting is an input line's
+static bool is_setting(const char *setting) {
+	return find_handler(setting, input_handlers, sizeof(input_handlers))
+		|| find_handler(setting, input_config_handlers, sizeof(input_config_handlers));
+}
+
 struct cmd_results *cmd_input(int argc, char **argv) {
 	struct cmd_results *error = NULL;
-	if ((error = checkarg(argc, "input", EXPECTED_AT_LEAST, 2))) {
+	// tide: checked as tidewm checks it, in its words
+	if ((error = tide_input_check(argc, argv, is_setting))) {
+		return error;
+	}
+	if (!config->reading && (error = tide_input_unmatched(argv[0]))) {
 		return error;
 	}
 
@@ -88,8 +99,12 @@ struct cmd_results *cmd_input(int argc, char **argv) {
 			if (res) {
 				free_cmd_results(res);
 			}
-			res = cmd_results_new(CMD_FAILURE, "Failed to compile keymap: %s",
-					error ? error : "(details unavailable)");
+			// tide: in tidewm's words, XKB's own in the log
+			sway_log(SWAY_ERROR, "Failed to compile keymap: %s",
+				error ? error : "(details unavailable)");
+			res = config->reading ? cmd_results_new(CMD_FAILURE,
+					"input %s: XKB can't make a keymap of its xkb_ settings", argv[0])
+				: cmd_results_new(CMD_FAILURE, "XKB can't make a keymap of those settings");
 			free(error);
 			return res;
 		}

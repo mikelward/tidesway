@@ -23,6 +23,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/tide/configinfo.h"
+#include "sway/tide/inputcheck.h"
 #include "sway/tide/names.h"
 #include "sway/criteria.h"
 #include "sway/desktop/transaction.h"
@@ -844,6 +845,7 @@ bool read_config(FILE *file, struct sway_config *config,
 		config->current_config_line = line;
 		struct cmd_results *res;
 		char *new_block = NULL;
+		char name_error[256]; // tide
 		if (block && strcmp(block, "<commands>") == 0) {
 			// Special case
 			res = config_commands_command(expanded);
@@ -881,6 +883,10 @@ bool read_config(FILE *file, struct sway_config *config,
 			if (block && has_prefix(block, "mode ") && has_prefix(new_block, "mode ")) {
 				block_error(line_number, "%s is still open: modes don't nest", block);
 				success = false;
+			} else if (has_prefix(new_block, "input ")
+					&& tide_input_bad_block(new_block + 6, name_error, sizeof(name_error))) {
+				block_error(line_number, "%s", name_error);
+				success = false;
 			} else if (strcmp(new_block, "mode default") == 0
 					|| strcmp(new_block, "mode \"default\"") == 0) {
 				block_error(line_number, "%sdefault is the top level, not a mode to open", "");
@@ -897,7 +903,7 @@ bool read_config(FILE *file, struct sway_config *config,
 		case CMD_BLOCK_END:
 			if (!block) {
 				sway_log(SWAY_DEBUG, "Unmatched '}' on line %i", line_number);
-				block_error(line_number, "%s} closes no mode or block", ""); // tide
+				block_error(line_number, "%s} closes no mode, input or output block", ""); // tide
 				success = false;
 				break;
 			}
