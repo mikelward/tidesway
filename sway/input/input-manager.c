@@ -11,6 +11,7 @@
 #include "sway/config.h"
 #include "sway/input/cursor.h"
 #include "sway/input/input-manager.h"
+#include "sway/tide/inputname.h"
 #include "sway/input/keyboard.h"
 #include "sway/input/libinput.h"
 #include "sway/input/seat.h"
@@ -145,7 +146,7 @@ static void apply_input_type_config(struct sway_input_device *input_device) {
 
 	for (int i = 0; i < config->input_configs->length; i++) {
 		struct input_config *ic = config->input_configs->items[i];
-		if (strcmp(input_device->identifier, ic->identifier) == 0) {
+		if (tide_input_named(input_device, ic->identifier)) { // tide: or its Hyprland name
 			struct input_config *current = new_input_config(ic->identifier);
 			merge_input_config(current, type_config);
 			merge_input_config(current, ic);
@@ -196,6 +197,8 @@ void input_manager_verify_fallback_seat(void) {
 	}
 }
 
+static void renamed_namesakes(struct sway_input_device *device);
+
 static void handle_device_destroy(struct wl_listener *listener, void *data) {
 	struct wlr_input_device *device = data;
 
@@ -217,6 +220,7 @@ static void handle_device_destroy(struct wl_listener *listener, void *data) {
 
 	wl_list_remove(&input_device->link);
 	wl_list_remove(&input_device->device_destroy.link);
+	renamed_namesakes(input_device); // tide
 	free(input_device->identifier);
 	free(input_device);
 }
@@ -288,6 +292,8 @@ static void handle_new_input(struct wl_listener *listener, void *data) {
 	if (config_changed) {
 		ipc_event_input("libinput_config", input_device);
 	}
+
+	renamed_namesakes(input_device); // tide
 }
 
 static void handle_keyboard_shortcuts_inhibitor_destroy(
@@ -393,6 +399,7 @@ void handle_virtual_keyboard(struct wl_listener *listener, void *data) {
 	input_device->device_destroy.notify = handle_device_destroy;
 
 	seat_add_device(seat, input_device);
+	renamed_namesakes(input_device); // tide
 }
 
 void handle_virtual_pointer(struct wl_listener *listener, void *data) {
@@ -430,6 +437,7 @@ void handle_virtual_pointer(struct wl_listener *listener, void *data) {
 		wlr_cursor_map_input_to_output(seat->cursor->cursor, device,
 			event->suggested_output);
 	}
+	renamed_namesakes(input_device); // tide
 }
 
 static void handle_transient_seat_manager_create_seat(
@@ -565,6 +573,19 @@ static void input_manager_configure_input(
 	}
 }
 
+/* tide: device came or went, so others of its name have other Hyprland
+ * names now, and take those names' settings */
+static void renamed_namesakes(struct sway_input_device *device) {
+	struct sway_input_device *other;
+	wl_list_for_each(other, &server.input->devices, link) {
+		if (other != device && tide_input_namesakes(other, device)) {
+			apply_input_type_config(other);
+			input_manager_reset_input(other);
+			input_manager_configure_input(other);
+		}
+	}
+}
+
 void input_manager_configure_all_input_mappings(void) {
 	struct sway_input_device *input_device;
 	wl_list_for_each(input_device, &server.input->devices, link) {
@@ -589,7 +610,7 @@ void input_manager_apply_input_config(struct input_config *input_config) {
 	wl_list_for_each(input_device, &server.input->devices, link) {
 		bool type_matches = type_wildcard &&
 			strcmp(input_device_get_type(input_device), input_config->identifier + 5) == 0;
-		if (strcmp(input_device->identifier, input_config->identifier) == 0
+		if (tide_input_named(input_device, input_config->identifier) // tide
 				|| wildcard
 				|| type_matches) {
 			input_manager_configure_input(input_device);
@@ -714,7 +735,7 @@ struct input_config *input_device_get_config(struct sway_input_device *device) {
 	struct input_config *input_config = NULL;
 	for (int i = 0; i < config->input_configs->length; ++i) {
 		input_config = config->input_configs->items[i];
-		if (strcmp(input_config->identifier, device->identifier) == 0) {
+		if (tide_input_named(device, input_config->identifier)) { // tide
 			return input_config;
 		} else if (strcmp(input_config->identifier, "*") == 0) {
 			wildcard_config = input_config;
