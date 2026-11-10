@@ -125,18 +125,15 @@ Each patch's PR says how far it moves this.
   workspace on the first output left, as new windows go there, tiled or
   floating, each with a `move` window event. sway would move its whole
   workspaces over.
-- **Known flaky: `test_focus.HeldCloseTest`** (2026-11-09):
-  `test_a_held_window_under_the_pointer_waits_when_the_focused_one_closes`
-  fails now and then (4 of 15 CI runs on #6's branch, 0 of about 25 before).
-  The pointer jumps onto the held window with no time, which tidewm's focus
-  doesn't follow and sway's `focus_follows_mouse` does, so it focuses the
-  held window whenever that window is already on screen when the pointer
-  lands. The test passes only when the pointer lands while sway still
-  shows the old layout, before the window's transaction applies. It's not
-  #5's fallback for an undrawn place: the held window's first 100x100
-  buffer already covers the point. Fixing it means focus not following a
-  motion with no time, as in tidewm; that changes sway's behavior, so it's
-  left for review.
+- **Focus doesn't follow a jump** (2026-11-10): a pointer motion with no
+  time, as a virtual pointer's, moves the pointer without
+  `focus_follows_mouse` focusing what it lands on, as in tidewm, and the
+  next motion over a window focuses it. tidewm's tests jump the pointer so;
+  in sway the jump focused a held window under it
+  (`test_focus.HeldCloseTest`, tidesway#7) and the output under it, so a
+  drag there started on the wrong output (`test_split.TwoMonitorsTest`).
+  Both were flaky. It changes sway's behavior for tools such as `wlrctl`
+  that send no time.
 - **Flaky tests** (2026-11-09): a test that passes and fails on the same code goes
   in `tests/tidewm-harness/flaky.txt` with a reason, and never fails CI, rather
   than being retried. The 9 put there each flipped in 12 CI runs of main's code

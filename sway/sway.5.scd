@@ -727,7 +727,9 @@ The default colors are:
 *focus_follows_mouse* yes|no|always
 	If set to _yes_, moving your mouse over a window will focus that window. If
 	set to _always_, the window under the cursor will always be focused, even
-	after switching between workspaces.
+	after switching between workspaces. In tidesway, as in tidewm, a jump of
+	the pointer with no time, as a virtual pointer's, doesn't focus; the next
+	move over a window does.
 
 *focus_on_window_activation* smart|urgent|focus|none
 	This option determines what to do when a client requests window activation.
