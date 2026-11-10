@@ -183,6 +183,16 @@ void tide_maximize_unmapped(struct sway_view *view) {
 	view->tide.maximized = false;
 }
 
+void tide_maximize_mapped(struct sway_view *view) {
+	if (view->type != SWAY_VIEW_XDG_SHELL) {
+		return;
+	}
+	struct wlr_xdg_toplevel *toplevel = view->wlr_xdg_toplevel;
+	if (toplevel->scheduled.maximized || toplevel->current.maximized) {
+		tell(view, false);
+	}
+}
+
 void tide_maximize_describe(struct sway_container *con, json_object *object) {
 	if (con->view) {
 		json_object_object_add(object, "maximized",

@@ -44,6 +44,8 @@ void tide_maximize_opening(struct sway_view *view);
 
 // view_unmap's: a window that maps again is a new one, not maximized
 void tide_maximize_unmapped(struct sway_view *view);
+// Tells a window that maps again that it isn't maximized
+void tide_maximize_mapped(struct sway_view *view);
 
 // GET_TREE's maximized
 void tide_maximize_describe(struct sway_container *con, json_object *object);
