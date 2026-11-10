@@ -162,6 +162,7 @@ sway_cmd cmd_layout;
 sway_cmd cmd_default_layout;
 sway_cmd cmd_dim;
 sway_cmd cmd_dim_inactive;
+sway_cmd cmd_xwayland_scaling;
 sway_cmd cmd_focus_guard;
 sway_cmd cmd_grant;
 sway_cmd cmd_layout_cycle;

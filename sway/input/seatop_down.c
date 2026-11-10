@@ -6,6 +6,7 @@
 #include "sway/input/seat.h"
 #include "sway/tree/view.h"
 #include "sway/desktop/transaction.h"
+#include "sway/tide/x11scale.h"
 #include "log.h"
 
 struct seatop_touch_point_event {
@@ -25,6 +26,16 @@ struct seatop_down_event {
 	struct wl_list point_events;   // seatop_touch_point_event::link
 };
 
+/* tide: a move in the layout, in surface's own pixels, as its point was
+ * found: an X11 window's, with xwayland_scaling disable (x11scale.h) */
+static void in_pixels(struct wlr_surface *surface, double *dx, double *dy) {
+#if WLR_HAS_XWAYLAND
+	double s = tide_x11_surface_scale(surface);
+	*dx *= s;
+	*dy *= s;
+#endif
+}
+
 static void handle_touch_motion(struct sway_seat *seat,
 		struct wlr_touch_motion_event *event, double lx, double ly) {
 	struct seatop_down_event *e = seat->seatop_data;
@@ -43,6 +54,7 @@ static void handle_touch_motion(struct sway_seat *seat,
 
 	double moved_x = lx - point_event->ref_lx;
 	double moved_y = ly - point_event->ref_ly;
+	in_pixels(e->surface, &moved_x, &moved_y); // tide
 	double sx = point_event->ref_con_lx + moved_x;
 	double sy = point_event->ref_con_ly + moved_y;
 
@@ -163,6 +175,7 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 	if (seat_is_input_allowed(seat, pressed ? pressed : e->surface)) {
 		double moved_x = seat->cursor->cursor->x - e->ref_lx;
 		double moved_y = seat->cursor->cursor->y - e->ref_ly;
+		in_pixels(pressed ? pressed : e->surface, &moved_x, &moved_y); // tide
 		double sx = e->ref_con_lx + moved_x;
 		double sy = e->ref_con_ly + moved_y;
 		wlr_seat_pointer_notify_motion(seat->wlr_seat, time_msec, sx, sy);
@@ -186,6 +199,7 @@ static void handle_tablet_tool_motion(struct sway_seat *seat,
 	if (seat_is_input_allowed(seat, pressed ? pressed : e->surface)) {
 		double moved_x = seat->cursor->cursor->x - e->ref_lx;
 		double moved_y = seat->cursor->cursor->y - e->ref_ly;
+		in_pixels(pressed ? pressed : e->surface, &moved_x, &moved_y); // tide
 		double sx = e->ref_con_lx + moved_x;
 		double sy = e->ref_con_ly + moved_y;
 		wlr_tablet_v2_tablet_tool_notify_motion(tool->tablet_v2_tool, sx, sy);

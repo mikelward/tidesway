@@ -31,12 +31,16 @@ this order, one PR each; each makes more of tidewm's suite pass.
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
   past `1.12`. Why this can't sync as tidewm does: tide's `docs/dwl-vs-sway.md`.
-- **X11 at a fractional scale**. tidewm's `xwayland_scaling disable` (tide's SPEC
-  §17, Hyprland's `xwayland:force_zero_scaling`): X11 windows in their outputs' own
-  pixels, so they're sharp. As tidewm's `x11.h` does it: a zxdg_output_manager_v1
-  only Xwayland sees, giving each output's box spread by the largest scale; X11
-  configures and input points translated to and from those boxes; and the scene
-  showing an X11 buffer one pixel to one. 8 of tidewm's tests (`test_xwayland`).
+- ~~**X11 at a fractional scale**~~. Done: tidewm's `xwayland_scaling disable`
+  (tide's SPEC §17, Hyprland's `xwayland:force_zero_scaling`), as tidewm's `x11.h`
+  does it: a zxdg_output_manager_v1 only Xwayland sees, giving each output's box
+  spread by the largest scale; X11 configures and input points translated to and
+  from those boxes; and the scene showing an X11 buffer one pixel to one. Of
+  tidewm's `test_xwayland`, four can't pass here: two assume tidewm's 1px
+  borders, which tide's look has none of; one reads GET_CONFIG, which the
+  harness's wrapper config can't give; and a drag over another window loses its
+  press to Xwayland (see *Decisions needing review*). tidesway's own
+  `test_tide_x11.py` covers the first two and the drag for tidesway.
 - ~~**Input lines in tidewm's words**~~. Done: the input command failing when no
   device matches, an unknown `type:`, `xkb_switch_layout` past the keymap's
   layouts, and XKB's errors as "XKB can't make a keymap of its xkb_ settings".
@@ -259,3 +263,18 @@ Each patch's PR says how far it moves this.
   quote it doesn't close fails. The `input` command over IPC fails when no device
   matches, as tidewm's does, where sway kept it for a device that came later; the
   config file's lines still wait for one.
+- **X11 windows open within their size hints** (2026-11-10): an X11 window
+  opens at the size its hints allow, as in tidewm, where sway opened a window
+  that asks for a minimum bigger than it is at its own size.
+- **X11 drags in tidewm's tests** (2026-11-10): sway moves the pointer to the
+  window under it as a button comes up, as it always has. Xwayland handles its
+  input later, so when a test presses, drags onto another window and releases
+  in one burst, the press goes nowhere. Input from a person comes spread out in
+  time, so it isn't lost; tidewm's `test_a_drag_out_of_an_x11_window_stays_in_its_pixels`
+  stays failing rather than tidesway's pointer focus changing.
+- **Only floating X11 windows keep their pixels** (2026-11-10): with
+  `xwayland_scaling disable`, a floating X11 window keeps its pixel size on an
+  output of another scale. Windows in a floating split are laid out within it as
+  tiles are, so like tiled ones they take the layout's size there, as in tidewm,
+  which has no floating splits; a split may hold Wayland windows too, whose
+  pixels follow the output's scale.

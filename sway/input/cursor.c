@@ -32,6 +32,7 @@
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
+#include "sway/tide/x11scale.h"
 #include "wlr-layer-shell-unstable-v1-protocol.h"
 
 /**
@@ -319,14 +320,19 @@ void pointer_motion(struct sway_cursor *cursor, uint32_t time_msec,
 			return;
 		}
 
+		// tide: sx, sy and the region are in an X11 window's pixels (x11scale.h)
+		double s = 1;
+#if WLR_HAS_XWAYLAND
+		s = tide_x11_surface_scale(surface);
+#endif
 		double sx_confined, sy_confined;
-		if (!wlr_region_confine(&cursor->confine, sx, sy, sx + dx, sy + dy,
+		if (!wlr_region_confine(&cursor->confine, sx, sy, sx + dx * s, sy + dy * s,
 				&sx_confined, &sy_confined)) {
 			return;
 		}
 
-		dx = sx_confined - sx;
-		dy = sy_confined - sy;
+		dx = (sx_confined - sx) / s;
+		dy = (sy_confined - sy) / s;
 	}
 
 	wlr_cursor_move(cursor->cursor, device, dx, dy);
@@ -840,9 +846,14 @@ static void check_constraint_region(struct sway_cursor *cursor) {
 		cursor->active_confine_requires_warp = false;
 
 		struct sway_container *con = view->container;
+		// tide: the region is in an X11 window's pixels (x11scale.h)
+		double s = 1;
+#if WLR_HAS_XWAYLAND
+		s = tide_x11_surface_scale(constraint->surface);
+#endif
 
-		double sx = cursor->cursor->x - con->pending.content_x + view->geometry.x;
-		double sy = cursor->cursor->y - con->pending.content_y + view->geometry.y;
+		double sx = (cursor->cursor->x - con->pending.content_x) * s + view->geometry.x;
+		double sy = (cursor->cursor->y - con->pending.content_y) * s + view->geometry.y;
 
 		if (!pixman_region32_contains_point(region,
 				floor(sx), floor(sy), NULL)) {
@@ -853,8 +864,8 @@ static void check_constraint_region(struct sway_cursor *cursor) {
 				double sy = (boxes[0].y1 + boxes[0].y2) / 2.;
 
 				wlr_cursor_warp_closest(cursor->cursor, NULL,
-					sx + con->pending.content_x - view->geometry.x,
-					sy + con->pending.content_y - view->geometry.y);
+					(sx - view->geometry.x) / s + con->pending.content_x,
+					(sy - view->geometry.y) / s + con->pending.content_y);
 
 				cursor_rebase(cursor);
 			}
@@ -1305,9 +1316,14 @@ static void warp_to_constraint_cursor_hint(struct sway_cursor *cursor) {
 		}
 
 		struct sway_container *con = view->container;
+		// tide: the hint is in an X11 window's pixels (x11scale.h)
+		double s = 1;
+#if WLR_HAS_XWAYLAND
+		s = tide_x11_surface_scale(constraint->surface);
+#endif
 
-		double lx = sx + con->pending.content_x - view->geometry.x;
-		double ly = sy + con->pending.content_y - view->geometry.y;
+		double lx = (sx - view->geometry.x) / s + con->pending.content_x;
+		double ly = (sy - view->geometry.y) / s + con->pending.content_y;
 
 		wlr_cursor_warp(cursor->cursor, NULL, lx, ly);
 

@@ -23,6 +23,7 @@
 #include "sway/server.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/root.h"
+#include "sway/tide/x11scale.h"
 #include "log.h"
 #include "util.h"
 
@@ -1137,6 +1138,8 @@ out:
 	input_manager_configure_all_input_mappings();
 	// Reconfigure the cursor images, since the scale may have changed.
 	input_manager_configure_xcursor();
+	// tide: Xwayland hears every output's box, now each is enabled or not
+	tide_x11_outputs_changed();
 
 	struct sway_seat *seat;
 	wl_list_for_each(seat, &server.input->seats, link) {

@@ -42,6 +42,7 @@
 #include "sway/tree/workspace.h"
 #include "sway/config.h"
 #include "sway/xdg_decoration.h"
+#include "sway/tide/x11scale.h"
 #include "stringop.h"
 
 static void handle_outputs_update(
@@ -895,6 +896,11 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		}
 	}
 
+#if WLR_HAS_XWAYLAND
+	// tide: an X11 window's size into the layout of the output it opens on
+	tide_x11_opening(view, ws ? ws->output : NULL);
+#endif
+
 	struct wlr_ext_foreign_toplevel_handle_v1_state foreign_toplevel_state = {
 		.app_id = view_get_app_id(view),
 		.title = view_get_title(view),
@@ -1109,9 +1115,15 @@ void view_center_and_clip_surface(struct sway_view *view) {
 				.width = con->current.content_width,
 				.height = con->current.content_height,
 			};
+#if WLR_HAS_XWAYLAND
+			tide_x11_clip(view, &clip); // tide: in an X11 window's pixels
+#endif
 		}
 		wlr_scene_subsurface_tree_set_clip(&con->view->content_tree->node, &clip);
 	}
+#if WLR_HAS_XWAYLAND
+	tide_x11_scale_view(view); // tide: past the clip the scene sized it to
+#endif
 }
 
 struct sway_view *view_from_wlr_surface(struct wlr_surface *wlr_surface) {

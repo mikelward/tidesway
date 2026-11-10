@@ -158,6 +158,7 @@ struct sway_xwayland_view {
 	struct wlr_scene_surface *image_capture_scene_surface;
 
 	struct wl_listener commit;
+	struct wl_listener tide_commit; // tide: after the scene's own (x11scale.h)
 	struct wl_listener request_move;
 	struct wl_listener request_resize;
 	struct wl_listener request_maximize;
@@ -186,6 +187,7 @@ struct sway_xwayland_unmanaged {
 	struct wlr_xwayland_surface *wlr_xwayland_surface;
 
 	struct wlr_scene_surface *surface_scene;
+	struct wl_listener tide_commit; // tide: after the scene's own (x11scale.h)
 
 	struct wl_listener request_activate;
 	struct wl_listener request_configure;

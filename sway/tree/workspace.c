@@ -22,6 +22,7 @@
 #include "sway/tree/node.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
+#include "sway/tide/x11scale.h"
 #include "list.h"
 #include "util.h"
 
@@ -979,6 +980,10 @@ void workspace_add_floating(struct sway_workspace *workspace,
 	con->pending.workspace = workspace;
 	container_for_each_child(con, set_workspace, NULL);
 	container_handle_fullscreen_reparent(con);
+#if WLR_HAS_XWAYLAND
+	// tide: an X11 window keeps its pixels on its new output (x11scale.h)
+	tide_x11_moved(con, workspace->output);
+#endif
 	node_set_dirty(&workspace->node);
 	node_set_dirty(&con->node);
 }
