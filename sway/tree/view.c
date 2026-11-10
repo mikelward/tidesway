@@ -1233,8 +1233,16 @@ bool view_is_visible(struct sway_view *view) {
 	return true;
 }
 
+// tide: each mark's order, so a shell can list marks most recent first
+static uint64_t urgent_marks;
+
 void view_set_urgent(struct sway_view *view, bool enable) {
 	if (view_is_urgent(view) == enable) {
+		// tide: marked again, it's the most recent mark
+		if (enable) {
+			view->tide.urgent_order = ++urgent_marks;
+			ipc_event_window(view->container, "urgent");
+		}
 		return;
 	}
 	if (enable) {
@@ -1243,9 +1251,11 @@ void view_set_urgent(struct sway_view *view, bool enable) {
 			return;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &view->urgent);
+		view->tide.urgent_order = ++urgent_marks; // tide
 		container_update_itself_and_parents(view->container);
 	} else {
 		view->urgent = (struct timespec){ 0 };
+		view->tide.urgent_order = 0; // tide
 		if (view->urgent_timer) {
 			wl_event_source_remove(view->urgent_timer);
 			view->urgent_timer = NULL;

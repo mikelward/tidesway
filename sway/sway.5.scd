@@ -925,10 +925,10 @@ The default colors are:
 	*unmark* will remove _identifier_ from the list of current marks on a
 	window. If _identifier_ is omitted, all marks are removed.
 
-*urgent* enable|disable|allow|deny
-	Using _enable_ or _disable_ manually sets or unsets the window's urgent
-	state. Using _allow_ or _deny_ controls the window's ability to set itself
-	as urgent. By default, windows are allowed to set their own urgency.
+*urgent* enable|disable
+	Marks the window urgent, as the most recent mark, even if it's marked
+	already, or takes its mark away, as tidewm does, for a shell's own marks.
+	Every window may mark itself: sway's _allow_ and _deny_ aren't supported.
 
 *workspace* [--no-auto-back-and-forth] [number] <[num:]name>
 	Switches to the specified workspace. The _num:_ portion of the name is

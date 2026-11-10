@@ -134,6 +134,11 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **No `urgent allow|deny`** (2026-11-10): `urgent` takes only `enable` and
+  `disable`, as tidewm's does, and every window may mark itself. Each mark,
+  by an activation, the guard, X11's hint coming on or `urgent enable`, is
+  the most recent, with tidewm's `urgent_order`, even on a window already
+  marked. sway's `allow` and `deny` fail.
 - **A binding's event when its command fails** (2026-11-10): a binding sends
   its binding event whether or not its command succeeds, as tidewm's does,
   where sway sent it only on success; a key bound to `kill` in a window kept

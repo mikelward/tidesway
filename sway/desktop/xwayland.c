@@ -768,6 +768,13 @@ static void handle_set_hints(struct wl_listener *listener, void *data) {
 		return;
 	}
 	const bool hints_urgency = xcb_icccm_wm_hints_get_urgency(xsurface->hints);
+	// tide: only the hint coming on marks the window, a new mark even on a
+	// marked one, and only its going off takes the mark away
+	bool was = view->tide.urgency_hint;
+	view->tide.urgency_hint = hints_urgency;
+	if (hints_urgency == was) {
+		return;
+	}
 	if (!hints_urgency && view->urgent_timer) {
 		// The view is in the timeout period. We'll ignore the request to
 		// unset urgency so that the view remains urgent until the timer clears

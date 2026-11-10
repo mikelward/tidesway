@@ -427,6 +427,10 @@ node and will have the following properties:
 :  boolean
 :  (Only windows) tidesway's: whether the window is maximized; a window event
    with the change _maximize_ says when it is or isn't
+|- urgent_order
+:  integer
+:  (Only windows) tidesway's: higher for a more recent urgency mark, 0 for a
+   window that isn't marked, so a shell can list marks most recent first
 |- keep_open
 :  boolean
 :  (Only windows) tidesway's: whether *kill* leaves the window open; window

@@ -49,6 +49,8 @@ struct tide_view {
 	bool maximized; // tide's maximize: covering its output's window area
 	double max_x, max_y, max_width, max_height; // a floating one's place before
 	char *keep_open_ws; // tide's keep_open: the workspace it's kept open on
+	uint64_t urgent_order; // higher for a more recent mark, 0 if unmarked
+	bool urgency_hint; // an X11 window's urgency hint, as last heard
 };
 
 // The config file's focus_guard lines
