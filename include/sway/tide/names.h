@@ -14,12 +14,8 @@ struct cmd_results *tide_names_bind(const char *bindtype, const char *name,
 	struct sway_binding *binding, const char *keys, bool code,
 	int flagc, char **flagv);
 
-// The rebind config line, and its error in a mode block
+// The rebind config line
 struct cmd_results *cmd_rebind(int argc, char **argv);
-struct cmd_results *tide_rebind_in_mode(int argc, char **argv);
-// An include or floating_modifier line's error in a mode block, as tidewm's
-struct cmd_results *tide_include_in_mode(int argc, char **argv);
-struct cmd_results *tide_floating_modifier_in_mode(int argc, char **argv);
 
 void tide_names_free(struct sway_config *config);
 
