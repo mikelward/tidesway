@@ -3,9 +3,8 @@
 #include "sway/tide/configinfo.h"
 
 struct cmd_results *cmd_include(int argc, char **argv) {
-	struct cmd_results *error = NULL;
-	if ((error = checkarg(argc, "include", EXPECTED_AT_LEAST, 1))) {
-		return error;
+	if (argc < 1) { // tide: in tidewm's words
+		return cmd_results_new(CMD_INVALID, "include needs a file");
 	}
 	char *files = join_args(argv, argc);
 	// tide: an included file's errors are the config's, so reload fails

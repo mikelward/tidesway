@@ -30,7 +30,8 @@ struct cmd_results *cmd_set(int argc, char **argv) {
 	}
 
 	if (argv[0][0] != '$') {
-		return cmd_results_new(CMD_INVALID, "variable '%s' must start with $", argv[0]);
+		// tide: in tidewm's words
+		return cmd_results_new(CMD_INVALID, "set needs a $name, not %s", argv[0]);
 	}
 
 	struct sway_variable *var = NULL;

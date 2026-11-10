@@ -22,6 +22,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/tide/configinfo.h"
+#include "sway/tide/names.h"
 #include "sway/criteria.h"
 #include "sway/desktop/transaction.h"
 #include "sway/server.h"
@@ -171,6 +172,7 @@ void free_config(struct sway_config *config) {
 	list_free(config->active_bar_modifiers);
 	list_free_items_and_destroy(config->config_chain);
 	tide_config_included_free(config);
+	tide_names_free(config);
 	free(config->floating_scroll_up_cmd);
 	free(config->floating_scroll_down_cmd);
 	free(config->floating_scroll_left_cmd);

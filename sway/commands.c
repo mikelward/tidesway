@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <json.h>
 #include "sway/commands.h"
+#include "sway/tide/names.h"
 #include "sway/config.h"
 #include "sway/criteria.h"
 #include "sway/input/input-manager.h"
@@ -109,6 +110,7 @@ static const struct cmd_handler config_handlers[] = {
 	{ "layout_cycle", cmd_layout_cycle }, // tide
 	{ "layout_defaults", cmd_layout_defaults }, // tide
 	{ "primary_selection", cmd_primary_selection },
+	{ "rebind", cmd_rebind }, // tide
 	{ "resize_grab", cmd_resize_grab }, // tide
 	{ "single_window", cmd_single_window }, // tide
 	{ "swaybg_command", cmd_swaybg_command },

@@ -84,6 +84,12 @@ supported. *For all replies, any properties not listed are subject to removal.*
 |- 101
 :  GET_SEATS
 :  Get the list of seats
+|- 200
+:  GET_BINDINGS
+:  tidesway's: get the config's bindings
+|- 201
+:  GET_NAMED_BINDINGS
+:  tidesway's: get the bindings the config names
 
 ## 0. RUN_COMMAND
 
@@ -1523,6 +1529,65 @@ one seat. Each object has the following properties:
 				}
 			}
 		]
+	}
+]
+```
+
+## 200. GET_BINDINGS
+
+*MESSAGE*++
+tidesway's, as tidewm's: retrieve the config's bindings, for a shell's list of
+keyboard shortcuts
+
+*REPLY*++
+An array of objects, each mode's *bindsym* and *bindcode* lines in the file's
+order, the top level's first, then the *bindswitch* lines. Each has _type_
+(_key_, _mouse_ or _switch_), _keys_ (as written, after variables, or a
+switch's _lid:on_ and the like), _command_, _mode_ (_default_ for the top
+level and every switch), _release_, _locked_, _kept\_open_ and _name_ (its
+*--name*, or an empty string)
+
+*Example Reply:*
+```
+[
+	{
+		"type": "key",
+		"keys": "Mod4+Return",
+		"command": "exec foot",
+		"mode": "default",
+		"release": false,
+		"locked": false,
+		"kept_open": false,
+		"name": "terminal"
+	}
+]
+```
+
+## 201. GET_NAMED_BINDINGS
+
+*MESSAGE*++
+tidesway's, as tidewm's: retrieve each binding the config names with
+*bindsym --name*, in the order the file first names it
+
+*REPLY*++
+An array of objects with _name_, _type_ (_key_ or _mouse_), _keys_, its keys
+now, after any *rebind* line, as GET_BINDINGS gives them, _default\_keys_, the
+ones its *bindsym* lines give it, _command_, _mode_, _release_, _locked_ and
+_kept\_open_
+
+*Example Reply:*
+```
+[
+	{
+		"name": "terminal",
+		"type": "key",
+		"keys": ["Mod4+Return"],
+		"default_keys": ["Mod4+t"],
+		"command": "exec foot",
+		"mode": "default",
+		"release": false,
+		"locked": false,
+		"kept_open": false
 	}
 ]
 ```
