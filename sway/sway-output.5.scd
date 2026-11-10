@@ -70,6 +70,12 @@ must be separated by one space. For example:
 	Note that the left x-pos of eDP1 is 1600 = 3200/2 and the bottom y-pos is
 	1020 + (1800 / 2) = 1920 = 0 + 1920
 
+*output* <name> position|pos auto|auto-right|auto-left|auto-up|auto-down
+	tidesway's, as tidewm's and Hyprland's monitor rules: places the output
+	beside the others, on that side, in the order they connected, beside
+	those put at positions and those placed before it, at 0 across. _auto_
+	is _auto-right_. It moves as the one beside it changes size or goes.
+
 *output* <name> scale <factor>
 	Scales the specified output by the specified scale _factor_. An integer is
 	recommended, but fractional values are also supported. You may be better

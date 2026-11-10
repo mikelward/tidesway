@@ -1,6 +1,7 @@
 #ifndef _SWAY_CONFIG_H
 #define _SWAY_CONFIG_H
 #include <libinput.h>
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -282,6 +283,15 @@ enum color_profile {
  *
  * This is set via the `output` command.
  */
+// tide: an output's position beside the others, as tidewm's position auto-*
+enum {
+	TIDE_POSITION_AUTO = INT_MIN + 1,
+	TIDE_POSITION_AUTO_RIGHT,
+	TIDE_POSITION_AUTO_LEFT,
+	TIDE_POSITION_AUTO_UP,
+	TIDE_POSITION_AUTO_DOWN,
+};
+
 struct output_config {
 	char *name;
 	int enabled;
@@ -290,7 +300,7 @@ struct output_config {
 	float refresh_rate;
 	int custom_mode;
 	drmModeModeInfo drm_mode;
-	int x, y;
+	int x, y; // tide: y TIDE_POSITION_AUTO, x a side, for position auto-*
 	float scale;
 	enum scale_filter_mode scale_filter;
 	int32_t transform;

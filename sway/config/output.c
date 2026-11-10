@@ -18,6 +18,7 @@
 #include "sway/layers.h"
 #include "sway/lock.h"
 #include "sway/output.h"
+#include "sway/tide/output.h"
 #include "sway/server.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/root.h"
@@ -667,7 +668,11 @@ static bool finalize_output_config(struct output_config *oc, struct sway_output 
 	}
 
 	// Find position for it
-	if (oc && oc->x != INT_MAX && oc->y != INT_MAX) {
+	// tide: beside the others, placed once every output has its config
+	output->tide_position_side = oc && oc->y == TIDE_POSITION_AUTO ? oc->x : 0;
+	if (output->tide_position_side) {
+		wlr_output_layout_add_auto(root->output_layout, wlr_output);
+	} else if (oc && oc->x != INT_MAX && oc->y != INT_MAX) {
 		sway_log(SWAY_DEBUG, "Set %s position to %d, %d", oc->name, oc->x, oc->y);
 		wlr_output_layout_add(root->output_layout, wlr_output, oc->x, oc->y);
 	} else {
@@ -1081,6 +1086,8 @@ static bool apply_resolved_output_configs(struct matched_output_config *configs,
 			cfg->output->wlr_output->name);
 		finalize_output_config(cfg->config, cfg->output, &backend_state->base, config_state);
 	}
+
+	tide_output_place_beside(); // tide: position auto-*, beside the others
 
 	// Output layout being applied in finalize_output_config can shift outputs
 	// around, so we do a second pass to update positions and arrange.
