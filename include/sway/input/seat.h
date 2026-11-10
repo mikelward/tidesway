@@ -102,6 +102,10 @@ struct sway_seat {
 	// If the exclusive layer is set, views cannot receive keyboard focus
 	bool has_exclusive_layer;
 
+	// tide: the last keyboard, or pointer, to go was a virtual one, so the
+	// seat keeps its keyboard, or pointer
+	bool tide_virtual_keyboard_left, tide_virtual_pointer_left;
+
 	// Last touch point
 	int32_t touch_id;
 	double touch_x, touch_y;

@@ -631,6 +631,16 @@ static void seat_update_capabilities(struct sway_seat *seat) {
 			break;
 		}
 	}
+	// tide: a virtual keyboard or pointer going, as wtype's does once it has
+	// typed, leaves the seat its keyboard or pointer, as tidewm's, so
+	// clients keep theirs; a real one going takes it, so they can tell none
+	// is plugged in
+	if (seat->tide_virtual_keyboard_left) {
+		caps |= previous_caps & WL_SEAT_CAPABILITY_KEYBOARD;
+	}
+	if (seat->tide_virtual_pointer_left) {
+		caps |= previous_caps & WL_SEAT_CAPABILITY_POINTER;
+	}
 
 	// Hide cursor if seat doesn't have pointer capability.
 	// We must call cursor_set_image while the wlr_seat has the capabilities
@@ -972,6 +982,11 @@ void seat_remove_device(struct sway_seat *seat,
 	sway_log(SWAY_DEBUG, "removing device %s from seat %s",
 		input_device->identifier, seat->wlr_seat->name);
 
+	if (input_device->wlr_device->type == WLR_INPUT_DEVICE_KEYBOARD) {
+		seat->tide_virtual_keyboard_left = input_device->is_virtual;
+	} else if (input_device->wlr_device->type == WLR_INPUT_DEVICE_POINTER) {
+		seat->tide_virtual_pointer_left = input_device->is_virtual;
+	}
 	seat_device_destroy(seat_device);
 
 	seat_update_capabilities(seat);

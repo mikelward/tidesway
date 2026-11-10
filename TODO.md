@@ -134,6 +134,11 @@ Each patch's PR says how far it moves this.
   size once the configures drain instead let a tile's late size in (3 of 60
   runs of `test_fullscreen.GuardTest`'s held-request test). A fix needs to
   tell a client's own size from a stale one sway sent.
+- **A virtual keyboard or pointer going leaves the seat one** (2026-11-10): the
+  seat keeps its keyboard, or pointer, when the last to go was virtual, as
+  wtype's is once it has typed, so clients keep theirs, as tidewm's seat
+  does. A real one going still takes it, so a client can tell none is
+  plugged in; tide's lock and greeter go by udev (`tide keyboards`) anyway.
 - **Focus doesn't follow a jump** (2026-11-10): a pointer motion with no
   time, as a virtual pointer's, moves the pointer without
   `focus_follows_mouse` focusing what it lands on, as in tidewm, and the
