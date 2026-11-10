@@ -1561,6 +1561,14 @@ available:
 :  layout
 :  tidesway's: sent when a workspace's tide layout changes, or a workspace is
    shown (*sway*(5), TIDE'S LAYOUTS)
+|- 0x8000001f
+:  capture
+:  tidesway's, as tidewm's: sent when a capture session over
+   ext-image-copy-capture starts or stops, as a screen share's or a
+   screenshot's: _change_ ("start" or "stop"), _source_ ("window" or
+   "output") and _con\_id_, the captured window's id, or null for an output.
+   A session stops when its client ends it or goes, or its window closes.
+   wlr-screencopy's captures send none.
 
 
 ## 0x80000000. WORKSPACE

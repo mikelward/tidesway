@@ -48,7 +48,7 @@ struct ipc_client {
 	struct wl_event_source *writable_event_source;
 	struct sway_server *server;
 	int fd;
-	enum ipc_command_type subscribed_events;
+	uint32_t subscribed_events; // tide: a mask of events, up to 31
 	size_t write_buffer_len;
 	size_t write_buffer_size;
 	char *write_buffer;
@@ -540,6 +540,21 @@ void ipc_event_layout(struct sway_workspace *ws) {
 	json_object_put(json);
 }
 
+// tide: tidewm's capture event; con_id 0 for an output's capture
+void ipc_event_capture(const char *change, size_t con_id) {
+	if (!ipc_has_event_listeners(IPC_EVENT_CAPTURE)) {
+		return;
+	}
+	sway_log(SWAY_DEBUG, "Sending capture::%s event", change);
+	json_object *json = json_object_new_object();
+	json_object_object_add(json, "change", json_object_new_string(change));
+	json_object_object_add(json, "source", json_object_new_string(con_id ? "window" : "output"));
+	json_object_object_add(json, "con_id", con_id ? json_object_new_int64((int64_t)con_id) : NULL);
+	const char *json_string = json_object_to_json_string(json);
+	ipc_send_event(json_string, IPC_EVENT_CAPTURE);
+	json_object_put(json);
+}
+
 void ipc_event_output(void) {
 	if (!ipc_has_event_listeners(IPC_EVENT_OUTPUT)) {
 		return;
@@ -801,6 +816,8 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 				client->subscribed_events |= event_mask(IPC_EVENT_INPUT);
 			} else if (strcmp(event_type, "layout") == 0) { // tide
 				client->subscribed_events |= event_mask(IPC_EVENT_LAYOUT);
+			} else if (strcmp(event_type, "capture") == 0) { // tide
+				client->subscribed_events |= event_mask(IPC_EVENT_CAPTURE);
 			} else {
 				const char msg[] = "{\"success\": false}";
 				ipc_send_reply(client, payload_type, msg, strlen(msg));

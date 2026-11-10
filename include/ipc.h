@@ -1,7 +1,7 @@
 #ifndef _SWAY_IPC_H
 #define _SWAY_IPC_H
 
-#define event_mask(ev) (1 << (ev & 0x7F))
+#define event_mask(ev) (1u << (ev & 0x7F)) // tide: unsigned, for event 31
 
 enum ipc_command_type {
 	// i3 command types - see i3's I3_REPLY_TYPE constants
@@ -39,6 +39,8 @@ enum ipc_command_type {
 
 	// tide's: a workspace's tide layout changes, or the workspace shown does
 	IPC_EVENT_LAYOUT = ((1<<31) | 30),
+	// tide's: a screen or window capture starts or stops
+	IPC_EVENT_CAPTURE = ((1<<31) | 31),
 };
 
 #endif
