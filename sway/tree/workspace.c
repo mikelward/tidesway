@@ -355,6 +355,8 @@ static bool workspace_valid_on_output(const char *output_name,
 	return false;
 }
 
+// tide: unused, as workspace_next_name names by number
+__attribute__((unused))
 static void workspace_name_from_binding(const struct sway_binding * binding,
 		const char* output_name, int *min_order, char **earliest_name) {
 	char *cmdlist = strdup(binding->command);
@@ -440,23 +442,14 @@ char *workspace_next_name(const char *output_name) {
 			output_name);
 	// Scan for available workspace names by looking through output-workspace
 	// assignments primarily, falling back to bindings and numbers.
-	struct sway_mode *mode = config->current_mode;
-
 	struct sway_output *output = output_by_name_or_id(output_name);
 	if (!output) {
 		return NULL;
 	}
 
-	int order = INT_MAX;
 	char *target = NULL;
-	for (int i = 0; i < mode->keysym_bindings->length; ++i) {
-		workspace_name_from_binding(mode->keysym_bindings->items[i],
-				output_name, &order, &target);
-	}
-	for (int i = 0; i < mode->keycode_bindings->length; ++i) {
-		workspace_name_from_binding(mode->keycode_bindings->items[i],
-				output_name, &order, &target);
-	}
+	/* tide: not a name a binding gives, so it starts on workspace 1 as
+	 * tidewm does, whatever the bindings name */
 	for (int i = 0; i < config->workspace_configs->length; ++i) {
 		// Unlike with bindings, this does not guarantee order
 		const struct workspace_config *wsc = config->workspace_configs->items[i];
