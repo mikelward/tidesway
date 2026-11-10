@@ -622,7 +622,11 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 	struct sway_node *node = node_at_coords(seat,
 			cursor->cursor->x, cursor->cursor->y, &surface, &sx, &sy);
 
-	if (config->focus_follows_mouse != FOLLOWS_NO) {
+	// tide: a motion with no time, a virtual pointer's jump, moves the
+	// pointer without focus following it, as in tidewm; the next motion
+	// with a time over a new window is what focuses it
+	bool jump = time_msec == 0;
+	if (config->focus_follows_mouse != FOLLOWS_NO && !jump) {
 		check_focus_follows_mouse(seat, e, node);
 	}
 
@@ -638,7 +642,9 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 
 	drag_icons_update_position(seat);
 
-	e->previous_node = node;
+	if (!jump) {
+		e->previous_node = node;
+	}
 }
 
 static void handle_tablet_tool_motion(struct sway_seat *seat,

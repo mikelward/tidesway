@@ -14,12 +14,3 @@ test_xwayland.TwoOutputTest.test_a_configure_request_is_in_the_pixels_of_the_win
 # The dialog is sometimes stacked under its floating parent; failed 2 of 12
 # runs on main's code.
 test_dialogs.FollowTest.test_a_dialog_stays_above_its_floating_parent
-
-# focus_follows_mouse focuses the held window when the pointer lands on it
-# after its layout applies (TODO.md, "Known flaky: test_focus.HeldCloseTest",
-# tidesway#7); failed 2 of 12 runs on main's code.
-test_focus.HeldCloseTest.test_a_held_window_under_the_pointer_waits_when_the_focused_one_closes
-
-# The drag on the unfocused monitor resized its tiles, once in 12 runs on
-# main's code; the cause isn't known yet.
-test_split.TwoMonitorsTest.test_only_on_the_focused_monitor
