@@ -147,6 +147,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "rename", cmd_rename },
 	{ "resize", cmd_resize },
 	{ "scratchpad", cmd_scratchpad },
+	{ "send_shortcut", cmd_send_shortcut }, // tide
 	{ "shortcuts_inhibitor", cmd_shortcuts_inhibitor },
 	{ "single_width", cmd_single_width }, // tide
 	{ "split", cmd_split },

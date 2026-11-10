@@ -1219,6 +1219,15 @@ windows and picture-in-picture place themselves, so theirs isn't kept.
 	A window that maps again is a new one, not kept open. Its own close
 	button still closes it.
 
+*send_shortcut* <mods>+<key>
+	Sends the window a press and release of _key_, such as _ctrl+v_, with the
+	modifiers _ctrl_, _shift_, _alt_ or _super_ held, whether or not it's
+	focused, as tidewm and Hyprland's sendshortcut do, for tide's picker to
+	paste. _key_ is a key name, sent as the key that gives it on the
+	keyboard's layout now, at its lowest level, so a shifted one, as _plus_
+	on a US keyboard, wants _shift_ too. Focus stays where it was. It fails
+	while the screen is locked.
+
 *minimize* [enable|disable|toggle]
 	Hides the window, as tidewm does: it leaves the layout, and focus on it
 	goes to the window you were in before. It stays on its workspace, which
