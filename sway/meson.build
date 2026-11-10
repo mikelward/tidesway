@@ -219,6 +219,7 @@ sway_sources = files(
 	'tide/focus.c',
 	'tide/gesture.c',
 	'tide/grab.c',
+	'tide/inputcheck.c',
 	'tide/inputname.c',
 	'tide/keepopen.c',
 	'tide/layout.c',

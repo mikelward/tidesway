@@ -29,6 +29,13 @@ try using _\*_ instead of _\<identifier\>_. If it works with the wildcard, try
 using a different identifier from *swaymsg -t get_inputs* until you find the
 correct input device.
 
+tidesway, as tidewm, checks an input line before it takes it: a _type:_ must be
+one of the types below, and each of tidewm's settings needs one value it can
+take. An on or off setting, such as *tap*, takes _enabled_, _disabled_, or a
+word that means one of them, such as _yes_ or _off_, but nothing else. In the
+config file, a quote must close. *input* sent as a command fails when no device
+matches its name, rather than waiting for one.
+
 Current available input types are:
 
 - touchpad
