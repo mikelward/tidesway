@@ -177,6 +177,9 @@ void handle_new_output(struct wl_listener *listener, void *data);
 void handle_idle_inhibitor_v1(struct wl_listener *listener, void *data);
 void handle_layer_shell_surface(struct wl_listener *listener, void *data);
 bool sway_session_lock_init(void);
+/* tide: drops a lock whose locker has gone, as tidewm's unlock command
+ * does: NULL once it's done, else why it isn't */
+const char *tide_lock_drop_abandoned(void);
 void sway_session_lock_add_output(struct sway_session_lock *lock,
 	struct sway_output *output);
 bool sway_session_lock_has_surface(struct sway_session_lock *lock,

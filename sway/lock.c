@@ -212,10 +212,8 @@ static void sway_session_lock_destroy(struct sway_session_lock* lock) {
 	free(lock);
 }
 
-static void handle_unlock(struct wl_listener *listener, void *data) {
-	struct sway_session_lock *lock = wl_container_of(listener, lock, unlock);
-	sway_log(SWAY_DEBUG, "session unlocked");
-
+// tide: the unlock, as a locker's, for tidewm's unlock command too
+static void session_unlocked(struct sway_session_lock *lock) {
 	sway_session_lock_destroy(lock);
 
 	struct sway_seat *seat;
@@ -238,6 +236,25 @@ static void handle_unlock(struct wl_listener *listener, void *data) {
 
 	// Views are now visible, so check if we need to activate inhibition again.
 	sway_idle_inhibit_v1_check_active();
+}
+
+static void handle_unlock(struct wl_listener *listener, void *data) {
+	struct sway_session_lock *lock = wl_container_of(listener, lock, unlock);
+	sway_log(SWAY_DEBUG, "session unlocked");
+	session_unlocked(lock);
+}
+
+const char *tide_lock_drop_abandoned(void) {
+	struct sway_session_lock *lock = server.session_lock.lock;
+	if (!lock) {
+		return "Nothing is locked";
+	}
+	if (!lock->abandoned) {
+		return "The screen locker holds the lock: only it may unlock";
+	}
+	sway_log(SWAY_INFO, "dropping the abandoned session lock, as asked");
+	session_unlocked(lock);
+	return NULL;
 }
 
 static void handle_abandon(struct wl_listener *listener, void *data) {

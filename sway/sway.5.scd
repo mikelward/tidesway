@@ -947,6 +947,13 @@ The default colors are:
 [--locked] [--input-device=<device>] <code>
 	is also available for unbinding with key/button codes instead of key/button names.
 
+*unlock*
+	tidesway's, as tidewm's: drops a lock whose screen locker has gone, as
+	after it crashed, showing the windows again and focusing the one you were
+	in. Until then the screen stays covered and no input reaches a window. From
+	a TTY, *swaymsg -s* _socket_ *unlock* gets you back in, keeping the
+	session. It fails while a locker holds the lock, and with nothing locked.
+
 *unmark* [<identifier>]
 	*unmark* will remove _identifier_ from the list of current marks on a
 	window. If _identifier_ is omitted, all marks are removed.

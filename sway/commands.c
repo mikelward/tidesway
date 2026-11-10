@@ -159,6 +159,7 @@ static const struct cmd_handler command_handlers[] = {
 	{ "sticky", cmd_sticky },
 	{ "swap", cmd_swap },
 	{ "title_format", cmd_title_format },
+	{ "unlock", cmd_unlock }, // tide
 	{ "unmark", cmd_unmark },
 	{ "unpersist", cmd_unpersist }, // tide
 	{ "urgent", cmd_urgent },
