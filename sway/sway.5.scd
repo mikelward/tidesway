@@ -758,6 +758,8 @@ The default colors are:
 	disables this feature. If _inverse_ is specified, left click is used for
 	resizing and right click for moving. In tidesway, as in tidewm, a floating
 	window resizes by its bottom right corner, which the pointer jumps to.
+	tidesway, as tidewm, also takes modifiers joined by _+_, as _Mod4+Shift_,
+	every one of which must be held; it can't be in a mode.
 
 *focus_follows_mouse* yes|no|always
 	If set to _yes_, moving your mouse over a window will focus that window. If

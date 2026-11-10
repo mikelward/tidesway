@@ -750,6 +750,9 @@ int workspace_output_cmp_workspace(const void *a, const void *b);
 
 void free_sway_binding(struct sway_binding *sb);
 
+// tide: whether modifiers hold all of floating_modifier's, as tidewm has it
+bool tide_floating_mod_held(uint32_t modifiers);
+
 void free_switch_binding(struct sway_switch_binding *binding);
 
 void free_gesture_binding(struct sway_gesture_binding *binding);
