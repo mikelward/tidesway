@@ -1136,6 +1136,12 @@ static void set_workspace(struct sway_seat *seat,
 	if (seat->workspace == new_ws) {
 		return;
 	}
+	// tide: tidewm's output event, as focus moves to another output
+	struct sway_output *old_output = seat->workspace ? seat->workspace->output : NULL;
+	struct sway_output *new_output = new_ws ? new_ws->output : NULL;
+	if (old_output != new_output) {
+		ipc_event_output_focus(new_output);
+	}
 
 	// tide: another output's part of it is the same workspace
 	if (seat->workspace && new_ws && seat->workspace->tide_group

@@ -434,6 +434,8 @@ json_object *ipc_json_describe_disabled_output(struct sway_output *output) {
 	json_object_object_add(object, "active", json_object_new_boolean(false));
 	json_object_object_add(object, "dpms", json_object_new_boolean(false));
 	json_object_object_add(object, "power", json_object_new_boolean(false));
+	// tide: as tidewm's, a disabled output says it isn't focused too
+	json_object_object_add(object, "focused", json_object_new_boolean(false));
 
 	json_object_object_add(object, "current_workspace", NULL);
 
