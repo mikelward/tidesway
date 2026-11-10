@@ -628,6 +628,8 @@ struct sway_config {
 	struct tide_focus_config tide_focus;
 	// tide: dim_inactive, from 0, none, to 1, black
 	double tide_dim_inactive;
+	// tide: each file include lines read, with its text, for GET_CONFIG
+	list_t *tide_included;
 };
 
 /**
@@ -636,9 +638,6 @@ struct sway_config {
  */
 bool load_main_config(const char *path, bool is_active, bool validating);
 
-/* tide: the first error the last load_main_config met, as "FILE:LINE:
- * ERROR", naming an included file's own, or NULL */
-const char *config_first_error(void);
 
 /**
  * Loads an included config. Can only be used after load_main_config.

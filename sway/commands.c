@@ -406,8 +406,9 @@ struct cmd_results *config_command(char *exec, char **new_block) {
 			results = cmd_results_new(CMD_INVALID,
 				"Command '%s' is shimmed, but unimplemented", argv[0]);
 		} else {
+			// tide: in tidewm's words
 			results = cmd_results_new(CMD_INVALID,
-				"Unknown/invalid command '%s'", argv[0]);
+				"no setting is called %s", argv[0]);
 		}
 		goto cleanup;
 	}

@@ -1,6 +1,7 @@
 #include <string.h>
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/configinfo.h"
 #include "sway/ipc-server.h"
 #include "sway/server.h"
 #include "sway/tree/arrange.h"
@@ -72,10 +73,12 @@ struct cmd_results *cmd_reload(int argc, char **argv) {
 	}
 
 	if (!load_main_config(path, true, true)) {
-		// tide: the first error, naming its file and line, as tidewm's
-		const char *error = config_first_error();
-		return cmd_results_new(CMD_FAILURE, "%s",
-			error ? error : "Error(s) reloading config.");
+		// tide: the first few errors, naming their files and lines, as tidewm's
+		char *errors = tide_config_errors_summary();
+		struct cmd_results *res = cmd_results_new(CMD_FAILURE, "%s",
+			errors ? errors : "Error(s) reloading config.");
+		free(errors);
+		return res;
 	}
 
 	// The reload command frees a lot of stuff, so to avoid use-after-frees

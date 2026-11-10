@@ -1,5 +1,6 @@
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/configinfo.h"
 
 struct cmd_results *cmd_include(int argc, char **argv) {
 	struct cmd_results *error = NULL;
@@ -13,5 +14,5 @@ struct cmd_results *cmd_include(int argc, char **argv) {
 	free(files);
 
 	return loaded ? cmd_results_new(CMD_SUCCESS, NULL)
-		: cmd_results_new(CMD_FAILURE, "An included file has errors");
+		: cmd_results_new(CMD_FAILURE, "%s", TIDE_INCLUDE_FAILED);
 }
