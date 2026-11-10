@@ -325,6 +325,11 @@ void ipc_event_workspace(struct sway_workspace *old,
 }
 
 void ipc_event_window(struct sway_container *window, const char *change) {
+	// tide: a window mapping, as its rules run, has no events before its
+	// new one, which says what they did
+	if (window->view && window->view->tide.mapping) {
+		return;
+	}
 	if (!ipc_has_event_listeners(IPC_EVENT_WINDOW)) {
 		return;
 	}
