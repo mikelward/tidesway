@@ -47,6 +47,9 @@ enum expected_args {
 struct cmd_results *checkarg(int argc, const char *name,
 		enum expected_args type, int val);
 
+// tide: whether name is a command or config line, for a mode block's error
+bool tide_is_command(char *name);
+
 const struct cmd_handler *find_handler(const char *line,
 		const struct cmd_handler *cmd_handlers, size_t handlers_size);
 

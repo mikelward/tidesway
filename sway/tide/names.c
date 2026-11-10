@@ -234,17 +234,6 @@ struct cmd_results *cmd_rebind(int argc, char **argv) {
 	return res ? res : cmd_results_new(CMD_SUCCESS, NULL);
 }
 
-struct cmd_results *tide_rebind_in_mode(int argc, char **argv) {
-	return cmd_results_new(CMD_FAILURE, "rebind can't be in a mode");
-}
-
-struct cmd_results *tide_include_in_mode(int argc, char **argv) {
-	return cmd_results_new(CMD_FAILURE, "include can't be in a mode");
-}
-
-struct cmd_results *tide_floating_modifier_in_mode(int argc, char **argv) {
-	return cmd_results_new(CMD_FAILURE, "floating_modifier can't be in a mode");
-}
 
 static int by_order(const void *a, const void *b) {
 	const struct sway_binding *x = *(void * const *)a, *y = *(void * const *)b;

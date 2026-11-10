@@ -3,7 +3,6 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/ipc-server.h"
-#include "sway/tide/names.h"
 #include "list.h"
 #include "log.h"
 #include "stringop.h"
@@ -14,9 +13,6 @@ static const struct cmd_handler mode_handlers[] = {
 	{ "bindgesture", cmd_bindgesture },
 	{ "bindswitch", cmd_bindswitch },
 	{ "bindsym", cmd_bindsym },
-	{ "floating_modifier", tide_floating_modifier_in_mode }, // tide
-	{ "include", tide_include_in_mode }, // tide
-	{ "rebind", tide_rebind_in_mode }, // tide
 	{ "set", cmd_set },
 	{ "unbindcode", cmd_unbindcode },
 	{ "unbindgesture", cmd_unbindgesture },
@@ -82,6 +78,13 @@ struct cmd_results *cmd_mode(int argc, char **argv) {
 		ipc_event_mode(config->current_mode->name,
 				config->current_mode->pango);
 		return cmd_results_new(CMD_SUCCESS, NULL);
+	}
+
+	// tide: a line that isn't a mode's, but is the top level's, says so
+	if (!find_handler(argv[1], mode_handlers, sizeof(mode_handlers))
+			&& tide_is_command(argv[1])) {
+		config->current_mode = stored_mode;
+		return cmd_results_new(CMD_FAILURE, "%s can't be in a mode", argv[1]);
 	}
 
 	// Create binding

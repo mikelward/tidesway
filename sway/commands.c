@@ -203,6 +203,10 @@ static const struct cmd_handler *find_core_handler(char *line) {
 			handlers, sizeof(handlers));
 }
 
+bool tide_is_command(char *name) {
+	return find_core_handler(name) != NULL;
+}
+
 static void set_config_node(struct sway_node *node, bool node_overridden) {
 	config->handler_context.node = node;
 	config->handler_context.container = NULL;
