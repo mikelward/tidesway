@@ -1,5 +1,6 @@
 #undef _POSIX_C_SOURCE
 #define _XOPEN_SOURCE 700 // for realpath
+#include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -748,6 +749,27 @@ static char *expand_line(const char *block, const char *line, bool add_brace) {
 	return expanded;
 }
 
+/* tide: a block's error, as tidewm words it, at the line that opened or
+ * closed it, for reload and GET_CONFIG to name */
+static void block_error(int line_number, const char *fmt, const char *name) {
+	char *unquoted = strdup(name ? name : "");
+	if (unquoted) {
+		char *w = unquoted;
+		for (char *r = unquoted; *r; r++) {
+			if (*r != '"') {
+				*w++ = *r;
+			}
+		}
+		*w = '\0';
+	}
+	char *error = format_str(fmt, unquoted ? unquoted : "");
+	sway_log(SWAY_ERROR, "Error on line %i: %s (%s)", line_number,
+		error ? error : fmt, config->current_config_path);
+	tide_config_error(config->current_config_path, line_number, error ? error : fmt);
+	free(error);
+	free(unquoted);
+}
+
 bool read_config(FILE *file, struct sway_config *config,
 		struct swaynag_instance *swaynag) {
 	bool reading_main_config = false;
@@ -778,6 +800,7 @@ bool read_config(FILE *file, struct sway_config *config,
 	size_t line_size = 0;
 	ssize_t nread;
 	list_t *stack = create_list();
+	list_t *opened = create_list(); // tide: each block's line, as stack has them
 	size_t read = 0;
 	int nlines = 0;
 	while ((nread = getline_with_cont(&line, &line_size, file, &nlines)) != -1) {
@@ -850,11 +873,22 @@ bool read_config(FILE *file, struct sway_config *config,
 		case CMD_BLOCK_COMMANDS:
 			sway_log(SWAY_DEBUG, "Entering commands block");
 			list_insert(stack, 0, "<commands>");
+			list_insert(opened, 0, (void *)(intptr_t)line_number);
 			break;
 
 		case CMD_BLOCK:
+			// tide: tidewm's errors for a mode block that can't be one
+			if (block && has_prefix(block, "mode ") && has_prefix(new_block, "mode ")) {
+				block_error(line_number, "%s is still open: modes don't nest", block);
+				success = false;
+			} else if (strcmp(new_block, "mode default") == 0
+					|| strcmp(new_block, "mode \"default\"") == 0) {
+				block_error(line_number, "%sdefault is the top level, not a mode to open", "");
+				success = false;
+			}
 			sway_log(SWAY_DEBUG, "Entering block '%s'", new_block);
 			list_insert(stack, 0, strdup(new_block));
+			list_insert(opened, 0, (void *)(intptr_t)line_number);
 			if (strcmp(new_block, "bar") == 0) {
 				config->current_bar = NULL;
 			}
@@ -863,6 +897,7 @@ bool read_config(FILE *file, struct sway_config *config,
 		case CMD_BLOCK_END:
 			if (!block) {
 				sway_log(SWAY_DEBUG, "Unmatched '}' on line %i", line_number);
+				block_error(line_number, "%s} closes no mode or block", ""); // tide
 				success = false;
 				break;
 			}
@@ -872,7 +907,10 @@ bool read_config(FILE *file, struct sway_config *config,
 
 			sway_log(SWAY_DEBUG, "Exiting block '%s'", block);
 			list_del(stack, 0);
-			free(block);
+			list_del(opened, 0);
+			if (strcmp(block, "<commands>") != 0) {
+				free(block);
+			}
 			memset(&config->handler_context, 0,
 					sizeof(config->handler_context));
 		default:;
@@ -882,7 +920,17 @@ bool read_config(FILE *file, struct sway_config *config,
 		free_cmd_results(res);
 	}
 	free(line);
-	list_free_items_and_destroy(stack);
+	// tide: a block a file opens closes in it, as tidewm has it
+	for (int i = stack->length - 1; i >= 0; i--) {
+		char *open = stack->items[i];
+		if (strcmp(open, "<commands>") != 0) {
+			block_error((int)(intptr_t)opened->items[i], "%s has no }", open);
+			success = false;
+			free(open);
+		}
+	}
+	list_free(stack);
+	list_free(opened);
 	config->current_config_line_number = 0;
 	config->current_config_line = NULL;
 
