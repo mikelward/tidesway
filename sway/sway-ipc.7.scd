@@ -102,7 +102,8 @@ has the property _success_, which is a boolean indicating whether the command
 was successful. The object may also contain the properties _error_ and _parse\_error_.
 The _error_ property is a human readable error message while _parse\_error_ is a
 boolean indicating whether the reason the command failed was because the command
-was unknown or not able to be parsed.
+was unknown or not able to be parsed. tidesway, as i3 and tidewm, gives
+_parse\_error_ only when it's true.
 
 *Example Reply:*
 ```

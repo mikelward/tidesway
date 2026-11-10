@@ -539,8 +539,11 @@ char *cmd_results_to_json(list_t *res_list) {
 		json_object_object_add(root, "success",
 				json_object_new_boolean(results->status == CMD_SUCCESS));
 		if (results->error) {
-			json_object_object_add(root, "parse_error",
-					json_object_new_boolean(results->status == CMD_INVALID));
+			// tide: only when it is one, as i3 and tidewm say it
+			if (results->status == CMD_INVALID) {
+				json_object_object_add(root, "parse_error",
+						json_object_new_boolean(true));
+			}
 			json_object_object_add(
 					root, "error", json_object_new_string(results->error));
 		}
