@@ -21,6 +21,7 @@
 #include "sway/tide/dim.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/look.h"
 #include "sway/tree/root.h"
 #include "wlr-layer-shell-unstable-v1-protocol.h"
 #include <pango/pangocairo.h>
@@ -630,6 +631,8 @@ struct sway_config {
 	struct tide_focus_config tide_focus;
 	// tide: dim_inactive, from 0, none, to 1, black
 	double tide_dim_inactive;
+	// tide: corner_radius and the shadow lines
+	struct tide_look_config tide_look;
 	// tide: xwayland_scaling disable: X11 in the outputs' own pixels
 	bool tide_xwayland_unscaled;
 	// tide: each file include lines read, with its text, for GET_CONFIG

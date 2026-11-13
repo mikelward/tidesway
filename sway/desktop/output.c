@@ -27,6 +27,7 @@
 #include "sway/ipc-server.h"
 #include "sway/layers.h"
 #include "sway/output.h"
+#include "sway/tide/look.h"
 #include "sway/tide/output.h"
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
@@ -224,6 +225,7 @@ void output_configure_scene(struct sway_output *output,
 		scene_descriptor_try_get(node, SWAY_SCENE_DESC_CONTAINER);
 	if (con) {
 		opacity = con->alpha;
+		tide_look_frame(con); // tide: its rounded corners, as it is now
 	}
 
 	if (node->type == WLR_SCENE_NODE_BUFFER) {
@@ -241,12 +243,14 @@ void output_configure_scene(struct sway_output *output,
 		// hack: don't call the scene setter because that will damage all outputs
 		// We don't want to damage outputs that aren't our current output that
 		// we're configuring
-		// tide: a dim layer keeps its own, as one pixel filtered fades
-		if (output && !tide_dim_is_layer(buffer)) {
+		// tide: a dim layer and a shadow keep their own, as one pixel
+		// filtered fades
+		if (output && !tide_dim_is_layer(buffer) && !tide_look_is_shadow(buffer)) {
 			buffer->filter_mode = get_scale_filter(output, buffer);
 		}
 
-		wlr_scene_buffer_set_opacity(buffer, opacity);
+		// tide: a rounded corner's strip has its window's opacity drawn in
+		wlr_scene_buffer_set_opacity(buffer, tide_look_is_strip(buffer) ? 1 : opacity);
 	} else if (node->type == WLR_SCENE_NODE_TREE) {
 		struct wlr_scene_tree *tree = wlr_scene_tree_from_node(node);
 		struct wlr_scene_node *node;
@@ -378,6 +382,8 @@ static void handle_frame(struct wl_listener *listener, void *user_data) {
 	data.msec_until_refresh = msec_until_refresh;
 	data.output = output;
 	wlr_scene_output_for_each_buffer(output->scene_output, send_frame_done_iterator, &data);
+	// tide: and to surfaces shown only in a window's rounded corners' rows
+	tide_look_frame_done(output, &data.when);
 }
 
 void update_output_manager_config(struct sway_server *server) {

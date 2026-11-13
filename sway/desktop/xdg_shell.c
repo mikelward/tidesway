@@ -13,6 +13,7 @@
 #include "sway/input/input-manager.h"
 #include "sway/input/seat.h"
 #include "sway/output.h"
+#include "sway/tide/look.h"
 #include "sway/tide/maximize.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
@@ -314,6 +315,7 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 	}
 
 	tide_dim_committed(view); // tide: video, by its content type, doesn't dim
+	tide_look_committed(view); // tide: its rounded corners show the commit
 
 	struct wlr_box *new_geo = &xdg_surface->geometry;
 	bool new_size = new_geo->width != view->geometry.width ||

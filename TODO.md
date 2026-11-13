@@ -27,6 +27,12 @@ this order, one PR each; each makes more of tidewm's suite pass.
 - ~~**Fail on regressions**~~. Done: the `test` job fails when a test in
   `tests/tidewm-harness/passing.txt` stops passing, unless `flaky.txt` lists it
   (`tests/tidewm-harness/gate`).
+- ~~**Rounded corners and shadows**~~. Done: tide's look on Hyprland, its
+  `rounding` and `shadow`. `corner_radius` rounds each window's corners, and
+  `shadows`, `shadow_blur_radius` and `shadow_color` put a soft shadow around
+  each floating one, on wlroots' own scene graph and any of its renderers
+  (`sway/tide/look.c`; *Decisions needing review* says how, and why not
+  SceneFX). Still Hyprland's alone: blur and animations.
 - **Track sway**. A weekly check of swaywm/sway: new commits on the current release
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
@@ -72,6 +78,45 @@ Each patch's PR says how far it moves this.
 
 ## Decisions needing review
 
+- **Rounded corners without SceneFX** (2026-11-13): SwayFX rounds corners
+  with SceneFX, which replaces wlroots' scene graph and renderer. SceneFX
+  0.5 builds against wlroots 0.20 and Debian testing packages it, but it
+  draws with GLES2 alone: not pixman, which tidewm's suite runs on (it needs
+  a GPU or `/dev/udmabuf`), and not Vulkan, which sway's HDR needs. sway's
+  window capture also walks wlroots' own scene graph, not SceneFX's. So
+  tidesway keeps wlroots' and draws the corners itself: a rounded window's
+  surfaces are clipped to the rows between its corners, and the rows the
+  corners are in, a strip of `corner_radius` rows at its top and its bottom,
+  are composited by wlroots' renderer into a buffer of their own, with the
+  corners cut out, smoothed in the output's pixels. A strip is drawn again
+  when a commit damages its rows, a subsurface commits, or the window's size
+  or dimming changes: two small render passes each. Not measured against
+  `MEASUREMENTS.md` yet. The pointer in a strip goes to the surface under
+  it. Any change to a subsurface of a rounded window asks for a frame, and a
+  surface wholly in them, which the scene graph has clipped out and never
+  tells of a frame, is told by the strip's output's (#18's review).
+- **Which windows stay square** (2026-11-13): a fullscreen one, as on
+  Hyprland; one with a border or title bar of sway's, which tide's look has
+  none of and which would stay square around it; a floating one that draws
+  its own corners and shadow past its geometry, as GTK's do; an X11 one in
+  its output's own pixels on a scaled output (`xwayland_scaling disable`),
+  whose surface isn't in the layout's units; one with a color description
+  (HDR), as the strips are composited as sRGB; and one narrower than two
+  radii or no taller.
+- **Corners during a resize** (2026-11-13): while sway shows a window's
+  saved buffers, waiting for its client to draw at a new size, its strips
+  stay as they were, with those buffers, and both change in the same frame.
+- **Shadows around floating windows only** (2026-11-13): Hyprland draws one
+  around every window, but with no gaps a tile's falls on its neighbors,
+  under some and over others by stacking order. tidewm's `shadows` is the
+  same, floating windows only. A window that draws its own shadow gets
+  none, nor does a fullscreen or maximized one. The falloff is Hyprland's
+  `render_power 2`, gone at `shadow_blur_radius`, tide's `range`.
+- **The look's lines** (2026-11-13): `shadows enable|disable` is tidewm's
+  (its main, `d6171f7`); `corner_radius`, `shadow_blur_radius` and
+  `shadow_color` are SwayFX's, as tidewm has none. Config file only, as
+  `dim_inactive` is. Off unless the config has
+  them, as sway looks.
 - **Release tags** (2026-11-08): `v<sway version>-tide.N`, sway's version padded to
   three parts, N the commits since `RELEASE_BASE` (sway's release commit, in
   `meson.build`): `v1.12.0-tide.1` is the first. sway tags `1.12` and `1.12.1`, with

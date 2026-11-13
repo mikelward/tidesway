@@ -65,6 +65,7 @@
 #include "sway/tide/capture.h"
 #include "sway/tide/dialog.h"
 #include "sway/tide/grab.h"
+#include "sway/tide/look.h"
 #include "sway/tree/root.h"
 #include "sway/tree/workspace.h"
 
@@ -323,6 +324,7 @@ bool server_init(struct sway_server *server) {
 		sway_log(SWAY_ERROR, "Failed to create compositor");
 		return false;
 	}
+	tide_look_init(); // tide: hears subsurfaces commit in rounded corners' rows
 
 	if (!wlr_subcompositor_create(server->wl_display)) {
 		sway_log(SWAY_ERROR, "Failed to create subcompositor");
@@ -753,6 +755,7 @@ void server_fini(struct sway_server *server) {
 	wl_list_remove(&server->xdg_toplevel_tag_manager_v1_set_tag.link);
 	wl_list_remove(&server->request_set_cursor_shape.link);
 	wl_list_remove(&server->new_foreign_toplevel_capture_request.link);
+	tide_look_fini(); // tide: its listener for new surfaces
 	wl_list_remove(&server->workspace_manager_v1_commit.link);
 	input_manager_finish(server->input);
 	tide_capture_fini(); // tide

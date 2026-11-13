@@ -160,6 +160,7 @@ sway_cmd cmd_layout;
 // focus guard's (sway/tide/focus.c), dimming's (sway/tide/dim.c) and
 // workspaces' (sway/tide/workspace.c)
 sway_cmd cmd_default_layout;
+sway_cmd cmd_corner_radius;
 sway_cmd cmd_dim;
 sway_cmd cmd_dim_inactive;
 sway_cmd cmd_xwayland_scaling;
@@ -205,6 +206,9 @@ sway_cmd cmd_resize;
 sway_cmd cmd_scratchpad;
 sway_cmd cmd_seamless_mouse;
 sway_cmd cmd_set;
+sway_cmd cmd_shadow_blur_radius;
+sway_cmd cmd_shadow_color;
+sway_cmd cmd_shadows;
 sway_cmd cmd_send_shortcut;
 sway_cmd cmd_shortcuts_inhibitor;
 sway_cmd cmd_show_marks;

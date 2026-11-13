@@ -23,6 +23,7 @@
 #include "sway/input/seat.h"
 #include "sway/server.h"
 #include "sway/tide/dim.h"
+#include "sway/tide/look.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
@@ -180,8 +181,10 @@ bool tide_dim_update(struct sway_view *view) {
 		if (layer->buffer != buffer) {
 			wlr_scene_buffer_set_buffer(layer, buffer);
 		}
-		wlr_scene_node_set_position(&layer->node, 0, 0);
-		wlr_scene_buffer_set_dest_size(layer, width, height);
+		// A rounded window's corners' rows have the dim drawn into them
+		int r = view->tide_look.radius;
+		wlr_scene_node_set_position(&layer->node, 0, r);
+		wlr_scene_buffer_set_dest_size(layer, width, height - 2 * r);
 	}
 	return on;
 }

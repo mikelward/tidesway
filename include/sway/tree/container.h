@@ -5,6 +5,7 @@
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_scene.h>
 #include "list.h"
+#include "sway/tide/look.h"
 #include "sway/tree/node.h"
 
 struct sway_view;
@@ -70,6 +71,7 @@ struct sway_container {
 	struct sway_view *view;
 
 	struct wlr_scene_tree *scene_tree;
+	struct tide_look_shadow tide_shadow; // tide: its shadow, while floating
 
 	struct {
 		struct wlr_scene_tree *tree;

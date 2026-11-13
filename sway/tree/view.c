@@ -33,6 +33,7 @@
 #include "sway/tide/dialog.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/look.h"
 #include "sway/tide/keepopen.h"
 #include "sway/tide/maximize.h"
 #include "sway/tide/minimize.h"
@@ -142,6 +143,7 @@ void view_destroy(struct sway_view *view) {
 	tide_keep_open_unmapped(view); // tide: its workspace's name
 
 	view_assign_ctx(view, NULL);
+	tide_look_view_destroy(view); // tide: its rounded corners' buffers
 	wlr_scene_node_destroy(&view->image_capture_scene->tree.node);
 	wlr_scene_node_destroy(&view->scene_tree->node);
 	if (view->impl->destroy) {
@@ -1119,6 +1121,7 @@ void view_center_and_clip_surface(struct sway_view *view) {
 			tide_x11_clip(view, &clip); // tide: in an X11 window's pixels
 #endif
 		}
+		tide_look_clip(view, &clip); // tide: less its rounded corners' rows
 		wlr_scene_subsurface_tree_set_clip(&con->view->content_tree->node, &clip);
 	}
 #if WLR_HAS_XWAYLAND

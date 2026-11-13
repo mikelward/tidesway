@@ -1323,6 +1323,35 @@ This may only be used in the configuration file:
 In IPC, a window has tidewm's _dim_, whether it dims when it isn't focused,
 and _dimmed_, whether it's dimmed now.
 
+# TIDE'S ROUNDED CORNERS AND SHADOWS
+
+With *corner\_radius* above 0, each window's corners are rounded, showing
+what's behind them, as tide's are on Hyprland. These windows stay square: a
+fullscreen one, one with a border or title bar, a floating one that draws
+its own shadow, as GTK's do, an X11 one in its output's own pixels
+(*xwayland\_scaling disable*), and one whose colors an app describes, as HDR
+video's. With *shadows enable*, each floating window has a soft shadow
+around it, as in tidewm, unless it's maximized or draws its own; tiles have
+none. Menus, tooltips and layer surfaces, such as a bar or a launcher, have
+neither.
+
+These may only be used in the configuration file:
+
+*corner\_radius* <pixels>
+	How far each corner is rounded, from 0, square, to 100; tide's is 6.
+	Without the line, corners are square.
+
+*shadows* enable|disable
+	Whether floating windows have shadows. Without the line, none do.
+
+*shadow\_blur\_radius* <pixels>
+	How far a shadow reaches past its window, from 0 to 100. The default
+	is 8.
+
+*shadow\_color* <color>
+	A shadow's color where it's darkest, by its window, as _#RRGGBB_ or
+	_#RRGGBBAA_. The default is _#00000044_.
+
 # TIDE'S WORKSPACES
 
 As in tidewm, a workspace spans every output: each output shows its own part

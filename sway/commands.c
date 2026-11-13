@@ -102,6 +102,7 @@ static const struct cmd_handler handlers[] = {
 
 /* Config-time only commands. Keep alphabetized */
 static const struct cmd_handler config_handlers[] = {
+	{ "corner_radius", cmd_corner_radius }, // tide
 	{ "default_layout", cmd_default_layout }, // tide
 	{ "default_orientation", cmd_default_orientation },
 	{ "dim_inactive", cmd_dim_inactive }, // tide
@@ -112,6 +113,9 @@ static const struct cmd_handler config_handlers[] = {
 	{ "primary_selection", cmd_primary_selection },
 	{ "rebind", cmd_rebind }, // tide
 	{ "resize_grab", cmd_resize_grab }, // tide
+	{ "shadow_blur_radius", cmd_shadow_blur_radius }, // tide
+	{ "shadow_color", cmd_shadow_color }, // tide
+	{ "shadows", cmd_shadows }, // tide
 	{ "single_window", cmd_single_window }, // tide
 	{ "swaybg_command", cmd_swaybg_command },
 	{ "swaynag_command", cmd_swaynag_command },
