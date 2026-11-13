@@ -13,6 +13,7 @@
 #include "sway/server.h"
 #include "sway/tide/dialog.h"
 #include "sway/tide/floatplace.h"
+#include "sway/tide/look.h"
 #include "sway/tide/minimize.h"
 #include "sway/tide/maximize.h"
 #include "sway/tree/container.h"
@@ -873,6 +874,7 @@ static void transaction_progress(void) {
 	transaction_apply(server.queued_transaction);
 	arrange_root(root);
 	tide_dim_update_all(); // tide: dimmed as the windows are now laid out
+	tide_look_update_all(); // tide: and shadowed
 	cursor_rebase_all();
 	transaction_destroy(server.queued_transaction);
 	server.queued_transaction = NULL;

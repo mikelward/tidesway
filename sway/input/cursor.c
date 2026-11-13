@@ -28,6 +28,7 @@
 #include "sway/server.h"
 #include "sway/desktop/transaction.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/look.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
@@ -70,6 +71,9 @@ struct sway_node *node_at_coords(
 
 			if (scene_surface) {
 				*surface = scene_surface->surface;
+			} else {
+				// tide: the rows of a window's rounded corners
+				tide_look_surface_at(scene_buffer, surface, sx, sy);
 			}
 		}
 

@@ -201,6 +201,7 @@ subdir('protocols')
 subdir('common')
 subdir('sway')
 subdir('swaymsg')
+subdir('tests/tidesway') # tide: a client its own tests need
 
 if get_option('swaybar') or get_option('swaynag')
 	subdir('client')

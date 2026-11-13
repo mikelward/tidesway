@@ -19,6 +19,7 @@
 #include "sway/tree/container.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/look.h"
 #include "sway/tide/xwayland.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
@@ -448,6 +449,8 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 	struct sway_view *view = &xwayland_view->view;
 	struct wlr_xwayland_surface *xsurface = view->wlr_xwayland_surface;
 	struct wlr_surface_state *state = &xsurface->surface->current;
+
+	tide_look_committed(view); // tide: its rounded corners show the commit
 
 	struct wlr_box new_geo = {0};
 	// tide: its pixels, in the layout (x11scale.h)
