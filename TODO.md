@@ -53,8 +53,16 @@ this order, one PR each; each makes more of tidewm's suite pass.
 tests that pass on main (2026-11-09, `9612edaf`, tidewm main at `1f47ac2`), less
 the 9 then in `flaky.txt`, and since then `GrantTest`'s grant on a workspace, once
 its crash was fixed, and each test a later PR made pass. A PR that makes a test pass for good adds it there. CI runs
-tidewm's suite at the commit `ci.yml`'s `TIDEWM_REF` pins, `1f47ac2`, so tidewm's
-changes reach it only through a PR that moves the pin and updates the lists.
+tidewm's suite at the commit `ci.yml`'s `TIDEWM_REF` pins, so tidewm's changes
+reach it only through a PR that moves the pin and updates the lists. The pin
+moved from `1f47ac2` to `e6e7c3f` on 2026-11-13: Debian testing took wtype 0.5,
+which numbers the keys it types from 2, and two of `test_inputs`' tests of a
+keyboard in its own group pressed a key by its number; `e6e7c3f` is the first
+commit whose tests press it as either wtype numbers it. Of the tests its 15
+commits added, the eight that pass went into `passing.txt`. A ninth,
+`test_capture`'s capture of a window on a workspace not shown, passed in 5
+runs of 6 and failed once with "failed buffer-constraints", so it's left out
+until that's found.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
