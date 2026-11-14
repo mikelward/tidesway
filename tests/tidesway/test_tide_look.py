@@ -265,8 +265,8 @@ class ConfigTest(LookHelpers):
         for line, error in (
                 ("corner_radius -1", "corner_radius takes a number of pixels from 0 to 100"),
                 ("corner_radius 6.5", "corner_radius takes a number of pixels from 0 to 100"),
-                ("shadows maybe", "shadows takes enable or disable"),
-                ("shadow_blur_radius far", "shadow_blur_radius takes a number of pixels from 0 to 100"),
+                ("shadows maybe", "shadows takes disable, floating, active or all"),
+                ("shadow_blur_radius far", "shadow_blur_radius takes pixels, from 0 to 100"),
                 ("shadow_color black", "shadow_color takes a color as #RRGGBB or #RRGGBBAA")):
             with self.subTest(line=line):
                 result, = self.reload(line + "\n")

@@ -18,8 +18,8 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   dim fades as focus moves, as tidewm's do (`man 5 sway`, "TIDE'S FADES");
 * tide's rounded corners and shadows, as on Hyprland: `corner_radius` rounds
   each window's corners, and `shadows` puts a soft shadow around each
-  floating one, with whichever renderer wlroots has (`man 5 sway`, "TIDE'S
-  ROUNDED CORNERS AND SHADOWS");
+  floating window, the focused window alone or every window, with whichever
+  renderer wlroots has (`man 5 sway`, "TIDE'S ROUNDED CORNERS AND SHADOWS");
 * tide's workspaces, which span every monitor: each output shows its own part
   of the current one, and they all switch together, with tidewm's `persist`
   and `unpersist` commands and its workspace IPC (`man 5 sway`, "TIDE'S

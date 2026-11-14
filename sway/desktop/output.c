@@ -257,6 +257,10 @@ void output_configure_scene(struct sway_output *output,
 		if (tide_dim_is_layer(buffer)) {
 			opacity *= tide_fade_dim_of(buffer);
 		}
+		// tide: a tile's shadow, in a tree of its own, is as its window is
+		if (tide_look_is_shadow(buffer)) {
+			opacity = tide_look_shadow_opacity(buffer, opacity);
+		}
 		// tide: a rounded corner's strip has its window's opacity drawn in
 		wlr_scene_buffer_set_opacity(buffer, tide_look_is_strip(buffer) ? 1 : opacity);
 	} else if (node->type == WLR_SCENE_NODE_TREE) {

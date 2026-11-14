@@ -30,7 +30,8 @@ this order, one PR each; each makes more of tidewm's suite pass.
 - ~~**Rounded corners and shadows**~~. Done: tide's look on Hyprland, its
   `rounding` and `shadow`. `corner_radius` rounds each window's corners, and
   `shadows`, `shadow_blur_radius` and `shadow_color` put a soft shadow around
-  each floating one, on wlroots' own scene graph and any of its renderers
+  each floating one, the focused one or them all, on wlroots' own scene graph
+  and any of its renderers
   (`sway/tide/look.c`; *Decisions needing review* says how, and why not
   SceneFX). Still Hyprland's alone: blur and animations.
 - **A tide session**. tide's shell runs on tidesway as on tidewm, from tide's
@@ -51,9 +52,10 @@ this order, one PR each; each makes more of tidewm's suite pass.
     command; the Appearance page writes `corner_radius` to
     `tidesway.d/`; and `tide-setup` builds tidesway.
 - **The color behind windows**. tidewm draws its `rootcolor`, `#222222`,
-  where no window is; tidesway shows black unless swaybg runs. Five of
-  tidewm's `test_effects` read that color, so they can't pass: its shadow
-  tests, and a window that opens dimmed fading in.
+  where no window is; tidesway shows black unless swaybg runs. Nine of
+  tidewm's `test_effects` read that color, so they can't pass: its tests
+  of a shadow on the wallpaper, and a window that opens dimmed fading in.
+  A tenth is in tidewm's floating layout, which tidesway hasn't.
 - **Track sway**. A weekly check of swaywm/sway: new commits on the current release
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
@@ -102,7 +104,11 @@ one, a fullscreen window's border, was in and passed only when the tree was
 read before the window's first frame. GET_TREE now says a fullscreen window
 has none, so it and the other pass each time, and with the fades (below) two
 of `test_effects`' do: 643. `FadeTest`'s dim fading as focus moves passed in
-one run of two, so it's out.
+one run of two, so it's out. It moved again, to tidewm's main at `1f28603`, on
+2026-11-14, with tidewm's `shadows disable|floating|active|all` and its
+`shadow` in GET_TREE: of its 800 tests, 674 are in `passing.txt`, 30 of them
+its new shadow tests. Its other 5 new ones can't pass: four read the color
+behind windows and one is in its floating layout (above).
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -140,13 +146,27 @@ Each patch's PR says how far it moves this.
 - **Corners during a resize** (2026-11-13): while sway shows a window's
   saved buffers, waiting for its client to draw at a new size, its strips
   stay as they were, with those buffers, and both change in the same frame.
-- **Shadows around floating windows only** (2026-11-13): Hyprland draws one
-  around every window, but with no gaps a tile's falls on its neighbors,
-  under some and over others by stacking order. tidewm's `shadows` is the
-  same, floating windows only. A window that draws its own shadow gets
-  none, nor does a fullscreen or maximized one. The falloff is Hyprland's
-  `render_power 2`, gone at `shadow_blur_radius`, tide's `range`.
-- **The look's lines** (2026-11-13): `shadows enable|disable` is tidewm's
+- **Which windows cast a shadow** (2026-11-14): `shadows
+  disable|floating|active|all`, tidewm's names, for tide's setting; `enable`
+  still means `floating`, which was all there was. A window that draws its
+  own shadow gets none, nor does a fullscreen or maximized one. The falloff
+  is Hyprland's `render_power 2`, gone at `shadow_blur_radius`, tide's
+  `range`.
+- **A tile's shadow** (2026-11-14): tiles touch, so one's falls on its
+  neighbors, and sway stacks tiles in the order it lays them out. So a
+  tile's shadow isn't in its window's tree, as a floating window's is, but
+  in one of two trees beside sway's tiles, below the floating windows, as
+  tidewm has them: the focused tile's over every tile, and with `all` the
+  others' under them all, where only gaps show them. Hyprland draws the
+  focused tile last to the same end. With no gaps, `all` and `active` look
+  the same but for floating windows. `active` goes by the window GET_TREE
+  calls focused: the floating container it's in, if it's in one; the tab
+  showing, with its tabs. A tile's shadow is cut off at its output's window
+  area, or a lone tile's would fall on the bar and the next output. It
+  takes its window's opacity and fade, not being in its tree.
+  GET_TREE's `shadow`, tidewm's, goes by the config and the commands so
+  far, not by what's laid out yet, so it's right as a command returns.
+- **The look's lines** (2026-11-13): `shadows` is tidewm's
   (its main, `d6171f7`); `corner_radius`, `shadow_blur_radius` and
   `shadow_color` are SwayFX's, as tidewm has none. Config file only, as
   `dim_inactive` is. Off unless the config has

@@ -1354,10 +1354,19 @@ what's behind them, as tide's are on Hyprland. These windows stay square: a
 fullscreen one, one with a border or title bar, a floating one that draws
 its own shadow, as GTK's do, an X11 one in its output's own pixels
 (*xwayland\_scaling disable*), and one whose colors an app describes, as HDR
-video's. With *shadows enable*, each floating window has a soft shadow
-around it, as in tidewm, unless it's maximized or draws its own; tiles have
-none. Menus, tooltips and layer surfaces, such as a bar or a launcher, have
-neither.
+video's. *shadows* puts a soft shadow around windows, as in tidewm: each
+floating one, the focused one alone, or all of them. A fullscreen or
+maximized window has none, nor a floating one that draws its own. Menus,
+tooltips and layer surfaces, such as a bar or a launcher, have neither.
+
+Tiles touch, so a tile's shadow falls on the tiles beside it. The focused
+tile's is over them, and goes with focus; with *shadows all* the other
+tiles' are under every tile, so they show only in the gaps between tiles,
+if there are any. Of tabbed or stacked windows, the one showing casts the
+shadow, around its tabs too. A tile's shadow stops at the edge of its
+output's window area, so none reaches a bar or the next output. A shadow
+takes no clicks and moves no window. GET_TREE and window events say whether
+a window casts one, as its _shadow_.
 
 These may only be used in the configuration file:
 
@@ -1365,8 +1374,10 @@ These may only be used in the configuration file:
 	How far each corner is rounded, from 0, square, to 100; tide's is 6.
 	Without the line, corners are square.
 
-*shadows* enable|disable
-	Whether floating windows have shadows. Without the line, none do.
+*shadows* disable|floating|active|all
+	Which windows have shadows: none, each floating window, the focused
+	window alone, whether it's tiled or floating, or every window.
+	*enable* means *floating*. Without the line, none do.
 
 *shadow\_blur\_radius* <pixels>
 	How far a shadow reaches past its window, from 0 to 100. The default
