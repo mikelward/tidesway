@@ -15,7 +15,7 @@
 #include "sway/tree/workspace.h"
 
 bool tide_kept_open(struct sway_container *con) {
-	if (!con || !con->view || !con->view->tide.keep_open_ws || con->view->tide.minimized) {
+	if (!con || !con->view || !con->view->tide.keep_open_ws) {
 		return false;
 	}
 	struct sway_workspace *ws = con->pending.workspace;
