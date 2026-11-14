@@ -23,6 +23,7 @@
 #include "sway/input/seat.h"
 #include "sway/server.h"
 #include "sway/tide/dim.h"
+#include "sway/tide/fade.h"
 #include "sway/tide/look.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -161,6 +162,8 @@ bool tide_dim_update(struct sway_view *view) {
 	if (shown && !buffer) {
 		shown = false;
 	}
+	// The dim fades to there (fade.h): while it fades out, the layer stays
+	bool fading_out = tide_fade_dim_set(view, shown) && !shown;
 	if (shown && !view->tide_dim.layer) {
 		// Last in its tree, so over its content and over the buffer saved
 		// while it resizes, which sway puts below the output handler
@@ -175,7 +178,8 @@ bool tide_dim_update(struct sway_view *view) {
 	}
 	struct wlr_scene_buffer *layer = view->tide_dim.layer;
 	if (layer) {
-		wlr_scene_node_set_enabled(&layer->node, shown);
+		wlr_scene_node_set_enabled(&layer->node,
+			shown || (fading_out && width > 0 && height > 0));
 	}
 	if (layer && shown) {
 		if (layer->buffer != buffer) {

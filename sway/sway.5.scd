@@ -1334,6 +1334,19 @@ This may only be used in the configuration file:
 In IPC, a window has tidewm's _dim_, whether it dims when it isn't focused,
 and _dimmed_, whether it's dimmed now.
 
+# TIDE'S FADES
+
+With *fade\_duration* above 0, as tidewm has it, a window fades in as it
+opens, and the dim (above) fades as focus moves, each easing out over that
+long. A window that opens dimmed has its dim fade in with it. A border or
+title bar shows at once. A reload changes no window's dim by a fade.
+
+This may only be used in the configuration file:
+
+*fade\_duration* <milliseconds>
+	How long a fade takes, from 0, at once, to 3600000; tide's is 300.
+	Without the line, nothing fades.
+
 # TIDE'S ROUNDED CORNERS AND SHADOWS
 
 With *corner\_radius* above 0, each window's corners are rounded, showing

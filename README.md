@@ -14,6 +14,8 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
 * tide's dimming: `dim_inactive` darkens every window but the one you're in,
   rather than making it see-through, with tidewm's `dim` command for windows
   that shouldn't dim (`man 5 sway`, "TIDE'S DIMMING");
+* tide's fades: with `fade_duration`, a window fades in as it opens and the
+  dim fades as focus moves, as tidewm's do (`man 5 sway`, "TIDE'S FADES");
 * tide's rounded corners and shadows, as on Hyprland: `corner_radius` rounds
   each window's corners, and `shadows` puts a soft shadow around each
   floating one, with whichever renderer wlroots has (`man 5 sway`, "TIDE'S

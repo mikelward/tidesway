@@ -19,6 +19,7 @@
 #include "tree/container.h"
 #include "sway/input/tablet.h"
 #include "sway/tide/dim.h"
+#include "sway/tide/fade.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
 #include "sway/tide/look.h"
@@ -633,6 +634,8 @@ struct sway_config {
 	struct tide_focus_config tide_focus;
 	// tide: dim_inactive, from 0, none, to 1, black
 	double tide_dim_inactive;
+	// tide: fade_duration, in milliseconds; 0, the default, is instant
+	int tide_fade_duration;
 	// tide: corner_radius and the shadow lines
 	struct tide_look_config tide_look;
 	// tide: xwayland_scaling disable: X11 in the outputs' own pixels

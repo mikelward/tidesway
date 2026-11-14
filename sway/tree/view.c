@@ -31,6 +31,7 @@
 #include "sway/server.h"
 #include "sway/sway_text_node.h"
 #include "sway/tide/dialog.h"
+#include "sway/tide/fade.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
 #include "sway/tide/look.h"
@@ -844,6 +845,7 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 		view->tide.id = view->container->node.id;
 	}
 	tide_focus_open(view); // tide: held or granted, before it's placed
+	tide_fade_opened(view); // tide: it fades in from here
 	view->tide.mapping = true; // tide: no events of its own before its new one
 
 	if (view->ctx == NULL) {

@@ -130,6 +130,7 @@ struct sway_view {
 	struct tide_view tide; // tide: the focus guard's
 	struct tide_dim_view tide_dim; // tide: its dimming
 	struct tide_look_view tide_look; // tide: its rounded corners
+	struct tide_fade_view tide_fade; // tide: its fades
 };
 
 struct sway_xdg_shell_view {
