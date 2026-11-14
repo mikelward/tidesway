@@ -4,6 +4,7 @@
 # in the pull request that makes it pass for good.
 test_borders.BadBorderTest.test_it_cant_be_in_a_mode
 test_borders.NoBorderTest.test_a_window_opens_with_no_border
+test_borders.NoBorderTest.test_a_window_out_of_fullscreen_still_has_none
 test_borders.PixelBorderTest.test_a_fullscreen_window_has_none
 test_capture.CaptureTest.test_a_capture_stops_when_its_client_goes
 test_capture.CaptureTest.test_a_stream_of_just_the_cursor_isnt_a_capture
