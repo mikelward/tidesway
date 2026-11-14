@@ -1325,6 +1325,7 @@ void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
 		seat_set_focus_surface(seat, server.session_lock.lock->focused, false);
 	}
 	tide_dim_update_all(); // tide: the window focus left dims, and its new one doesn't
+	tide_look_focused(); // tide: and the focused window's shadow goes with it
 }
 
 void seat_set_focus_container(struct sway_seat *seat,

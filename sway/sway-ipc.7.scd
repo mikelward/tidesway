@@ -431,6 +431,11 @@ node and will have the following properties:
 |- dimmed
 :  boolean
 :  (Only windows) tidesway's: whether the window is dimmed now
+|- shadow
+:  boolean
+:  (Only windows) tidesway's: whether the window casts a shadow now, as
+   *shadows* has it (*sway*(5), TIDE'S ROUNDED CORNERS AND SHADOWS), though
+   another window may be over the shadow
 |- maximized
 :  boolean
 :  (Only windows) tidesway's: whether the window is maximized; a window event

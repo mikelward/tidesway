@@ -471,6 +471,7 @@ void container_destroy(struct sway_container *con) {
 	}
 
 	scene_node_disown_children(con->content_tree);
+	tide_look_container_destroy(con); // tide: its shadow may be in another tree
 	wlr_scene_node_destroy(&con->scene_tree->node);
 	free(con);
 }

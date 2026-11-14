@@ -4,7 +4,8 @@
 /*
  * Rounded corners and shadows, tide's look on Hyprland (its hyprland.lua's
  * rounding and shadow): corner_radius rounds each window's corners, and
- * shadows puts a soft shadow around each floating one.
+ * shadows puts a soft shadow around each floating window, around the
+ * focused one, or around them all.
  *
  * wlroots' scene graph draws a buffer as a rectangle, so a rounded
  * window's surfaces are clipped to the rows between its corners, and the
@@ -12,11 +13,21 @@
  * drawn here: its surfaces composited by the renderer, whichever it is,
  * with the corners cut out, into a buffer of the strip's own. A shadow is
  * eight more buffers, its corners and edges, under the window.
+ *
+ * A floating window's shadow is in its own tree, so it falls on what's
+ * under the window. Tiles touch, so a tile's can only fall on the tiles
+ * beside it, and sway stacks those in the order it lays them out. A tile's
+ * shadow is in one of two trees of its own instead, as in tidewm: over
+ * every tile if it's the focused one, and under them all if not, where it
+ * shows in the gaps between them, if there are any. Either is cut off at
+ * the edge of its output's window area, so it doesn't reach a bar or the
+ * next output.
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
+#include <wayland-server-core.h>
 
 struct sway_container;
 struct sway_output;
@@ -27,10 +38,18 @@ struct wlr_scene_tree;
 struct wlr_surface;
 struct wlr_swapchain;
 
+// Which windows cast a shadow
+enum tide_shadows {
+	TIDE_SHADOWS_NONE, // the default
+	TIDE_SHADOWS_FLOATING, // each floating one
+	TIDE_SHADOWS_ACTIVE, // the focused one, tiled or floating
+	TIDE_SHADOWS_ALL,
+};
+
 // The look's lines, held in struct sway_config
 struct tide_look_config {
 	int corner_radius; // in layout pixels; 0, the default, is square
-	bool shadows; // around floating windows; off by default
+	enum tide_shadows shadows;
 	int shadow_blur_radius; // how far a shadow reaches past its window
 	float shadow_color[4]; // red, green, blue and alpha, not premultiplied
 };
@@ -46,10 +65,13 @@ struct tide_look_view {
 	bool failed; // the strips couldn't be drawn, so it stays square
 };
 
-// A floating window's shadow, held in its struct sway_container
+// A window's shadow, held in its struct sway_container
 struct tide_look_shadow {
-	struct wlr_scene_tree *tree; // under its borders and content
+	/* Under a floating window's borders and content, in its own tree; a
+	 * tile's is over or under every tile */
+	struct wlr_scene_tree *tree;
 	struct wlr_scene_buffer *part[8]; // its four corners, then its four edges
+	struct wl_listener destroy; // the tree's, whichever tree it's in
 };
 
 // sway's defaults: square corners and no shadows
@@ -102,10 +124,27 @@ bool tide_look_is_strip(struct wlr_scene_buffer *buffer);
  * leaves nearest, as a dim layer's */
 bool tide_look_is_shadow(struct wlr_scene_buffer *buffer);
 
-/* Brings every window's clip and every floating window's shadow up to
- * date: after a transaction lays the windows out, or the config is
- * reloaded */
+/* Whether con casts a shadow, for GET_TREE's shadow, as tidewm's: as the
+ * config and the commands so far have it, whether or not it's laid out
+ * yet, and though another window may be over it. One on a workspace not
+ * shown casts none. */
+bool tide_look_shadow(struct sway_container *con);
+
+/* How see-through a shadow's buffer is, for output_configure_scene, which
+ * has opacity for it: a tile's shadow isn't in its window's tree, so it
+ * takes its window's own, fading in as it opens */
+float tide_look_shadow_opacity(struct wlr_scene_buffer *buffer, float opacity);
+
+/* Brings every window's clip and shadow up to date: after a transaction
+ * lays the windows out, or the config is reloaded */
 void tide_look_update_all(void);
+
+/* Focus moved, from seat_set_focus: the focused window's shadow goes with
+ * it at once */
+void tide_look_focused(void);
+
+// Takes con's shadow with it, as it's destroyed
+void tide_look_container_destroy(struct sway_container *con);
 
 // Frees what view's strips were drawn into, as it's destroyed
 void tide_look_view_destroy(struct sway_view *view);

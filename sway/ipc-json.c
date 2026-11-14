@@ -619,6 +619,9 @@ static void ipc_json_describe_view(struct sway_container *c, json_object *object
 			json_object_new_boolean(!c->view->tide_dim.exempt));
 	json_object_object_add(object, "dimmed",
 			json_object_new_boolean(tide_dim_update(c->view)));
+	// tide: whether it casts a shadow now
+	json_object_object_add(object, "shadow",
+			json_object_new_boolean(tide_look_shadow(c)));
 
 	bool has_titlebar = c->title_bar.tree->node.enabled;
 	struct wlr_box window_box = {

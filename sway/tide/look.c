@@ -33,6 +33,8 @@
 #include "log.h"
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/input/input-manager.h"
+#include "sway/input/seat.h"
 #include "sway/output.h"
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
@@ -43,6 +45,7 @@
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
 #include "sway/tree/view.h"
+#include "sway/tree/workspace.h"
 #include "util.h"
 #if WLR_HAS_XWAYLAND
 #include "sway/tide/x11scale.h"
@@ -950,30 +953,148 @@ static bool shadow_no_input(struct wlr_scene_buffer *buffer, double *sx, double 
 	return false;
 }
 
-/* Whether con has a shadow: a floating window or container that isn't
- * fullscreen or maximized, as in tidewm, and doesn't draw its own */
-static bool shadowed(struct sway_container *con) {
-	return config->tide_look.shadows && config->tide_look.shadow_blur_radius > 0
-		&& config->tide_look.shadow_color[3] > 0
-		&& container_is_floating(con)
-		&& con->current.fullscreen_mode == FULLSCREEN_NONE
-		&& !tide_maximized(con)
+/* The trees tiles' shadows are in, made as the first is cast: one just
+ * under sway's tiles and one just over them, below the floating windows */
+struct shadow_layer {
+	struct wlr_scene_tree *tree;
+	struct wl_listener destroy;
+};
+
+static struct shadow_layer layers[2]; // under the tiles, then over them
+
+static void layer_destroyed(struct wl_listener *listener, void *data) {
+	struct shadow_layer *layer = wl_container_of(listener, layer, destroy);
+	wl_list_remove(&layer->destroy.link);
+	layer->tree = NULL;
+}
+
+static struct wlr_scene_tree *shadow_layer(bool over) {
+	struct shadow_layer *layer = &layers[over];
+	if (layer->tree) {
+		return layer->tree;
+	}
+	layer->tree = wlr_scene_tree_create(root->layer_tree);
+	if (!layer->tree) {
+		sway_log(SWAY_ERROR, "tide: can't make a tree for the tiles' shadows");
+		return NULL;
+	}
+	if (over) {
+		wlr_scene_node_place_above(&layer->tree->node, &root->layers.tiling->node);
+	} else {
+		wlr_scene_node_place_below(&layer->tree->node, &root->layers.tiling->node);
+	}
+	layer->destroy.notify = layer_destroyed;
+	wl_signal_add(&layer->tree->node.events.destroy, &layer->destroy);
+	return layer->tree;
+}
+
+/* The window whose shadow shadows active casts, or NULL: the one GET_TREE
+ * calls focused, or the floating container it's in */
+static struct sway_container *active_window(void) {
+	struct sway_seat *seat = input_manager_get_default_seat();
+	struct sway_node *focus = seat ? seat_get_focus(seat) : NULL;
+	if (!focus || focus->type != N_CONTAINER || focus->destroying) {
+		return NULL;
+	}
+	struct sway_container *con = focus->sway_container;
+	return container_is_floating_or_child(con) ? container_toplevel_ancestor(con) : con;
+}
+
+/* Whether con is one of the windows shadows names: a floating window or
+ * container, the focused one, or either of those and each tile */
+static bool casts(struct sway_container *con, struct sway_container *active) {
+	switch (config->tide_look.shadows) {
+	case TIDE_SHADOWS_FLOATING:
+		return container_is_floating(con);
+	case TIDE_SHADOWS_ACTIVE:
+		return con == active;
+	case TIDE_SHADOWS_ALL:
+		return container_is_floating(con)
+			|| (con->view && !container_is_floating_or_child(con));
+	case TIDE_SHADOWS_NONE:
+		break;
+	}
+	return false;
+}
+
+/* Whether con has a shadow: one of those windows that isn't fullscreen or
+ * maximized, as in tidewm, and doesn't draw its own */
+static bool shadowed(struct sway_container *con, struct sway_container *active) {
+	if (config->tide_look.shadow_blur_radius <= 0
+			|| config->tide_look.shadow_color[3] <= 0 || !casts(con, active)) {
+		return false;
+	}
+	for (struct sway_container *c = con; c; c = c->current.parent) {
+		if (c->current.fullscreen_mode != FULLSCREEN_NONE) {
+			return false;
+		}
+	}
+	return !tide_maximized(con)
 		&& !(con->view && draws_its_own(con->view))
 		&& con->current.width > 0 && con->current.height > 0;
 }
 
-static bool make_shadow(struct sway_container *con) {
+bool tide_look_shadow(struct sway_container *con) {
+	struct sway_workspace *ws = con->pending.workspace;
+	if (config->tide_look.shadow_blur_radius <= 0
+			|| config->tide_look.shadow_color[3] <= 0
+			|| !casts(con, active_window()) || !ws || !workspace_is_visible(ws)) {
+		return false;
+	}
+	for (struct sway_container *c = con; c; c = c->pending.parent) {
+		if (c->pending.fullscreen_mode != FULLSCREEN_NONE) {
+			return false;
+		}
+	}
+	return !tide_maximized(con) && !(con->view && draws_its_own(con->view));
+}
+
+/* Whether a tile is on screen, and its output's window area in the
+ * layout, which its shadow stays in: a tab that isn't the one showing, a
+ * minimized window and one on another workspace aren't */
+static bool tile_area(struct sway_container *con, struct wlr_box *area) {
+	struct sway_workspace *ws = con->current.workspace;
+	int lx, ly;
+	if (!ws || !ws->output || !con->content_tree
+			|| !wlr_scene_node_coords(&con->content_tree->node, &lx, &ly)) {
+		return false;
+	}
+	*area = ws->output->usable_area;
+	area->x += ws->output->lx;
+	area->y += ws->output->ly;
+	return true;
+}
+
+static void shadow_destroyed(struct wl_listener *listener, void *data) {
+	struct tide_look_shadow *shadow = wl_container_of(listener, shadow, destroy);
+	wl_list_remove(&shadow->destroy.link);
+	*shadow = (struct tide_look_shadow){0};
+}
+
+// con's shadow's tree, in parent, made if it has none
+static bool make_shadow(struct sway_container *con, struct wlr_scene_tree *parent) {
 	struct tide_look_shadow *shadow = &con->tide_shadow;
 	if (shadow->tree) {
+		if (shadow->tree->node.parent != parent) {
+			wlr_scene_node_reparent(&shadow->tree->node, parent);
+			if (parent == con->scene_tree) {
+				// Under the window's borders and content
+				wlr_scene_node_lower_to_bottom(&shadow->tree->node);
+			}
+		}
 		return true;
 	}
-	shadow->tree = wlr_scene_tree_create(con->scene_tree);
+	shadow->tree = wlr_scene_tree_create(parent);
 	if (!shadow->tree) {
 		sway_log(SWAY_ERROR, "tide: can't make a window's shadow");
 		return false;
 	}
-	// Under the window's borders and content
-	wlr_scene_node_lower_to_bottom(&shadow->tree->node);
+	shadow->tree->node.data = con; // for tide_look_shadow_opacity
+	shadow->destroy.notify = shadow_destroyed;
+	wl_signal_add(&shadow->tree->node.events.destroy, &shadow->destroy);
+	if (parent == con->scene_tree) {
+		wlr_scene_node_lower_to_bottom(&shadow->tree->node);
+	}
 	static const enum wl_output_transform mirror[8] = {
 		// The corners: top left, top right, bottom left, bottom right
 		WL_OUTPUT_TRANSFORM_NORMAL, WL_OUTPUT_TRANSFORM_FLIPPED,
@@ -986,8 +1107,7 @@ static bool make_shadow(struct sway_container *con) {
 		struct wlr_scene_buffer *part = wlr_scene_buffer_create(shadow->tree, NULL);
 		if (!part) {
 			sway_log(SWAY_ERROR, "tide: can't make part of a window's shadow");
-			wlr_scene_node_destroy(&shadow->tree->node);
-			*shadow = (struct tide_look_shadow){0};
+			wlr_scene_node_destroy(&shadow->tree->node); // which forgets it
 			return false;
 		}
 		part->point_accepts_input = shadow_no_input;
@@ -999,9 +1119,34 @@ static bool make_shadow(struct sway_container *con) {
 	return true;
 }
 
+/* The pixels, of a part's size along one axis, that show from..to of the
+ * length it covers in the layout: whole ones, as pixman takes them, and
+ * the one pixel of an edge, stretched along that axis, as it is */
+static void crop(double *start, double *extent, int size, int length,
+		int from, int to, bool mirrored) {
+	if (size == 1) {
+		*start = 0;
+		*extent = 1;
+		return;
+	}
+	if (mirrored) {
+		int past = length - to;
+		to = length - from;
+		from = past;
+	}
+	int first = (int)floor((double)from * size / length);
+	int end = (int)ceil((double)to * size / length);
+	*start = first;
+	*extent = end - first;
+}
+
+/* Shows a part at x, y in its shadow's tree, width by height, or as much
+ * of it as is in clip, if there is one */
 static void place(struct wlr_scene_buffer *part, struct shadow_pixels *pixels,
-		int x, int y, int width, int height) {
-	bool shown = width > 0 && height > 0;
+		int x, int y, int width, int height, const struct wlr_box *clip) {
+	struct wlr_box whole = {x, y, width, height}, box = whole;
+	bool shown = width > 0 && height > 0
+		&& (!clip || wlr_box_intersection(&box, &whole, clip));
 	wlr_scene_node_set_enabled(&part->node, shown);
 	if (!shown) {
 		return;
@@ -1009,36 +1154,92 @@ static void place(struct wlr_scene_buffer *part, struct shadow_pixels *pixels,
 	if (part->buffer != &pixels->base) {
 		wlr_scene_buffer_set_buffer(part, &pixels->base);
 	}
-	wlr_scene_node_set_position(&part->node, x, y);
-	wlr_scene_buffer_set_dest_size(part, width, height);
+	struct wlr_fbox source = {0}; // all of it
+	if (!wlr_box_equal(&box, &whole)) {
+		enum wl_output_transform mirror = part->transform;
+		crop(&source.x, &source.width, pixels->base.width, width,
+			box.x - x, box.x + box.width - x,
+			mirror == WL_OUTPUT_TRANSFORM_FLIPPED || mirror == WL_OUTPUT_TRANSFORM_180);
+		crop(&source.y, &source.height, pixels->base.height, height,
+			box.y - y, box.y + box.height - y,
+			mirror == WL_OUTPUT_TRANSFORM_FLIPPED_180 || mirror == WL_OUTPUT_TRANSFORM_180);
+	}
+	wlr_scene_buffer_set_source_box(part, &source);
+	wlr_scene_node_set_position(&part->node, box.x, box.y);
+	wlr_scene_buffer_set_dest_size(part, box.width, box.height);
 }
 
-static void update_shadow(struct sway_container *con) {
+static void update_shadow(struct sway_container *con, struct sway_container *active) {
 	struct tide_look_shadow *shadow = &con->tide_shadow;
-	if (!shadowed(con)) {
+	bool tile = !container_is_floating(con);
+	struct wlr_box area;
+	int blur = config->tide_look.shadow_blur_radius;
+	int r = con->view ? tide_look_radius(con->view) : 0;
+	struct shadow_tiles *t = NULL;
+	struct wlr_scene_tree *parent = NULL;
+	if (shadowed(con, active) && (!tile || tile_area(con, &area))) {
+		t = shadow_tiles(r);
+		parent = tile ? shadow_layer(con == active) : con->scene_tree;
+	}
+	if (!t || !parent || !make_shadow(con, parent)) {
 		if (shadow->tree) {
 			wlr_scene_node_set_enabled(&shadow->tree->node, false);
 		}
 		return;
 	}
 	int width = con->current.width, height = con->current.height;
-	int blur = config->tide_look.shadow_blur_radius;
-	int r = con->view ? tide_look_radius(con->view) : 0;
-	struct shadow_tiles *t = shadow_tiles(r);
-	if (!t || !make_shadow(con)) {
-		return;
+	const struct wlr_box *clip = NULL;
+	if (tile) {
+		// In the layout, as its tree is; a floating window's is in the window
+		int x = (int)round(con->current.x), y = (int)round(con->current.y);
+		wlr_scene_node_set_position(&shadow->tree->node, x, y);
+		area.x -= x;
+		area.y -= y;
+		clip = &area;
+	} else {
+		wlr_scene_node_set_position(&shadow->tree->node, 0, 0);
 	}
 	int side = blur + r; // a corner reaches under the window's rounded one
 	struct wlr_scene_buffer **part = shadow->part;
-	place(part[0], t->corner, -blur, -blur, side, side);
-	place(part[1], t->corner, width - r, -blur, side, side);
-	place(part[2], t->corner, -blur, height - r, side, side);
-	place(part[3], t->corner, width - r, height - r, side, side);
-	place(part[4], t->above, r, -blur, width - 2 * r, blur);
-	place(part[5], t->above, r, height, width - 2 * r, blur);
-	place(part[6], t->left, -blur, r, blur, height - 2 * r);
-	place(part[7], t->left, width, r, blur, height - 2 * r);
+	place(part[0], t->corner, -blur, -blur, side, side, clip);
+	place(part[1], t->corner, width - r, -blur, side, side, clip);
+	place(part[2], t->corner, -blur, height - r, side, side, clip);
+	place(part[3], t->corner, width - r, height - r, side, side, clip);
+	place(part[4], t->above, r, -blur, width - 2 * r, blur, clip);
+	place(part[5], t->above, r, height, width - 2 * r, blur, clip);
+	place(part[6], t->left, -blur, r, blur, height - 2 * r, clip);
+	place(part[7], t->left, width, r, blur, height - 2 * r, clip);
 	wlr_scene_node_set_enabled(&shadow->tree->node, true);
+}
+
+float tide_look_shadow_opacity(struct wlr_scene_buffer *buffer, float opacity) {
+	struct wlr_scene_tree *tree = buffer->node.parent;
+	struct sway_container *con = tree ? tree->node.data : NULL;
+	if (!con || tree->node.parent == con->scene_tree) {
+		return opacity; // its window's already
+	}
+	return opacity * con->alpha * tide_fade_window(con);
+}
+
+void tide_look_container_destroy(struct sway_container *con) {
+	if (con->tide_shadow.tree) {
+		wlr_scene_node_destroy(&con->tide_shadow.tree->node);
+	}
+}
+
+static void update_container_shadow(struct sway_container *con, void *data) {
+	update_shadow(con, data);
+}
+
+void tide_look_focused(void) {
+	if (!root || !config) {
+		return;
+	}
+	// Only then does focus say which windows cast one, or which tree it's in
+	if (config->tide_look.shadows == TIDE_SHADOWS_ACTIVE
+			|| config->tide_look.shadows == TIDE_SHADOWS_ALL) {
+		root_for_each_container(update_container_shadow, active_window());
+	}
 }
 
 static void update_container(struct sway_container *con, void *data) {
@@ -1048,14 +1249,14 @@ static void update_container(struct sway_container *con, void *data) {
 		// The clip its surfaces have is for another radius
 		view_center_and_clip_surface(view);
 	}
-	update_shadow(con);
+	update_shadow(con, data);
 }
 
 void tide_look_update_all(void) {
 	if (!root || !config) {
 		return;
 	}
-	root_for_each_container(update_container, NULL);
+	root_for_each_container(update_container, active_window());
 }
 
 /*
@@ -1084,16 +1285,26 @@ struct cmd_results *cmd_corner_radius(int argc, char **argv) {
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
 
-// shadows enable|disable
+// shadows disable|floating|active|all; enable is floating, as it was
 struct cmd_results *cmd_shadows(int argc, char **argv) {
-	if (argc == 1 && strcasecmp(argv[0], "enable") == 0) {
-		config->tide_look.shadows = true;
-	} else if (argc == 1 && strcasecmp(argv[0], "disable") == 0) {
-		config->tide_look.shadows = false;
-	} else {
-		return cmd_results_new(CMD_INVALID, "shadows takes enable or disable");
+	static const struct {
+		const char *name;
+		enum tide_shadows shadows;
+	} modes[] = {
+		{"disable", TIDE_SHADOWS_NONE},
+		{"floating", TIDE_SHADOWS_FLOATING},
+		{"enable", TIDE_SHADOWS_FLOATING},
+		{"active", TIDE_SHADOWS_ACTIVE},
+		{"all", TIDE_SHADOWS_ALL},
+	};
+	for (size_t i = 0; argc == 1 && i < sizeof(modes) / sizeof(modes[0]); i++) {
+		if (strcasecmp(argv[0], modes[i].name) == 0) {
+			config->tide_look.shadows = modes[i].shadows;
+			return cmd_results_new(CMD_SUCCESS, NULL);
+		}
 	}
-	return cmd_results_new(CMD_SUCCESS, NULL);
+	return cmd_results_new(CMD_INVALID,
+		"shadows takes disable, floating, active or all");
 }
 
 // shadow_blur_radius PIXELS
@@ -1101,7 +1312,7 @@ struct cmd_results *cmd_shadow_blur_radius(int argc, char **argv) {
 	int v = argc == 1 ? pixels(argv[0], 100) : -1;
 	if (v < 0) {
 		return cmd_results_new(CMD_INVALID,
-			"shadow_blur_radius takes a number of pixels from 0 to 100");
+			"shadow_blur_radius takes pixels, from 0 to 100");
 	}
 	config->tide_look.shadow_blur_radius = v;
 	return cmd_results_new(CMD_SUCCESS, NULL);

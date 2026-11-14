@@ -71,7 +71,7 @@ struct sway_container {
 	struct sway_view *view;
 
 	struct wlr_scene_tree *scene_tree;
-	struct tide_look_shadow tide_shadow; // tide: its shadow, while floating
+	struct tide_look_shadow tide_shadow; // tide: its shadow, if it casts one
 
 	struct {
 		struct wlr_scene_tree *tree;
