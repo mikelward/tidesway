@@ -33,6 +33,17 @@ this order, one PR each; each makes more of tidewm's suite pass.
   each floating one, on wlroots' own scene graph and any of its renderers
   (`sway/tide/look.c`; *Decisions needing review* says how, and why not
   SceneFX). Still Hyprland's alone: blur and animations.
+- **A tide session**. tide's shell runs on tidesway as on tidewm, from tide's
+  own config and conf's over it, so the Appearance page's rounded corners
+  reach it (maintainer, 2026-11-14). In order:
+  - ~~tidewm's `bindsym --desc`, a later `bindsym --name` line redefining the
+    name, and a minimized pinned window staying open~~. Done: tide's
+    `tidewm/tide.conf` and conf's `config/tidewm/config` over it load but for
+    one line.
+  - `fade_duration`, that line: a window fades in as it opens, and the dim
+    fades as focus moves, as tidewm's and Hyprland's do.
+  - Then, in tide: a tidesway session beside tidewm's, built by `tide-setup`,
+    and `corner_radius` in the Appearance page's file there.
 - **Track sway**. A weekly check of swaywm/sway: new commits on the current release
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
@@ -68,7 +79,11 @@ commit whose tests press it as either wtype numbers it. Of the tests its 15
 commits added, the eight that pass went into `passing.txt`. A ninth,
 `test_capture`'s capture of a window on a workspace not shown, passed in 5
 runs of 6 and failed once with "failed buffer-constraints", so it's left out
-until that's found.
+until that's found. It moved again, to tidewm's main at `96a691b`, on
+2026-11-14, with tidewm's `--desc`, its redefining of a named binding and its
+keeping a minimized pinned window open, which tide's and conf's configs need
+(below). Of that suite's 765 tests, 640 are in `passing.txt`: those that passed
+in three runs. Two of `test_borders`' passed in only some, so they're out.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
