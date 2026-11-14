@@ -40,6 +40,14 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   and an X11 window always shows up, past two races in wlroots that could
   leave one unmapped.
 
+It installs a `tidesway` command beside `sway`, started as tidewm is:
+`tidesway [-c CONFIG] [-s STARTUP]`. It runs sway on tidewm's look
+(`share/tidesway/look.conf`), then CONFIG, tidewm's own
+(`~/.config/tidewm/config`) by default, then any `tidesway.d/*.conf` beside
+CONFIG, for lines tidewm doesn't know, and runs STARTUP once sway is up.
+tide's tidesway session starts it. CONFIG's path can't hold a space or a
+character a shell reads specially, as sway's `include` can't take one.
+
 How it compares with tidewm, in latency, flicker and tidewm's tests, is in
 [MEASUREMENTS.md](MEASUREMENTS.md).
 

@@ -1,85 +1,12 @@
-#!/usr/bin/env python3
-"""Stands in for tidewm in tidewm's tests/harness.py, so tidewm's suite runs
-against tidesway: TIDEWM=/path/to/tests/tidewm-harness/run.
-
-It takes tidewm's arguments (-c CONFIG, -s STARTUP), writes a config of
-look.conf, an include of the test's config and `exec STARTUP`, and runs
-tidesway on it. TIDESWAY names the binary; it defaults to build/sway/sway in
-this checkout, where `meson setup build && ninja -C build` puts it.
-"""
-
-import os
-import re
-import shlex
-import sys
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
-
-
-def parse(argv):
-    """tidewm's -c and -s, each taking the next argument"""
-    config = startup = None
-    i = 0
-    while i < len(argv):
-        if argv[i] in ("-c", "-s") and i + 1 < len(argv):
-            if argv[i] == "-c":
-                config = argv[i + 1]
-            else:
-                startup = argv[i + 1]
-            i += 2
-        else:
-            sys.exit(f"tidewm-harness/run: unknown or incomplete argument {argv[i]!r}")
-    return config, startup
-
-
-MOUSE = re.compile(r"^\s*(floating_modifier\b|bind(sym|code)\b.*(--whole-window|\bbutton\d))",
-                   re.MULTILINE)
-
-
-def says_what_the_mouse_does(config):
-    """Whether the config file says what the mouse does, by a
-    floating_modifier line or a button's binding, as tidewm reads it: then
-    tidewm's built-in mouse is out"""
-    try:
-        with open(config) as f:
-            return bool(MOUSE.search(f.read()))
-    except OSError:
-        return False
-
-
-def main(argv):
-    config, startup = parse(argv)
-    if config is None:
-        # Where tidewm looks with no -c, so a test of that still sees its config
-        config = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
-                              "tidewm", "config")
-    runtime = os.environ.get("XDG_RUNTIME_DIR")
-    if not runtime:
-        sys.exit("tidewm-harness/run: XDG_RUNTIME_DIR isn't set")
-    state = os.path.join(runtime, "tidesway-harness")
-    os.makedirs(state, exist_ok=True)
-    startup_path = os.path.join(state, "startup.sh")
-    with open(startup_path, "w") as f:
-        f.write((startup or "true") + "\n")
-    base = os.path.join(state, "sway.conf")
-    with open(base, "w") as f, open(os.path.join(HERE, "look.conf")) as look:
-        f.write(look.read())
-        if not says_what_the_mouse_does(config):
-            # tidewm's built-in mouse, which a config file saying what the
-            # mouse does replaces: Alt and the left button drag a floating
-            # window, and Alt and the right one resize it
-            f.write("floating_modifier Mod1 normal\n")
-        # Included by path, not copied, so a test that writes its config
-        # later and reloads gets it. sway skips an include that's missing.
-        f.write(f"include {shlex.quote(config)}\n")
-        f.write(f"exec sh {shlex.quote(startup_path)}\n")
-    sway = os.environ.get("TIDESWAY", os.path.join(ROOT, "build", "sway", "sway"))
-    try:
-        os.execv(sway, [sway, "-c", base])
-    except OSError as e:
-        sys.exit(f"tidewm-harness/run: can't run {sway}: {e}")
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
+#!/bin/sh
+# Stands in for tidewm in tidewm's tests/harness.py, so tidewm's suite runs
+# against tidesway: TIDEWM=/path/to/tests/tidewm-harness/run.
+#
+# It's tide/tidesway.in, the command tidesway installs, which takes tidewm's
+# arguments (-c CONFIG, -s STARTUP), run from this checkout: on the sway
+# TIDESWAY names, or build/sway/sway here, where `meson setup build && ninja
+# -C build` puts it, with this checkout's look.conf.
+here=$(dirname -- "$(readlink -f -- "$0")")
+root=${here%/tests/tidewm-harness}
+TIDESWAY=${TIDESWAY:-$root/build/sway/sway} TIDESWAY_LOOK=${TIDESWAY_LOOK:-$root/tide/look.conf} \
+    exec sh "$root/tide/tidesway.in" "$@"
