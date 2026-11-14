@@ -21,11 +21,10 @@ concurrency:
 
 env:
   # The mikelward/tidewm commit whose suite and harness the test job runs,
-  # pinned so tests/tidewm-harness/passing.txt holds against it: e6e7c3f,
-  # the first whose tests press keys as wtype 0.5, Debian testing's, numbers
-  # them. To move it, change it here, re-run, and update passing.txt (and
+  # pinned so tests/tidewm-harness/passing.txt holds against it: main at
+  # 96a691b. To move it, change it here, re-run, and update passing.txt (and
   # flaky.txt) in the same pull request.
-  TIDEWM_REF: e6e7c3ff1dbebf82844c93e88d443e25dc57ddff
+  TIDEWM_REF: 96a691b1228ab154868479c4b7638bbba3d92573
 
 jobs:
   classify:
