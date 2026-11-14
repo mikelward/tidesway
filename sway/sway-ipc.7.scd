@@ -1549,8 +1549,9 @@ An array of objects, each mode's *bindsym* and *bindcode* lines in the file's
 order, the top level's first, then the *bindswitch* lines. Each has _type_
 (_key_, _mouse_ or _switch_), _keys_ (as written, after variables, or a
 switch's _lid:on_ and the like), _command_, _mode_ (_default_ for the top
-level and every switch), _release_, _locked_, _kept\_open_ and _name_ (its
-*--name*, or an empty string)
+level and every switch), _release_, _locked_, _kept\_open_, _name_ (its
+*--name*, or an empty string), _input\_code_ (a *bindcode*'s keycode, or 0)
+and _description_ (its *--desc*, or its name's, or an empty string)
 
 *Example Reply:*
 ```
@@ -1563,7 +1564,9 @@ level and every switch), _release_, _locked_, _kept\_open_ and _name_ (its
 		"release": false,
 		"locked": false,
 		"kept_open": false,
-		"name": "terminal"
+		"name": "terminal",
+		"input_code": 0,
+		"description": "Open a terminal"
 	}
 ]
 ```
@@ -1577,8 +1580,8 @@ tidesway's, as tidewm's: retrieve each binding the config names with
 *REPLY*++
 An array of objects with _name_, _type_ (_key_ or _mouse_), _keys_, its keys
 now, after any *rebind* line, as GET_BINDINGS gives them, _default\_keys_, the
-ones its *bindsym* lines give it, _command_, _mode_, _release_, _locked_ and
-_kept\_open_
+ones its *bindsym* lines give it, _command_, _mode_, _release_, _locked_,
+_kept\_open_ and _description_ (its lines' *--desc*, or an empty string)
 
 *Example Reply:*
 ```
@@ -1592,7 +1595,8 @@ _kept\_open_
 		"mode": "default",
 		"release": false,
 		"locked": false,
-		"kept_open": false
+		"kept_open": false,
+		"description": "Open a terminal"
 	}
 ]
 ```

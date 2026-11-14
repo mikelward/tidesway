@@ -454,7 +454,7 @@ runtime.
 
 *bindsym* [--whole-window] [--border] [--exclude-titlebar] [--release] [--locked] \
 [--to-code] [--input-device=<device>] [--no-warn] [--no-repeat] [--inhibited] \
-[--kept-open] [--name <name>] [Group<1-4>+]<key combo> <command>
+[--kept-open] [--name <name>] [--desc <text>] [Group<1-4>+]<key combo> <command>
 	Binds _key combo_ to execute the sway command _command_ when pressed. You
 	may use XKB key names here (*wev*(1) is a good tool for discovering these).
 	With the flag _--release_, the command is executed when the key combo is
@@ -473,7 +473,10 @@ runtime.
 	Unless the flag _--locked_ is set, the command will not be run when a
 	screen locking program is active. If there is a matching binding with
 	and without _--locked_, the one with will be preferred when locked and the
-	one without will be preferred when unlocked. If there are matching bindings
+	one without will be preferred when unlocked.
+
+	With _--desc_ _text_, tidewm's, the binding says what it does, as
+	*bindsym*'s. If there are matching bindings
 	and one has both _--input-device_ and _--locked_ and the other has neither,
 	the former will be preferred even when unlocked.
 
@@ -493,7 +496,14 @@ runtime.
 	can give other keys. A name is a lower-case letter, then lower-case
 	letters, digits and _\__. Several lines can give a name keys, each in
 	the same mode with the same command and flags; those are its default
-	keys.
+	keys. A later line that gives the name another command, flags or mode
+	redefines it, as tidewm's does, so a config that includes another can
+	bind its names to commands of its own: the name's earlier keys go.
+
+	With _--desc_ _text_, or _--desc=text_, tidewm's, the binding says what
+	it does, for a shell's list of keyboard shortcuts (GET_BINDINGS). _text_
+	is a word, or text in double quotes. A named binding's is its name's,
+	for each of its keys.
 
 	Unless the flag _--no-repeat_ is set, the command will be run
 	repeatedly when the key is held, according to the repeat
@@ -554,7 +564,7 @@ runtime.
 		rebind terminal Mod4+Return
 ```
 
-*bindswitch* [--locked] [--no-warn] [--reload] <switch>:<state> <command>
+*bindswitch* [--locked] [--no-warn] [--reload] [--desc <text>] <switch>:<state> <command>
 	Binds <switch> to execute the sway command _command_ on state changes.
 	Supported switches are _lid_ (laptop lid), _tablet_ (tablet mode) and
 	_keypad_slide_ (whether the device keypad is exposed or not) switches. Valid
@@ -1278,7 +1288,8 @@ windows and picture-in-picture place themselves, so theirs isn't kept.
 	from a key or IPC, leaves it open, and a _close\_refused_ window event
 	says so. While you're typing in it, its bindings made with *--kept-open*
 	count, so a config can take an app's own close keys from it alone. It's
-	kept open on the workspace it's on: on any other, or minimized, it isn't.
+	kept open on the workspace it's on, minimized or not: on any other, it
+	isn't.
 	A window that maps again is a new one, not kept open. Its own close
 	button still closes it.
 

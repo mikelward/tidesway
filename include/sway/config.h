@@ -74,6 +74,7 @@ struct sway_binding {
 	char *command;
 	char *tide_keys; // tide: its keys as written, for GET_BINDINGS
 	char *tide_name; // tide: its --name, or NULL
+	char *tide_desc; // tide: its --desc, or NULL
 };
 
 enum sway_switch_trigger {
@@ -90,6 +91,7 @@ struct sway_switch_binding {
 	enum sway_switch_trigger trigger;
 	uint32_t flags;
 	char *command;
+	char *tide_desc; // tide: its --desc, or NULL
 };
 
 /**

@@ -20,6 +20,42 @@
 
 int binding_order = 0;
 
+/* tide: a binding's --desc TEXT or --desc=TEXT, tidewm's own: what it does,
+ * for a shell's list of keyboard shortcuts. Takes the flag, and its text
+ * if that's the next word, off argc and argv, and gives the text in *desc,
+ * to free. NULL if argv[0] isn't --desc, or the error. */
+static struct cmd_results *tide_desc_flag(const char *bindtype, int *argc,
+		char ***argv, char **desc, bool *taken) {
+	const char *flag = (*argv)[0];
+	*taken = false;
+	if (strcmp(flag, "--desc") != 0 && !has_prefix(flag, "--desc=")) {
+		return NULL;
+	}
+	const char *text = NULL;
+	if (flag[strlen("--desc")] == '=') {
+		text = flag + strlen("--desc=");
+	} else if (*argc > 1) {
+		(*argv)++;
+		(*argc)--;
+		text = (*argv)[0];
+	}
+	if (!text || !*text) {
+		return cmd_results_new(CMD_FAILURE, "%s --desc needs a description", bindtype);
+	}
+	size_t len = strlen(text);
+	bool opens = text[0] == '"', closes = len > 1 && text[len - 1] == '"';
+	if (opens != closes) {
+		return cmd_results_new(CMD_FAILURE, "%s --desc needs a description, "
+			"in double quotes if it has spaces", bindtype);
+	}
+	free(*desc);
+	*desc = opens ? strndup(text + 1, len - 2) : strdup(text);
+	(*argv)++;
+	(*argc)--;
+	*taken = true;
+	return NULL;
+}
+
 // tide: a switch's error, in tidewm's words
 #define TIDE_BAD_SWITCH \
 	"%s %s: a switch is lid or tablet, and its state on, off or toggle"
@@ -35,6 +71,7 @@ void free_sway_binding(struct sway_binding *binding) {
 	free(binding->command);
 	free(binding->tide_keys);
 	free(binding->tide_name);
+	free(binding->tide_desc);
 	free(binding);
 }
 
@@ -43,6 +80,7 @@ void free_switch_binding(struct sway_switch_binding *binding) {
 		return;
 	}
 	free(binding->command);
+	free(binding->tide_desc); // tide
 	free(binding);
 }
 
@@ -378,6 +416,18 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 			argc--;
 			continue;
 		}
+		if (!unbind) { // tide: its --desc
+			bool taken;
+			struct cmd_results *bad =
+				tide_desc_flag(bindtype, &argc, &argv, &binding->tide_desc, &taken);
+			if (bad) {
+				free_sway_binding(binding);
+				return bad;
+			}
+			if (taken) {
+				continue;
+			}
+		}
 		if (strcmp("--release", argv[0]) == 0) {
 			binding->flags |= BINDING_RELEASE;
 		} else if (strcmp("--locked", argv[0]) == 0) {
@@ -569,6 +619,18 @@ struct cmd_results *cmd_bind_or_unbind_switch(int argc, char **argv,
 
 	// Handle flags
 	while (argc > 0) {
+		if (!unbind) { // tide: its --desc
+			bool taken;
+			struct cmd_results *bad =
+				tide_desc_flag(bindtype, &argc, &argv, &binding->tide_desc, &taken);
+			if (bad) {
+				free_switch_binding(binding);
+				return bad;
+			}
+			if (taken) {
+				continue;
+			}
+		}
 		if (strcmp("--locked", argv[0]) == 0) {
 			binding->flags |= BINDING_LOCKED;
 		} else if (strcmp("--no-warn", argv[0]) == 0) {
@@ -673,6 +735,7 @@ void seat_execute_command(struct sway_seat *seat, struct sway_binding *binding) 
 		// tide: its own, as free_sway_binding frees them
 		deferred->tide_keys = binding->tide_keys ? strdup(binding->tide_keys) : NULL;
 		deferred->tide_name = binding->tide_name ? strdup(binding->tide_name) : NULL;
+		deferred->tide_desc = binding->tide_desc ? strdup(binding->tide_desc) : NULL;
 		list_add(seat->deferred_bindings, deferred);
 		return;
 	}
