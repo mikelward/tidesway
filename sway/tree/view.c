@@ -30,6 +30,7 @@
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
 #include "sway/sway_text_node.h"
+#include "sway/tide/announce.h"
 #include "sway/tide/dialog.h"
 #include "sway/tide/fade.h"
 #include "sway/tide/focus.h"
@@ -992,8 +993,9 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 
 	// tide: the new event once the window has its place, the rules have run
 	// and it has its workspace and floating state, as tidewm's has it
+	// It goes once the window has the size its place gives it (announce.h)
 	view->tide.mapping = false;
-	ipc_event_window(view->container, "new");
+	tide_announce_mapped(view);
 
 	// tide: a rule that minimized it as it opened keeps it so
 	bool set_focus = should_focus(view) && !view->tide.minimized;
@@ -1025,6 +1027,7 @@ void view_map(struct sway_view *view, struct wlr_surface *wlr_surface,
 }
 
 void view_unmap(struct sway_view *view) {
+	tide_announce(view); // tide: gone before its size came, it was still new
 	wl_signal_emit_mutable(&view->events.unmap, view);
 	tide_maximize_unmapped(view); // tide: mapped again, it's a new window
 	tide_minimize_unmapped(view);

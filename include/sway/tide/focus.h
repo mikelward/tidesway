@@ -41,6 +41,8 @@ enum tide_held {
 };
 
 // A window's focus state, held in its struct sway_view
+#define TIDE_ANNOUNCE_WAITING 16 // events held behind a window's new one
+
 struct tide_view {
 	enum tide_held held;
 	uint64_t focus_seq; // when it last had focus, by count; 0 for never
@@ -58,6 +60,11 @@ struct tide_view {
 	bool urgency_hint; // an X11 window's urgency hint, as last heard
 	struct sway_workspace *follow_ws; // its workspace, as its dialogs last knew it
 	bool mapping; // mapping, its rules running: its events wait for its new one
+	/* Mapped, its new event still to go, once it has the size its place
+	 * gives it (announce.h), and the events that wait behind it, in order */
+	bool unannounced;
+	const char *waiting[TIDE_ANNOUNCE_WAITING];
+	int nwaiting;
 	struct wlr_box place_seen; // its floating place, as its app's last saw it
 	size_t id; // its container's id when first mapped, which it keeps
 };

@@ -1,8 +1,10 @@
 /*
  * A test window with a subsurface, which tidewm's test client has none of:
  * one xdg-shell toplevel filled blue, its app ID and title argv[1], with a
- * desynchronized subsurface over its top four rows, green. Lines on stdin
- * drive it:
+ * desynchronized subsurface over its top four rows, green. With a second
+ * argument, `slow`, it's an app that takes a while to draw: it waits 80 ms
+ * before each drawing but its first, as a real one's layout would take.
+ * Lines on stdin drive it:
  *
  * commit   draws the window again, as it is, and prints "committed" once
  *          the compositor has had the commit, as tidewm's client does.
@@ -26,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <time.h>
 #include <unistd.h>
 #include <wayland-client.h>
 #include "alpha-modifier-v1-client-protocol.h"
@@ -47,6 +50,7 @@ static struct wl_subsurface *sub;
 static int width = 100, height = 100;
 static uint32_t sub_color = GREEN;
 static bool closed;
+static bool slow, drawn;
 
 static void die(const char *why) {
 	fprintf(stderr, "subsurface: %s\n", why);
@@ -127,6 +131,12 @@ static const struct xdg_toplevel_listener toplevel_listener = {
 
 static void xdg_surface_configure(void *data, struct xdg_surface *xdg, uint32_t serial) {
 	xdg_surface_ack_configure(xdg, serial);
+	if (slow && drawn) {
+		// Not a wait for anything: it's how long this app takes to draw
+		struct timespec work = { .tv_nsec = 80 * 1000 * 1000 };
+		nanosleep(&work, NULL);
+	}
+	drawn = true;
 	draw_all();
 }
 
@@ -204,8 +214,10 @@ static void command(const char *line) {
 }
 
 int main(int argc, char *argv[]) {
-	if (argc != 2) {
-		die("usage: subsurface APP_ID");
+	if (argc == 3 && strcmp(argv[2], "slow") == 0) {
+		slow = true;
+	} else if (argc != 2) {
+		die("usage: subsurface APP_ID [slow]");
 	}
 	display = wl_display_connect(NULL);
 	if (!display) {

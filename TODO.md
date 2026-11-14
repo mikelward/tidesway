@@ -88,8 +88,12 @@ keyboard in its own group pressed a key by its number; `e6e7c3f` is the first
 commit whose tests press it as either wtype numbers it. Of the tests its 15
 commits added, the eight that pass went into `passing.txt`. A ninth,
 `test_capture`'s capture of a window on a workspace not shown, passed in 5
-runs of 6 and failed once with "failed buffer-constraints", so it's left out
-until that's found. It moved again, to tidewm's main at `96a691b`, on
+runs of 6 and failed once with "failed buffer-constraints", so it was left
+out. The cause (2026-11-14): sway tells a new window no size at first, so
+the app drew at its own, mapped, and was then told its place's; the new
+event went at map, and a capture begun then had a buffer for the old size.
+A window's new event now waits for the size (`sway/tide/announce.c`), and
+that test and its neighbor passed 56 runs of 56, so it's in. It moved again, to tidewm's main at `96a691b`, on
 2026-11-14, with tidewm's `--desc`, its redefining of a named binding and its
 keeping a minimized pinned window open, which tide's and conf's configs need
 (below). Of that suite's 765 tests, 640 are in `passing.txt`: those that passed
