@@ -25,6 +25,7 @@ struct tide_named {
 	bool code; // bindcode's, not bindsym's
 	list_t *flag_args; // its bindsym line's flags, for rebind's
 	list_t *default_keys; // as its bindsym lines give them
+	char *description; // its lines' --desc, or NULL
 };
 
 // While rebind binds a name's keys, which aren't its default ones
@@ -34,6 +35,7 @@ static void named_free(struct tide_named *n) {
 	free(n->name);
 	free(n->mode);
 	free(n->command);
+	free(n->description);
 	list_free_items_and_destroy(n->flag_args);
 	list_free_items_and_destroy(n->default_keys);
 	free(n);
@@ -76,18 +78,23 @@ static bool is_mouse(enum binding_input_type type) {
 	return type == BINDING_MOUSECODE || type == BINDING_MOUSESYM;
 }
 
-// The flags but --name and its name
+/* The flags but --name and its name, and --desc and its text, which is the
+ * name's and not a rebind's to give again */
 static list_t *copy_flags(int argc, char **argv) {
 	list_t *l = create_list();
 	for (int i = 0; l && i < argc; i++) {
-		if (strcmp(argv[i], "--name") == 0) {
+		if (strcmp(argv[i], "--name") == 0 || strcmp(argv[i], "--desc") == 0) {
 			i++;
-		} else if (strncmp(argv[i], "--name=", strlen("--name=")) != 0) {
+		} else if (strncmp(argv[i], "--name=", strlen("--name=")) != 0
+				&& strncmp(argv[i], "--desc=", strlen("--desc=")) != 0) {
 			list_add(l, strdup(argv[i]));
 		}
 	}
 	return l;
 }
+
+static struct sway_mode *mode_named(const char *name);
+static void unbind(struct sway_mode *mode, const char *name);
 
 struct cmd_results *tide_names_bind(const char *bindtype, const char *name,
 		struct sway_binding *binding, const char *keys, bool code,
@@ -99,22 +106,41 @@ struct cmd_results *tide_names_bind(const char *bindtype, const char *name,
 	}
 	const char *mode = config->current_mode->name;
 	struct tide_named *n = find(name);
-	if (n && strcmp(n->mode, mode) != 0) {
-		return cmd_results_new(CMD_FAILURE,
-			"%s --name %s: that name is in mode %s already", bindtype, name, n->mode);
-	}
-	if (n && strcmp(n->command, binding->command) != 0) {
-		return cmd_results_new(CMD_FAILURE,
-			"%s --name %s: that name runs %s already", bindtype, name, n->command);
-	}
-	if (n && (n->flags != binding->flags || n->code != code
-			|| is_mouse(n->type) != is_mouse(binding->type))) {
+	bool differs = n && (strcmp(n->mode, mode) != 0
+		|| strcmp(n->command, binding->command) != 0
+		|| n->flags != binding->flags || n->code != code
+		|| is_mouse(n->type) != is_mouse(binding->type));
+	if (differs && rebinding) {
 		return cmd_results_new(CMD_FAILURE,
 			"%s --name %s: that name's other keys have other flags", bindtype, name);
 	}
 	binding->tide_name = strdup(name);
 	if (rebinding) {
 		return NULL;
+	}
+	if (differs) {
+		/* A later line that gives the name another command, flags or mode
+		 * redefines it, as a later binding of the same keys replaces an
+		 * earlier one, so a config that includes tide's can bind tide's
+		 * names to its own commands. The name's earlier keys go with what
+		 * they ran, and its description. It keeps its place in the list. */
+		struct sway_mode *was = mode_named(n->mode);
+		if (was) {
+			unbind(was, name);
+		}
+		free(n->mode);
+		free(n->command);
+		free(n->description);
+		list_free_items_and_destroy(n->flag_args);
+		list_free_items_and_destroy(n->default_keys);
+		n->mode = strdup(mode);
+		n->command = strdup(binding->command);
+		n->description = NULL;
+		n->flags = binding->flags;
+		n->type = binding->type;
+		n->code = code;
+		n->flag_args = copy_flags(flagc, flagv);
+		n->default_keys = create_list();
 	}
 	if (!n) {
 		if (!config->tide_named) {
@@ -136,6 +162,11 @@ struct cmd_results *tide_names_bind(const char *bindtype, const char *name,
 		list_add(config->tide_named, n);
 	}
 	list_add(n->default_keys, strdup(keys));
+	// A line's --desc is the name's, for all its keys
+	if (binding->tide_desc) {
+		free(n->description);
+		n->description = strdup(binding->tide_desc);
+	}
 	return NULL;
 }
 
@@ -298,6 +329,15 @@ json_object *tide_names_describe_bindings(void) {
 			add_flags(o, b->flags);
 			json_object_object_add(o, "name",
 				json_object_new_string(b->tide_name ? b->tide_name : ""));
+			// A bindcode's keycode, as sway's binding event gives it
+			json_object_object_add(o, "input_code", json_object_new_int(
+				b->type == BINDING_KEYCODE && b->keys->length > 0
+				? (int)*(uint32_t *)b->keys->items[b->keys->length - 1] : 0));
+			// A named binding's is its name's, for each of its keys
+			struct tide_named *n = b->tide_name ? find(b->tide_name) : NULL;
+			const char *desc = n ? n->description : b->tide_desc;
+			json_object_object_add(o, "description",
+				json_object_new_string(desc ? desc : ""));
 			json_object_array_add(array, o);
 		}
 		list_free(all);
@@ -317,6 +357,9 @@ json_object *tide_names_describe_bindings(void) {
 			json_object_object_add(o, "mode", json_object_new_string("default"));
 			add_flags(o, b->flags);
 			json_object_object_add(o, "name", json_object_new_string(""));
+			json_object_object_add(o, "input_code", json_object_new_int(0));
+			json_object_object_add(o, "description",
+				json_object_new_string(b->tide_desc ? b->tide_desc : ""));
 			json_object_array_add(array, o);
 		}
 	}
@@ -355,6 +398,8 @@ json_object *tide_names_describe(void) {
 		json_object_object_add(o, "command", json_object_new_string(n->command));
 		json_object_object_add(o, "mode", json_object_new_string(n->mode));
 		add_flags(o, n->flags);
+		json_object_object_add(o, "description",
+			json_object_new_string(n->description ? n->description : ""));
 		json_object_array_add(array, o);
 	}
 	return array;
