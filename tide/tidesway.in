@@ -1,0 +1,108 @@
+#!/bin/sh
+# tidesway, started as tidewm is: `tidesway [-c CONFIG] [-s STARTUP]`.
+#
+# tidesway's compositor is its `sway`, which reads one config and has no
+# startup command. This gives it tidewm's two, so what starts tidewm (tide's
+# session, tidewm's tests) starts tidesway: it writes a config of
+#
+#   look.conf       tidewm's look and behavior, where sway has a setting
+#   the mouse       tidewm's built-in Alt-drag, unless CONFIG says its own
+#   include CONFIG  by path, so a reload reads CONFIG again
+#   include CONFIG's directory/tidesway.d/*.conf
+#                   lines tidewm doesn't know (corner_radius, say), which a
+#                   config both read can't hold: tidewm fails on them
+#   exec STARTUP    once sway is up, as tidewm's -s
+#
+# under $XDG_RUNTIME_DIR/tidesway/PID, sway's own process ID, so two running
+# at once, one nested in the other, say, each reload their own, and runs
+# sway on it. CONFIG defaults to tidewm's, ~/.config/tidewm/config. -v
+# prints sway's version.
+#
+# TIDESWAY names the sway to run, and TIDESWAY_LOOK the look.conf, for a
+# build that isn't installed; they default to the ones installed with this,
+# where meson was told to put them (tide/meson.build fills them in).
+#
+# What it can't do is said to stderr, which a session's journal keeps, and
+# it exits 1; sway's own log goes there too.
+
+fail() {
+    echo "tidesway: $*" >&2
+    exit 1
+}
+
+sway=${TIDESWAY:-@bindir@/sway}
+look=${TIDESWAY_LOOK:-@lookdir@/look.conf}
+
+config=
+startup=
+while test "$#" -gt 0; do
+    case $1 in
+        -c | -s)
+            test "$#" -ge 2 || fail "$1 takes an argument"
+            if test "$1" = -c; then config=$2; else startup=$2; fi
+            shift 2
+            ;;
+        -v)
+            exec "$sway" --version
+            ;;
+        *)
+            fail "unknown argument '$1': usage: tidesway [-c CONFIG] [-s STARTUP] [-v]"
+            ;;
+    esac
+done
+if test -z "$config"; then
+    config=${XDG_CONFIG_HOME:-$HOME/.config}/tidewm/config
+fi
+# sway's include splits its path into words and then expands it as a shell
+# would, and no quoting survives both, so a path either would change is
+# refused rather than read as some other file.
+plain() {
+    case $1 in
+        *[[:space:]\'\"\\\$\`\*\?\[\]\{\}\|\&\;\<\>\(\)\~\#\!]*) return 1 ;;
+    esac
+}
+case $config in
+    /*) ;;
+    *) config=$PWD/$config ;;
+esac
+plain "$config" || fail "the config's path, $config, holds a space or a character a shell reads specially, which sway's include can't take"
+test -n "${XDG_RUNTIME_DIR:-}" || fail "XDG_RUNTIME_DIR isn't set, so there's nowhere to write sway's config"
+test -r "$look" || fail "can't read $look: is tidesway installed whole?"
+test -x "$sway" || fail "can't run $sway: is tidesway installed whole?"
+
+plain "$XDG_RUNTIME_DIR" || fail "XDG_RUNTIME_DIR, $XDG_RUNTIME_DIR, holds a space or a character a shell reads specially"
+# This process becomes sway, so its ID is sway's for as long as the config
+# is read. What an earlier one left, whose process is gone, goes first: the
+# runtime directory lasts until logout.
+for old in "$XDG_RUNTIME_DIR"/tidesway/*; do
+    case ${old##*/} in
+        *[!0-9]* | '') continue ;;
+    esac
+    if ! kill -0 "${old##*/}" 2>/dev/null; then
+        rm -rf "$old" || echo "tidesway: couldn't remove $old, which an earlier one left" >&2
+    fi
+done
+state=$XDG_RUNTIME_DIR/tidesway/$$
+mkdir -p "$state" || fail "can't make $state"
+printf '%s\n' "${startup:-true}" > "$state/startup.sh" || fail "can't write $state/startup.sh"
+
+# Whether CONFIG says what the mouse does, by a floating_modifier line or a
+# button's binding: then tidewm's built-in mouse is out, as on tidewm. A
+# config that isn't there says nothing.
+mouse="floating_modifier Mod1 normal"
+if grep -Eq '^[[:space:]]*(floating_modifier([[:space:]]|$)|bind(sym|code)[[:space:]].*(--whole-window|(^|[^[:alnum:]_])button[0-9]))' "$config" 2>/dev/null; then
+    mouse=
+fi
+
+{
+    cat "$look"
+    # tidewm's built-in mouse: Alt and the left button drag a floating
+    # window, and Alt and the right one resize it
+    test -z "$mouse" || echo "$mouse"
+    # sway skips an include that's missing, and one that matches nothing
+    echo "include $config"
+    echo "include ${config%/*}/tidesway.d/*.conf"
+    echo "exec sh $state/startup.sh"
+} > "$state/sway.conf" || fail "can't write $state/sway.conf"
+
+exec "$sway" -c "$state/sway.conf"

@@ -1,10 +1,12 @@
-"""Tests for run, suite and gate, with a stand-in for tidesway: python3 -m unittest
-discover -s tests/tidewm-harness"""
+"""Tests for run (tide/tidesway.in, the command tidesway installs), suite and
+gate, with a stand-in for tidesway: python3 -m unittest discover -s
+tests/tidewm-harness"""
 
 import importlib.machinery
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -33,7 +35,7 @@ class RunTest(unittest.TestCase):
         with open(self.fake, "w") as f:
             f.write("#!/bin/sh\n"
                     f'printf "%s\\n" "$@" > "{self.out}"\n'
-                    f'cat "$2" >> "{self.out}"\n')
+                    f'test -z "$2" || cat "$2" >> "{self.out}"\n')
         os.chmod(self.fake, 0o755)
         self.env = dict(os.environ, TIDESWAY=self.fake, XDG_RUNTIME_DIR=self.dir.name,
                         XDG_CONFIG_HOME=os.path.join(self.dir.name, "xdg"))
@@ -90,6 +92,74 @@ class RunTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("nowhere", proc.stderr)
 
+    def test_includes_what_only_tidesway_reads_after_the_config(self):
+        config = os.path.join(self.dir.name, "config")
+        self.assertEqual(self.run_harness("-c", config, "-s", "true").returncode, 0)
+        text = self.written()
+        extra = f"include {self.dir.name}/tidesway.d/*.conf\n"
+        self.assertIn(extra, text)
+        self.assertLess(text.index(f"include {config}\n"), text.index(extra))
+
+    def test_a_relative_config_is_included_by_its_whole_path(self):
+        proc = subprocess.run([RUN, "-c", "config", "-s", "true"], env=self.env,
+                              cwd=self.dir.name, capture_output=True, text=True, timeout=10)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn(f"include {self.dir.name}/config\n", self.written())
+
+    def test_refuses_a_config_path_sways_include_would_read_as_another(self):
+        for name in "my config", "con$fig", "con*fig", "it's":
+            with self.subTest(name=name):
+                proc = self.run_harness("-c", os.path.join(self.dir.name, name), "-s", "true")
+                self.assertEqual(proc.returncode, 1)
+                self.assertIn("sway's include can't take", proc.stderr)
+                self.assertFalse(os.path.exists(self.out))
+
+    def test_v_asks_sway_its_version(self):
+        self.assertEqual(self.run_harness("-v").returncode, 0)
+        self.assertEqual(self.written().splitlines()[0], "--version")
+
+    def test_two_at_once_each_keep_their_own_config(self):
+        # Each writes under its own process ID, which is sway's
+        with open(self.fake, "a") as f:
+            f.write(f'echo "pid $$" >> "{self.out}"\n')
+        self.assertEqual(self.run_harness("-c", "/a/first", "-s", "true").returncode, 0)
+        first = self.written()
+        pid = first.split("pid ")[1].strip()
+        self.assertIn(f"exec sh {self.dir.name}/tidesway/{pid}/startup.sh\n", first)
+        self.assertEqual(first.splitlines()[1], f"{self.dir.name}/tidesway/{pid}/sway.conf")
+
+    def test_what_one_that_ended_left_is_removed_and_a_running_ones_kept(self):
+        gone = subprocess.Popen(["true"])
+        gone.wait()
+        for pid in gone.pid, os.getpid():
+            os.makedirs(os.path.join(self.dir.name, "tidesway", str(pid)))
+        self.assertEqual(self.run_harness("-s", "true").returncode, 0)
+        left = os.listdir(os.path.join(self.dir.name, "tidesway"))
+        self.assertNotIn(str(gone.pid), left)
+        self.assertIn(str(os.getpid()), left)
+
+    def test_installed_it_runs_the_sway_and_look_meson_put_it_with(self):
+        # As tide/meson.build fills it in, with a bindir and datadir that
+        # aren't beside each other
+        bindir = os.path.join(self.dir.name, "prefix", "bin")
+        lookdir = os.path.join(self.dir.name, "elsewhere", "data", "tidesway")
+        os.makedirs(bindir)
+        os.makedirs(lookdir)
+        root = os.path.dirname(os.path.dirname(HERE))
+        with open(os.path.join(root, "tide", "tidesway.in")) as f:
+            text = f.read().replace("@bindir@", bindir).replace("@lookdir@", lookdir)
+        installed = os.path.join(bindir, "tidesway")
+        with open(installed, "w") as f:
+            f.write(text)
+        os.chmod(installed, 0o755)
+        shutil.copy(self.fake, os.path.join(bindir, "sway"))
+        with open(os.path.join(lookdir, "look.conf"), "w") as f:
+            f.write("# the installed look\n")
+        env = {k: v for k, v in self.env.items() if k != "TIDESWAY"}
+        proc = subprocess.run([installed, "-s", "true"], env=env, capture_output=True,
+                              text=True, timeout=10)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("# the installed look\n", self.written())
 
 class SuiteTest(unittest.TestCase):
     def suite_on(self, files, **env):

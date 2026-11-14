@@ -43,8 +43,13 @@ this order, one PR each; each makes more of tidewm's suite pass.
   - ~~`fade_duration`, that line: a window fades in as it opens, and the dim
     fades as focus moves, as tidewm's and Hyprland's do~~. Done
     (`sway/tide/fade.c`): tide's config and conf's over it load whole.
-  - Then, in tide: a tidesway session beside tidewm's, built by `tide-setup`,
-    and `corner_radius` in the Appearance page's file there.
+  - ~~A `tidesway` command, started as tidewm is, with `-c` and `-s`~~.
+    Done (`tide/tidesway.in`, which the harness's `run` now is): tidewm's
+    look, the config, then `tidesway.d/*.conf` beside it, where tide can
+    put `corner_radius`, which tidewm would fail on.
+  - Then, in tide: its tidesway session (mikelward/tide#495) runs that
+    command; the Appearance page writes `corner_radius` to
+    `tidesway.d/`; and `tide-setup` builds tidesway.
 - **The color behind windows**. tidewm draws its `rootcolor`, `#222222`,
   where no window is; tidesway shows black unless swaybg runs. Five of
   tidewm's `test_effects` read that color, so they can't pass: its shadow
