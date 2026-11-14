@@ -341,10 +341,11 @@ node and will have the following properties:
    _floating\_con_
 |- border
 :  string
-:  The border style for the node. It can be _normal_, _none_, _pixel_, or _csd_
+:  The border style for the node. It can be _normal_, _none_, _pixel_, or _csd_.
+   tide: _none_ for a fullscreen window, which has none drawn
 |- current_border_width
 :  integer
-:  Number of pixels used for the border width
+:  Number of pixels used for the border width. tide: 0 with no border
 |- layout
 :  string
 :  The node's layout. It can either be _splith_, _splitv_, _stacked_,

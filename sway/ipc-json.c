@@ -781,11 +781,15 @@ static void ipc_json_describe_container(struct sway_container *c, json_object *o
 		json_object_object_add(object, "percent", json_object_new_double(percent));
 	}
 
+	// tide: a fullscreen window has no border drawn, so none is what's said,
+	// as tidewm says it, from the moment the command that made it so replies;
+	// and no border is 0 wide, whatever width one would have
+	enum sway_container_border tide_border =
+		c->pending.fullscreen_mode != FULLSCREEN_NONE ? B_NONE : c->current.border;
 	json_object_object_add(object, "border",
-			json_object_new_string(
-				ipc_json_border_description(c->current.border)));
+			json_object_new_string(ipc_json_border_description(tide_border)));
 	json_object_object_add(object, "current_border_width",
-			json_object_new_int(c->current.border_thickness));
+			json_object_new_int(tide_border == B_NONE ? 0 : c->current.border_thickness));
 	json_object_object_add(object, "floating_nodes", json_object_new_array());
 
 	struct wlr_box deco_box = {0, 0, 0, 0};
