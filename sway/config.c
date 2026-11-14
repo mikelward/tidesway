@@ -216,6 +216,7 @@ static void config_defaults(struct sway_config *config) {
 	tide_config_defaults(&config->tide); // tide
 	tide_focus_config_defaults(&config->tide_focus); // tide
 	config->tide_dim_inactive = 0; // tide: no dimming
+	config->tide_fade_duration = 0; // tide: no fades
 	tide_look_config_init(&config->tide_look); // tide: square, no shadows
 	config->tide_xwayland_unscaled = false; // tide: X11 scaled, as in sway
 	if (!(config->swaynag_command = strdup("swaynag"))) goto cleanup;
@@ -564,7 +565,11 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 	if (old_config) {
 		tide_config_reloaded(old_config, config); // tide
 		tide_focus_reloaded(); // tide
-		tide_dim_update_all(); // tide: windows dim at the new strength
+		// tide: windows dim at the new strength, at once: a reload reads
+		// dim_inactive again from none, and isn't focus moving
+		tide_fade_settling(true);
+		tide_dim_update_all();
+		tide_fade_settling(false);
 		tide_look_update_all(); // tide: and take the new shadows
 		destroy_removed_seats(old_config, config);
 		free_config(old_config);

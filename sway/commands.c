@@ -106,6 +106,7 @@ static const struct cmd_handler config_handlers[] = {
 	{ "default_layout", cmd_default_layout }, // tide
 	{ "default_orientation", cmd_default_orientation },
 	{ "dim_inactive", cmd_dim_inactive }, // tide
+	{ "fade_duration", cmd_fade_duration }, // tide
 	{ "focus_guard", cmd_focus_guard }, // tide
 	{ "include", cmd_include },
 	{ "layout_cycle", cmd_layout_cycle }, // tide

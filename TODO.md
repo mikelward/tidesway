@@ -40,10 +40,15 @@ this order, one PR each; each makes more of tidewm's suite pass.
     name, and a minimized pinned window staying open~~. Done: tide's
     `tidewm/tide.conf` and conf's `config/tidewm/config` over it load but for
     one line.
-  - `fade_duration`, that line: a window fades in as it opens, and the dim
-    fades as focus moves, as tidewm's and Hyprland's do.
+  - ~~`fade_duration`, that line: a window fades in as it opens, and the dim
+    fades as focus moves, as tidewm's and Hyprland's do~~. Done
+    (`sway/tide/fade.c`): tide's config and conf's over it load whole.
   - Then, in tide: a tidesway session beside tidewm's, built by `tide-setup`,
     and `corner_radius` in the Appearance page's file there.
+- **The color behind windows**. tidewm draws its `rootcolor`, `#222222`,
+  where no window is; tidesway shows black unless swaybg runs. Five of
+  tidewm's `test_effects` read that color, so they can't pass: its shadow
+  tests, and a window that opens dimmed fading in.
 - **Track sway**. A weekly check of swaywm/sway: new commits on the current release
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
@@ -83,7 +88,12 @@ until that's found. It moved again, to tidewm's main at `96a691b`, on
 2026-11-14, with tidewm's `--desc`, its redefining of a named binding and its
 keeping a minimized pinned window open, which tide's and conf's configs need
 (below). Of that suite's 765 tests, 640 are in `passing.txt`: those that passed
-in three runs. Two of `test_borders`' passed in only some, so they're out.
+in three runs. Two of `test_borders`' passed in only some, so they're out;
+one, a fullscreen window's border, was in and passed only when the tree was
+read before the window's first frame. GET_TREE now says a fullscreen window
+has none, so it and the other pass each time, and with the fades (below) two
+of `test_effects`' do: 643. `FadeTest`'s dim fading as focus moves passed in
+one run of two, so it's out.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with

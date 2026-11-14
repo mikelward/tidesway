@@ -27,6 +27,8 @@
 #include "sway/ipc-server.h"
 #include "sway/layers.h"
 #include "sway/output.h"
+#include "sway/tide/dim.h"
+#include "sway/tide/fade.h"
 #include "sway/tide/look.h"
 #include "sway/tide/output.h"
 #include "sway/scene_descriptor.h"
@@ -224,7 +226,9 @@ void output_configure_scene(struct sway_output *output,
 	struct sway_container *con =
 		scene_descriptor_try_get(node, SWAY_SCENE_DESC_CONTAINER);
 	if (con) {
-		opacity = con->alpha;
+		// tide: fading in as it opens, by now
+		tide_fade_frame(con);
+		opacity = con->alpha * tide_fade_window(con);
 		tide_look_frame(con); // tide: its rounded corners, as it is now
 	}
 
@@ -249,6 +253,10 @@ void output_configure_scene(struct sway_output *output,
 			buffer->filter_mode = get_scale_filter(output, buffer);
 		}
 
+		// tide: a dim layer is as dimmed as its fade has it by now
+		if (tide_dim_is_layer(buffer)) {
+			opacity *= tide_fade_dim_of(buffer);
+		}
 		// tide: a rounded corner's strip has its window's opacity drawn in
 		wlr_scene_buffer_set_opacity(buffer, tide_look_is_strip(buffer) ? 1 : opacity);
 	} else if (node->type == WLR_SCENE_NODE_TREE) {

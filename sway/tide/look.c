@@ -37,6 +37,7 @@
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
 #include "sway/tide/dim.h"
+#include "sway/tide/fade.h"
 #include "sway/tide/look.h"
 #include "sway/tide/maximize.h"
 #include "sway/tree/container.h"
@@ -331,7 +332,9 @@ static uint64_t view_stamp(struct sway_view *view, int r, float scale) {
 	struct sway_container *con = view->container;
 	struct stamp stamp = {0xcbf29ce484222325};
 	stamp_add(&stamp, (uintptr_t)con); // a window mapped again has a new one
-	stamp_add(&stamp, (uint32_t)lroundf(con->alpha * 65535)); // drawn into them
+	// Drawn into them: its opacity, and its fades as they are now
+	stamp_add(&stamp, (uint32_t)lroundf(con->alpha * tide_fade_window(con) * 65535));
+	stamp_add(&stamp, (uint32_t)lroundf(tide_fade_dim(view) * 65535));
 	stamp_add(&stamp, (uint32_t)r);
 	stamp_add(&stamp, (uint32_t)lroundf(scale * 1000));
 	// The filter the surfaces are scaled into the strips with (draw_surface)
@@ -355,6 +358,7 @@ struct strip_draw {
 	struct wlr_render_pass *pass;
 	int top; // the strip's first row, in the window's content
 	float scale;
+	float opacity; // the window's, and how far it has faded in
 };
 
 static void draw_surface(struct wlr_surface *surface, int sx, int sy, void *data) {
@@ -383,7 +387,7 @@ static void draw_surface(struct wlr_surface *surface, int sx, int sy, void *data
 		alpha = (float)alpha_state->multiplier;
 	}
 	// And the window's opacity, which the scene graph gives each buffer
-	alpha *= draw->view->container->alpha;
+	alpha *= draw->opacity;
 	/* The filter output_configure_scene gives the surface's own buffer, on
 	 * the output the strip is drawn for, so its rows look as the rest do */
 	struct sway_output *output = sharpest_output();
@@ -511,13 +515,16 @@ static bool draw_strip(struct sway_view *view, int which, int r, float scale) {
 		.pass = pass,
 		.top = which == 0 ? 0 : con->current.content_height - r,
 		.scale = scale,
+		.opacity = con->alpha * tide_fade_window(con),
 	};
 	wlr_surface_for_each_surface(view->surface, draw_surface, &draw);
 	if (dim_shown(view)) {
 		wlr_render_pass_add_rect(pass, &(struct wlr_render_rect_options){
 			.box = {0, 0, width, height},
 			// At the window's opacity, as its dim layer between the strips is
-			.color = {0, 0, 0, (float)config->tide_dim_inactive * con->alpha},
+			// and as far as its fade has it
+			.color = {0, 0, 0, (float)config->tide_dim_inactive
+				* tide_fade_dim(view) * draw.opacity},
 			.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED,
 		});
 	}
@@ -1084,7 +1091,7 @@ struct cmd_results *cmd_shadows(int argc, char **argv) {
 	} else if (argc == 1 && strcasecmp(argv[0], "disable") == 0) {
 		config->tide_look.shadows = false;
 	} else {
-		return cmd_results_new(CMD_INVALID, "Expected shadows enable|disable");
+		return cmd_results_new(CMD_INVALID, "shadows takes enable or disable");
 	}
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
