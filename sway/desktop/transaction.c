@@ -4,6 +4,7 @@
 #include <time.h>
 #include <wlr/types/wlr_buffer.h>
 #include "sway/config.h"
+#include "sway/tide/announce.h"
 #include "sway/scene_descriptor.h"
 #include "sway/desktop/idle_inhibit_v1.h"
 #include "sway/desktop/transaction.h"
@@ -859,6 +860,11 @@ static void transaction_apply(struct sway_transaction *transaction) {
 		}
 
 		node->instruction = NULL;
+
+		// tide: a new window has its size now, so its new event goes
+		if (node->type == N_CONTAINER && node->sway_container->view) {
+			tide_announce(node->sway_container->view);
+		}
 	}
 }
 

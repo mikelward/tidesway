@@ -16,6 +16,7 @@
 #include <wayland-server-core.h>
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/announce.h"
 #include "sway/tide/configinfo.h"
 #include "sway/tide/names.h"
 #include "sway/desktop/transaction.h"
@@ -340,6 +341,10 @@ void ipc_event_window(struct sway_container *window, const char *change) {
 	// tide: a window mapping, as its rules run, has no events before its
 	// new one, which says what they did
 	if (window->view && window->view->tide.mapping) {
+		return;
+	}
+	// tide: nor before its new one has gone, which waits for its size
+	if (window->view && tide_announce_holds(window->view, change)) {
 		return;
 	}
 	if (!ipc_has_event_listeners(IPC_EVENT_WINDOW)) {

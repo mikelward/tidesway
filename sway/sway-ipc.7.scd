@@ -1811,7 +1811,9 @@ The following change types are currently available:
 [- *TYPE*
 :- *DESCRIPTION*
 |- new
-:[ The window was created
+:[ The window was created. tide: sent once the window has the size its
+   place gives it, or sway has stopped waiting for the app to draw at it,
+   as tidewm's is; the window's other events wait until it has gone
 |- close
 :  The window was closed
 |- focus
