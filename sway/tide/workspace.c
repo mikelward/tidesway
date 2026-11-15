@@ -10,6 +10,7 @@
 #include <strings.h>
 #include <wayland-util.h>
 #include <wlr/types/wlr_ext_workspace_v1.h>
+#include <wlr/types/wlr_output_layout.h>
 #include "list.h"
 #include "log.h"
 #include "stringop.h"
@@ -35,7 +36,22 @@ struct tide_group {
 	bool urgent; // a window on any part is
 	int parts;
 	struct wlr_ext_workspace_handle_v1 *ext; // every part's
+	// The layouts of its parts on outputs disabled since, for their return
+	struct wl_list kept; // struct kept_part
 };
+
+// A disabled output's part's layouts, by the output's name
+struct kept_part {
+	struct wl_list link;
+	char *output;
+	struct tide_workspace tide;
+};
+
+static void kept_free(struct kept_part *k) {
+	wl_list_remove(&k->link);
+	free(k->output);
+	free(k);
+}
 
 static struct wl_list groups = { &groups, &groups };
 static uint64_t made_count;
@@ -178,10 +194,20 @@ void tide_ws_created(struct sway_workspace *ws) {
 		}
 		g->made = ++made_count;
 		g->ext = ws->ext_workspace;
+		wl_list_init(&g->kept);
 		wl_list_insert(groups.prev, &g->link);
 	}
 	ws->tide_group = g;
 	g->parts++;
+	// A part back on an output that was disabled has its layouts again
+	struct kept_part *k, *tmp;
+	wl_list_for_each_safe(k, tmp, &g->kept, link) {
+		if (ws->output && ws->output->wlr_output
+				&& strcmp(k->output, ws->output->wlr_output->name) == 0) {
+			ws->tide = k->tide;
+			kept_free(k);
+		}
+	}
 	if (!other) {
 		emit("init", NULL, ws);
 	}
@@ -217,6 +243,10 @@ void tide_ws_destroying(struct sway_workspace *ws) {
 	emit("empty", NULL, ws);
 	wlr_ext_workspace_handle_v1_destroy(g->ext);
 	wl_list_remove(&g->link);
+	struct kept_part *k, *tmp;
+	wl_list_for_each_safe(k, tmp, &g->kept, link) {
+		kept_free(k);
+	}
 	free(g);
 }
 
@@ -386,6 +416,16 @@ void tide_ws_output_enabled(struct sway_output *output) {
 	if (wl_list_empty(&groups)) {
 		return;
 	}
+	/* Its box in the layout now, not as it was before it was disabled, so
+	 * its new parts choose their layouts by its aspect */
+	struct wlr_box box;
+	wlr_output_layout_get_box(root->output_layout, output->wlr_output, &box);
+	if (!wlr_box_empty(&box)) {
+		output->lx = box.x;
+		output->ly = box.y;
+		output->width = box.width;
+		output->height = box.height;
+	}
 	struct tide_group *current = current_group();
 	struct tide_group *g;
 	wl_list_for_each(g, &groups, link) {
@@ -408,6 +448,7 @@ void tide_ws_output_enabled(struct sway_output *output) {
 		}
 	}
 	node_set_dirty(&output->node);
+	ipc_event_layout(part); // what it shows, as tidewm says
 }
 
 static void collect_views(struct sway_container *con, void *data) {
@@ -492,6 +533,15 @@ bool tide_ws_evacuate(struct sway_output *output) {
 		if (to) {
 			workspace_detect_urgent(to);
 			arrange_workspace(to);
+		}
+		// Its layouts wait for the output to come back, as tidewm's do
+		struct kept_part *k = part->tide_group ? calloc(1, sizeof(*k)) : NULL;
+		if (k && (k->output = strdup(output->wlr_output->name))) {
+			k->tide = part->tide;
+			wl_list_insert(&part->tide_group->kept, &k->link);
+		} else if (part->tide_group) {
+			free(k);
+			sway_log(SWAY_ERROR, "tide: can't keep workspace %s's layout", part->name);
 		}
 		workspace_begin_destroy(part);
 	}
