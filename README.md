@@ -40,6 +40,9 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   and output-focus events (`man 5 sway`, `man 7 sway-ipc`);
 * tidewm's checks of input lines and `for_window` rules, failing in its
   words (`man 5 sway-input`, `man 5 sway`);
+* tidewm's socket, `tidewm-ipc.UID.PID.sock`, which GET_VERSION calls
+  tidewm's, every command run in a list with one that fails, and a tree of
+  only outputs, as tidewm's (`man 7 sway-ipc`);
 * sharp X11 windows at a fractional scale, with tidewm's `xwayland_scaling
   disable` (`man 5 sway`);
 * fixes for what tide hit in sway: a floating window's dialogs stay above it,

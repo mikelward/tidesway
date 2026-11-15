@@ -14,6 +14,13 @@ to the socket is stored in the environment variable _SWAYSOCK_ and, for
 backwards compatibility with i3, _I3SOCK_. You can also retrieve the socket
 path by calling _sway --get-socketpath_.
 
+tidesway names its socket as tidewm does,
+_$XDG\_RUNTIME\_DIR/tidewm-ipc.<uid>.<pid>.sock_, so what looks for tidewm's
+finds it, and always its own: a _SWAYSOCK_ or _I3SOCK_ it inherits, from an
+earlier session, is replaced. As it starts, it removes the sockets of that
+name that a tidesway or tidewm of the same user left by dying, saying so in
+its log, so _tidewm-ipc.\*.sock_ matches only running ones.
+
 # MESSAGE AND REPLY FORMAT
 
 The format for messages and replies is:
@@ -90,6 +97,9 @@ supported. *For all replies, any properties not listed are subject to removal.*
 |- 201
 :  GET_NAMED_BINDINGS
 :  tidesway's: get the bindings the config names
+
+Any other type gets _{"success": false, "error": "unsupported message type"}_
+in tidesway, as in tidewm, where sway sends nothing.
 
 ## 0. RUN_COMMAND
 
@@ -335,7 +345,9 @@ node and will have the following properties:
 |- name
 :  string
 :  The name of the node such as the output name or window title. For the
-   scratchpad, this will be _\_\_i3\_scratch_ for compatibility with i3.
+   scratchpad, this will be _\_\_i3\_scratch_ for compatibility with i3. In
+   tidesway, as in tidewm, the root holds only outputs while the scratchpad
+   is empty: its _\_\_i3_ output is there only while it holds a window.
 |- type
 :  string
 :  The node type. It can be _root_, _output_, _workspace_, _con_, or
@@ -1073,10 +1085,19 @@ An object containing the following properties:
 |- human_readable
 :  string
 :  A human readable version string that will likely contain more useful
-   information such as the git commit short hash and git branch
+   information such as the git commit short hash and git branch. tidesway's
+   is _tidewm VERSION (tidesway)_
+|- variant
+:  string
+:  tidesway's is _tidewm_, as tidewm's is, whose IPC it speaks, so tide's
+   clients take it for tidewm. sway's is _sway_
+|- tidesway
+:  string
+:  tidesway's own: its version, as _human\_readable_ has it
 |- loaded_config_file_name
 :  string
-:  The path to the loaded config file
+:  The path to the loaded config file: in tidesway, tidewm's, which the
+   *tidesway* command names to sway
 
 
 *Example Reply:*

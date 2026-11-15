@@ -12,6 +12,7 @@
 #include "log.h"
 #include "sway/config.h"
 #include "sway/ipc-json.h"
+#include "sway/tide/configinfo.h"
 #include "sway/tide/inputname.h"
 #include "sway/server.h"
 #include "sway/tide/focus.h"
@@ -235,8 +236,12 @@ json_object *ipc_json_get_version(void) {
 
 	sscanf(SWAY_VERSION, "%d.%d.%d", &major, &minor, &patch);
 
-	json_object_object_add(version, "human_readable", json_object_new_string(SWAY_VERSION));
-	json_object_object_add(version, "variant", json_object_new_string("sway"));
+	/* tide: tidewm's variant, so tide's clients take it for tidewm, whose
+	 * IPC it speaks, and its own name and version in tidesway */
+	json_object_object_add(version, "human_readable",
+		json_object_new_string("tidewm " SWAY_VERSION " (tidesway)"));
+	json_object_object_add(version, "variant", json_object_new_string("tidewm"));
+	json_object_object_add(version, "tidesway", json_object_new_string(SWAY_VERSION));
 	json_object_object_add(version, "major", json_object_new_int(major));
 	json_object_object_add(version, "minor", json_object_new_int(minor));
 	json_object_object_add(version, "patch", json_object_new_int(patch));
@@ -898,8 +903,11 @@ json_object *ipc_json_describe_node_recursive(struct sway_node *node) {
 	json_object *children = json_object_new_array();
 	switch (node->type) {
 	case N_ROOT:
-		json_object_array_add(children,
-				ipc_json_describe_scratchpad_output());
+		// tide: as tidewm's tree, only outputs, unless the scratchpad has windows
+		if (root->scratchpad->length) {
+			json_object_array_add(children,
+					ipc_json_describe_scratchpad_output());
+		}
 		for (i = 0; i < root->outputs->length; ++i) {
 			struct sway_output *output = root->outputs->items[i];
 			json_object_array_add(children,
