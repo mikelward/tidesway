@@ -4,7 +4,9 @@
 /*
  * Minimized windows, as tidewm has them (its docs/ipc.md, tide's SPEC
  * §6.7): minimize [enable|disable|toggle] hides a window, which leaves the
- * layout, and focus on it goes to the window you were in before. It stays
+ * layout, and focus on it goes to the window under the pointer once the
+ * rest have moved in, if that's on its output, as closing it does
+ * (focus.h), or else to the window you were in before. It stays
  * on its workspace, which stays while it waits, and keeps its states, a
  * fullscreen one's included. Focusing it by any means brings it back
  * first, as minimize disable does: it joins the end of its part's stack,

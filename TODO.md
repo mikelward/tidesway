@@ -118,7 +118,10 @@ window you were in before. `FadeTest`'s dim fading as focus moves passed in
 eight runs of eight, so it's in too. Six of the new `test_borders` ones fail
 each time, where sway's colors and errors aren't tidewm's: a failed reload's,
 a translucent border's, urgent over focused, `client.focused_inactive`'s
-default and two errors' words.
+default and two errors' words. Its test of a minimize focusing the window
+under the pointer passes now that tidesway's does: 694. Its test of a floating window reaching
+onto another output can't pass, as sway moves a floating window to the output
+its middle is on, where tidewm keeps its monitor.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with

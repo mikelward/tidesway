@@ -29,6 +29,7 @@
 struct cmd_results;
 struct sway_container;
 struct sway_node;
+struct sway_output;
 struct sway_seat;
 struct sway_view;
 struct sway_workspace;
@@ -127,11 +128,16 @@ struct sway_node *tide_focus_after_close(struct sway_seat *seat,
  * are once they've moved into its space; a layer surface over it doesn't
  * count. Over nothing, or a window the guard holds, or as a dialog closes,
  * focus stays where closing it left it: the window you were in before, or
- * the dialog's parent. tide_focus_closing, as view starts to go, says
- * whether it's the one you're in and no dialog; tide_focus_closed, once
- * the windows left are arranged, then moves focus under the pointer. */
-bool tide_focus_closing(struct sway_view *view);
-void tide_focus_closed(void);
+ * the dialog's parent. Minimizing it does the same, as tide's SPEC §6.7
+ * has it, but only with the pointer on its own output: on another, focus
+ * stays on the window you were in before, even over a floating window of
+ * its output's reaching there. tide_focus_leaving, as view starts to go
+ * or before it's minimized, says whether it's the one you're in and no
+ * dialog; tide_focus_left, once the windows left are arranged, then moves
+ * focus under the pointer, if it's on only, a minimized window's output,
+ * or anywhere for NULL, a close. */
+bool tide_focus_leaving(struct sway_view *view);
+void tide_focus_left(struct sway_output *only);
 
 /* The window focus next|prev goes to on ws with no window focused: its
  * most recent one, or one the guard holds if that's all it has; NULL for

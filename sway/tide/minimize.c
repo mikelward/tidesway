@@ -13,6 +13,7 @@
 #include "sway/input/seat.h"
 #include "sway/ipc-server.h"
 #include "sway/server.h"
+#include "sway/tide/focus.h"
 #include "sway/tide/minimize.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
@@ -24,8 +25,9 @@ bool tide_minimized(struct sway_container *con) {
 	return con && con->view && con->view->tide.minimized;
 }
 
-/* The window focus goes to as con leaves: the most recent one left on
- * its workspace, else the workspace */
+/* The window focus goes to as con leaves, unless the one under the
+ * pointer takes it (tide_focus_left): the most recent one left on its
+ * workspace, else the workspace */
 static void focus_after(struct sway_seat *seat, struct sway_container *con) {
 	struct sway_workspace *ws = con->pending.workspace;
 	/* It loses the keyboard first: forgotten, it would leave its workspace
@@ -42,6 +44,8 @@ static void focus_after(struct sway_seat *seat, struct sway_container *con) {
 
 static void minimize(struct sway_container *con) {
 	struct sway_view *view = con->view;
+	// Before focus moves: whether it's the window you're in
+	bool refocus = tide_focus_leaving(view);
 	view->tide.minimized_fullscreen = con->pending.fullscreen_mode;
 	if (con->pending.fullscreen_mode != FULLSCREEN_NONE) {
 		// It covers its output no more, but is still fullscreen to come back
@@ -57,8 +61,13 @@ static void minimize(struct sway_container *con) {
 			seat_tide_forget(seat, &con->node);
 		}
 	}
-	if (con->pending.workspace) {
-		arrange_workspace(con->pending.workspace);
+	struct sway_workspace *ws = con->pending.workspace;
+	if (ws) {
+		arrange_workspace(ws);
+		if (refocus && ws->output) {
+			// To the window under the pointer, if it's on ws's output
+			tide_focus_left(ws->output);
+		}
 	}
 	ipc_event_window(con, "minimize");
 }
