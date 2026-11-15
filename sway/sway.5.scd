@@ -252,8 +252,11 @@ set|plus|minus|toggle <amount>
 
 *move* left|right|up|down [<px> px]
 	Moves the focused container in the direction specified. The optional _px_
-	argument specifies how many pixels to move the container. If unspecified,
-	the default is 10 pixels. Pixels are ignored when moving tiled containers.
+	argument specifies how many pixels to move a floating container, which
+	keeps its output, as in tidewm. Without it, a floating container goes
+	straight to the next output that way, at the same place in its window
+	area, no bigger than it; past the last output, nowhere. Pixels are
+	ignored when moving tiled containers.
 
 *move* [absolute] position <pos_x> [px|ppt] <pos_y> [px|ppt]
 	Moves the focused container to the specified position in the workspace.

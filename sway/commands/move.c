@@ -704,8 +704,9 @@ static struct cmd_results *cmd_move_in_direction(
 	if (argc) {
 		char *inv;
 		move_amt = (int)strtol(argv[0], &inv, 10);
-		if (*inv != '\0' && strcasecmp(inv, "px") != 0) {
-			return cmd_results_new(CMD_FAILURE, "Invalid distance specified");
+		if (inv == argv[0] || (*inv != '\0' && strcasecmp(inv, "px") != 0)) {
+			// tide: a parse error, as tidewm's is
+			return cmd_results_new(CMD_INVALID, "Invalid distance specified");
 		}
 	}
 
@@ -718,6 +719,11 @@ static struct cmd_results *cmd_move_in_direction(
 		if (container->pending.fullscreen_mode) {
 			return cmd_results_new(CMD_FAILURE,
 					"Cannot move fullscreen floating container");
+		}
+		if (!argc) { // tide: with no distance, to the next output, as tidewm's
+			const char *err = tide_move_floating_in_direction(container, direction);
+			return err ? cmd_results_new(CMD_FAILURE, "%s", err)
+				: cmd_results_new(CMD_SUCCESS, NULL);
 		}
 		double lx = container->pending.x;
 		double ly = container->pending.y;
@@ -735,7 +741,9 @@ static struct cmd_results *cmd_move_in_direction(
 			ly += move_amt;
 			break;
 		}
-		container_floating_move_to(container, lx, ly);
+		// tide: moved by pixels, it keeps its output, as tidewm's does
+		container_floating_translate(container, lx - container->pending.x,
+			ly - container->pending.y);
 		return cmd_results_new(CMD_SUCCESS, NULL);
 	}
 	if (tide_direction_applies(container)) { // tide: by the windows' boxes
