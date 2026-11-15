@@ -763,14 +763,17 @@ The default colors are:
 :  #0c0c0c
 
 
-*default_border* normal|none|pixel [<n>]
-	Set default border style for new tiled windows. Config reload won't affect
-	existing windows, only newly created ones after the reload.
+*default_border* none|pixel [<n>]
+	The border of every window, tiled and floating, as tidewm's: _none_, or
+	one _n_ pixels wide, from 0 to 100, or 1 without _n_. A reload gives every
+	window the new border at once, and a floating window keeps its place and
+	size, border and all. A window that draws its own decorations still has
+	it. A fullscreen window has none.
 
 *default_floating_border* normal|none|pixel [<n>]
 	Set default border style for new floating windows. This only applies to
 	windows that are spawned in floating mode, not windows that become floating
-	afterwards.
+	afterwards. *default_border* sets it too.
 
 *exec* <shell command>
 	Executes _shell command_ with sh.

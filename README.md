@@ -21,6 +21,10 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   floating window, the focused window alone or every window, with whichever
   renderer wlroots has (`man 5 sway`, "TIDE'S ROUNDED CORNERS AND SHADOWS");
 * tidewm's background color, `#222222`, where no window or wallpaper is;
+* tidewm's borders: `default_border` gives every window its border, tiled
+  and floating, and a reload changes each one's at once; `client.*` colors
+  are checked as tidewm checks them, and an urgent window's color wins over
+  the focused one's (`man 5 sway`);
 * tide's workspaces, which span every monitor: each output shows its own part
   of the current one, and they all switch together, with tidewm's `persist`
   and `unpersist` commands and its workspace IPC (`man 5 sway`, "TIDE'S

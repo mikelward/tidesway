@@ -22,6 +22,7 @@
 #include "sway/input/switch.h"
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/border.h"
 #include "sway/tide/configinfo.h"
 #include "sway/tide/inputcheck.h"
 #include "sway/tide/x11scale.h"
@@ -572,6 +573,7 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 		tide_dim_update_all();
 		tide_fade_settling(false);
 		tide_look_update_all(); // tide: and take the new shadows
+		tide_border_reloaded(); // tide: every window takes the new border
 		destroy_removed_seats(old_config, config);
 		free_config(old_config);
 	}

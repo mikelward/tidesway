@@ -121,7 +121,14 @@ a translucent border's, urgent over focused, `client.focused_inactive`'s
 default and two errors' words. Its test of a minimize focusing the window
 under the pointer passes now that tidesway's does: 694. Its test of a floating window reaching
 onto another output can't pass, as sway moves a floating window to the output
-its middle is on, where tidewm keeps its monitor.
+its middle is on, where tidewm keeps its monitor. Then (2026-11-15) tidesway
+took tidewm's border colors, its `default_border` and the color behind windows,
+and three single failures: 23 more pass, in `test_borders`, `test_effects`,
+`test_fullscreen`, `test_resize` and `test_vt`. Two of `test_borders`' can't
+pass while `look.conf` says `default_border none`, as they start from tidewm's
+1px border (*Decisions needing review*), and two of `test_effects`' are in
+tidewm's floating layout. `test_dimming`'s failed reload reads GET_CONFIG, which
+shows the harness's wrapper config, not tidewm's file.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -405,3 +412,19 @@ Each patch's PR says how far it moves this.
   tiles are, so like tiled ones they take the layout's size there, as in tidewm,
   which has no floating splits; a split may hold Wayland windows too, whose
   pixels follow the output's scale.
+- **tide's look keeps no border** (2026-11-15): `look.conf`, which tidesway
+  reads before your config, says `default_border none`, where tidewm's own
+  default is a 1px border and tide's `tidewm/tide.conf` says none itself. So
+  `test_borders`' `test_without_the_line_a_window_has_config_hs_border` and
+  `test_a_reload_with_none_takes_every_border_away`, and two of
+  `test_xwayland`'s, can't pass; `tests/tidesway/test_tide_borders.py` covers
+  the reload from a 1px border. Taking the line out of `look.conf` would let
+  them pass and change nothing for tide, but give a config without the line
+  tidewm's 1px border. Left as is: it's the maintainer's call.
+- **No window draws its own decorations in place of a border** (2026-11-15):
+  sway gave a floating window that draws its own decorations no border
+  (`csd`), and told an xdg-decoration client floating it could draw its own.
+  tidesway does as tidewm does: every window has `default_border`'s border,
+  and xdg-decoration is server-side, floating or not. A GTK dialog keeps its
+  own title bar inside the border; with tide's `default_border none` nothing
+  changes but GET_TREE saying `none` rather than `csd`.
