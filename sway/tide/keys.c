@@ -4,7 +4,8 @@
  * there are always keys to fix it with, as tidewm has it. Only under the
  * tidesway command, whose config names tidewm's file: sway's own config
  * binds the keys it binds. They're off on the lock screen, aren't in
- * GET_BINDINGS, and have only the top level, as tidewm's are.
+ * GET_BINDINGS, and have only the top level, as tidewm's are. So are its
+ * rules, while there's no file: a file's for_window lines replace them.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -121,5 +122,33 @@ void tide_keys_pointer_used(struct sway_seat *seat) {
 		if (group->seat_device && group->seat_device->keyboard) {
 			group->seat_device->keyboard->held_binding = NULL;
 		}
+	}
+}
+
+// tidewm's config.def.h's rules, as sway's lines: an app ID containing
+// either name, as a criteria's pattern matches
+static const char *const builtin_rules[] = {
+	"for_window [app_id=\"Gimp_EXAMPLE\"] floating enable",
+	"assign [app_id=\"firefox_EXAMPLE\"] workspace 9",
+};
+
+void tide_keys_builtin_rules(void) {
+	for (size_t i = 0; i < sizeof(builtin_rules) / sizeof(builtin_rules[0]); i++) {
+		char *line = strdup(builtin_rules[i]);
+		if (!line) {
+			sway_log(SWAY_ERROR, "tide: can't allocate a built-in rule");
+			return;
+		}
+		char *new_block = NULL;
+		struct cmd_results *res = config_command(line, &new_block);
+		if (res && res->status != CMD_SUCCESS) {
+			sway_log(SWAY_ERROR, "tide: built-in rule %s: %s", line,
+				res->error ? res->error : "failed");
+		}
+		if (res) {
+			free_cmd_results(res);
+		}
+		free(new_block);
+		free(line);
 	}
 }

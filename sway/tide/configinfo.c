@@ -206,6 +206,8 @@ struct cmd_results *cmd_tidewm_config(int argc, char **argv) {
 			tide_config_file_error(path, "there's no such file");
 			sway_log(SWAY_ERROR, "tidesway: %s: there's no such file", path);
 		}
+		// Without the file, config.h's rules apply, as its keys do
+		tide_keys_builtin_rules();
 		return cmd_results_new(CMD_SUCCESS, NULL);
 	}
 	user->depth = 1;

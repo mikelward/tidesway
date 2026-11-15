@@ -9,6 +9,9 @@ struct sway_seat;
 // A mode of tidewm's built-in keys, config.h's, for the config to keep
 struct sway_mode *tide_keys_builtin(void);
 
+// Adds tidewm's built-in rules, config.h's, to the config being read
+void tide_keys_builtin_rules(void);
+
 // Whether config binds a key at its top level, so the built-in keys are out
 bool tide_keys_bound(struct sway_config *config);
 

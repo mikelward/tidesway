@@ -314,7 +314,10 @@ Each patch's PR says how far it moves this.
   anyway. Only under the `tidesway` command: sway's own config binds what it
   binds. They're keys tidewm users know, but a tidesway build has no
   `config.h` to change them in, and the messages still call them
-  `config.h`'s, as tidewm's docs do.
+  `config.h`'s, as tidewm's docs do. While there's no file, its two example
+  rules apply too, as a `for_window` and an `assign` line: an app ID with
+  `Gimp_EXAMPLE` in it floats, and one with `firefox_EXAMPLE` opens on
+  workspace 9.
 - **Workspaces are named by number** (2026-11-10): a new workspace takes the
   next free number, so tidesway starts on `1`, as tidewm does. sway named it
   after the first workspace a binding shows.

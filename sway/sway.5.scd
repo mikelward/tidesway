@@ -96,7 +96,7 @@ The following commands may only be used in the configuration file.
 	its own line. The IPC's GET_CONFIG and GET_VERSION show that file, as
 	tidewm's do. While it isn't there, or binds no key at its top level,
 	tidewm's built-in keys work, as its _config.def.h_ has them, but for the
-	lock screen. With _--named_, the file was named by
+	lock screen; while it isn't there, so do that file's example rules. With _--named_, the file was named by
 	*tidesway -c*, and its being missing at startup is an error.
 
 *workspace_layout* default|stacking|tabbed
