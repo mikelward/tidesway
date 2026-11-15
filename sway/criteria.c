@@ -23,7 +23,7 @@ bool criteria_is_empty(struct criteria *criteria) {
 		&& !criteria->all
 		&& !criteria->app_id
 		&& !criteria->con_mark
-		&& !criteria->con_id
+		&& !criteria->has_con_id // tide
 #if WLR_HAS_XWAYLAND
 		&& !criteria->class
 		&& !criteria->id
@@ -168,7 +168,7 @@ static void find_urgent_iterator(struct sway_container *con, void *data) {
 }
 
 static bool has_container_criteria(struct criteria *criteria) {
-	return criteria->con_mark || criteria->con_id;
+	return criteria->con_mark || criteria->has_con_id; // tide
 }
 
 static bool criteria_matches_container(struct criteria *criteria,
@@ -187,7 +187,7 @@ static bool criteria_matches_container(struct criteria *criteria,
 		}
 	}
 
-	if (criteria->con_id) { // Internal ID
+	if (criteria->has_con_id) { // Internal ID; tide: 0 is none
 		if (container->node.id != criteria->con_id) {
 			return false;
 		}
@@ -662,6 +662,7 @@ static bool parse_token(struct criteria *criteria, char *name, char *value) {
 		pattern_create(&criteria->app_id, value);
 		break;
 	case T_CON_ID:
+		criteria->has_con_id = true; // tide
 		if (strcmp(value, "__focused__") == 0) {
 			struct sway_seat *seat = input_manager_current_seat();
 			struct sway_container *focus = seat_get_focused_container(seat);
