@@ -3,6 +3,7 @@
 #include "sway/config.h"
 #include "sway/output.h"
 #include "sway/tide/output.h"
+#include "sway/tide/outputcheck.h"
 #include "list.h"
 #include "log.h"
 
@@ -35,7 +36,11 @@ static const struct cmd_handler output_handlers[] = {
 };
 
 struct cmd_results *cmd_output(int argc, char **argv) {
-	struct cmd_results *error = checkarg(argc, "output", EXPECTED_AT_LEAST, 1);
+	struct cmd_results *error = tide_output_check(argc, argv); // tide: tidewm's words
+	if (error) {
+		return error;
+	}
+	error = checkarg(argc, "output", EXPECTED_AT_LEAST, 1);
 	if (error != NULL) {
 		return error;
 	}

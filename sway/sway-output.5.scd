@@ -30,13 +30,19 @@ config file, a line naming what an output is overrides one naming its
 connector, whatever their order; of those, the later wins. At runtime, the
 output command fails for a name no output has.
 
+tidesway checks an output line as tidewm does, and says what's wrong in its
+words, as _output HDMI-A-1: no setting is called brightness_; once a setting
+only sway has comes, sway checks the rest.
+
 # COMMANDS
 
-*output* <name> mode|resolution|res [--custom] <width>x<height>[@<rate>Hz]
+*output* <name> mode|resolution|res [--custom] <width>x<height>[@<rate>[Hz]]
 	Configures the specified output to use the given mode. Modes are a
 	combination of width and height (in pixels) and a refresh rate that your
 	display can be configured to use. For a list of available modes for each
 	output, use *swaymsg -t get_outputs*.
+
+	In tidesway, as in tidewm, the rate may leave out _Hz_.
 
 	To set a custom mode not listed in the list of available modes, use
 	*--custom*. You should probably only use this if you know what you're
