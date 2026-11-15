@@ -725,7 +725,12 @@ static bool should_focus(struct sway_view *view) {
 	}
 
 	// View opened "under" fullscreen view should not be given focus.
-	if (root->fullscreen_global || !map_ws || map_ws->fullscreen) {
+	// tide: but the fullscreen window's own dialog, shown over it, is, as
+	// on tidewm, and it stays fullscreen
+	bool over_fullscreen = map_ws && map_ws->fullscreen
+		&& config->popup_during_fullscreen == POPUP_SMART
+		&& container_is_transient_for(view->container, map_ws->fullscreen);
+	if (root->fullscreen_global || !map_ws || (map_ws->fullscreen && !over_fullscreen)) {
 		return false;
 	}
 
