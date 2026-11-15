@@ -26,6 +26,10 @@ struct cmd_results *cmd_floating(int argc, char **argv) {
 	if (!container && workspace->tiling->length == 0) {
 		return cmd_results_new(CMD_INVALID, "Can't float an empty workspace");
 	}
+	// tide: as tidewm's, a fullscreen window is left as it is
+	if (container && container_is_fullscreen_or_child(container)) {
+		return cmd_results_new(CMD_FAILURE, "A fullscreen window can't float or tile");
+	}
 	if (!container) {
 		// Wrap the workspace's children in a container so we can float it
 		container = workspace_wrap_children(workspace);

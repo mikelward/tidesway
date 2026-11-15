@@ -143,6 +143,7 @@ They are expected to be used with *bindsym* or at runtime through *swaymsg*(1).
 
 *floating* enable|disable|toggle
 	Make focused window floating, non-floating, or the opposite of what it is now.
+	A fullscreen window is left as it is, and the command fails, as in tidewm.
 
 <criteria> *focus*
 	Moves focus to the container that matches the specified criteria.
