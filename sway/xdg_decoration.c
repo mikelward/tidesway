@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "sway/desktop/transaction.h"
 #include "sway/server.h"
+#include "sway/tide/border.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/view.h"
 #include "sway/xdg_decoration.h"
@@ -82,7 +83,8 @@ void set_xdg_decoration_mode(struct sway_xdg_decoration *deco) {
 			view->impl->wants_floating(view);
 	}
 
-	if (floating && client_mode) {
+	// tide: server-side, floating or not, as on tidewm
+	if (!TIDE_NO_CSD && floating && client_mode) {
 		mode = client_mode;
 	}
 

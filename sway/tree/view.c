@@ -541,9 +541,8 @@ void view_update_csd_from_client(struct sway_view *view, bool enabled) {
 	struct sway_container *con = view->container;
 	if (enabled && con && con->pending.border != B_CSD) {
 		con->saved_border = con->pending.border;
-		if (container_is_floating(con)) {
-			con->pending.border = B_CSD;
-		}
+		// tide: a floating window keeps its border too, as on tidewm, where
+		// no window draws its own decorations in place of one
 	} else if (!enabled && con && con->pending.border == B_CSD) {
 		con->pending.border = con->saved_border;
 	}

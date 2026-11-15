@@ -16,6 +16,7 @@
 #include "sway/sway_text_node.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/border.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
 #include "sway/tide/stack.h"
@@ -959,7 +960,8 @@ void container_set_floating(struct sway_container *container, bool enable) {
 		workspace_add_floating(workspace, container);
 		if (container->view) {
 			view_set_tiled(container->view, false);
-			if (container->view->using_csd) {
+			// tide: it keeps its border, as on tidewm, its decorations sway's
+			if (!TIDE_NO_CSD && container->view->using_csd) {
 				container->saved_border = container->pending.border;
 				container->pending.border = B_CSD;
 				if (container->view->xdg_decoration) {
@@ -1004,7 +1006,7 @@ void container_set_floating(struct sway_container *container, bool enable) {
 		}
 		if (container->view) {
 			view_set_tiled(container->view, true);
-			if (container->view->using_csd) {
+			if (!TIDE_NO_CSD && container->view->using_csd) { // tide: as above
 				container->pending.border = container->saved_border;
 				if (container->view->xdg_decoration) {
 					struct sway_xdg_decoration *deco = container->view->xdg_decoration;
@@ -1545,7 +1547,7 @@ struct sway_container *container_split(struct sway_container *child,
 
 	if (container_is_floating(child) && child->view) {
 		view_set_tiled(child->view, true);
-		if (child->view->using_csd) {
+		if (!TIDE_NO_CSD && child->view->using_csd) { // tide: it kept its border
 			child->pending.border = child->saved_border;
 		}
 	}
