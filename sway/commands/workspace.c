@@ -174,7 +174,9 @@ struct cmd_results *cmd_workspace(int argc, char **argv) {
 	} else {
 		if (config->reading || !config->active) {
 			return cmd_results_new(CMD_DEFER, NULL);
-		} else if (!root->outputs->length) {
+		} else if (!root->outputs->length && !root->fallback_output) {
+			// tide: with none, on sway's fallback output, as tidewm switches
+			// with no monitor
 			return cmd_results_new(CMD_INVALID,
 					"Can't run this command while there's no outputs connected.");
 		}
