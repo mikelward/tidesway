@@ -362,6 +362,13 @@ Each patch's PR says how far it moves this.
   first, and the app's window comes up as it should. tidewm at the pin
   fails it the same way (23 of 48 runs, 8 at once on 4 cores), so the race
   is the test's; it's in `flaky.txt` until tidewm's test stops racing.
+- **for_window in tidewm's words** (2026-11-15): a `for_window` line is
+  checked as tidewm checks one, failing in its words, but with sway's
+  criteria's names, their valueless `all`, `floating` and `tiling`, and
+  spaces around `=`, which tidewm's rejects and sway's configs may have. A
+  match PCRE2 can't finish is logged as tidewm logs it, "tidewm: for_window
+  rule N: couldn't match its KEY: WHY", as tidewm's tests look for that
+  prefix; the rule runs nothing, as before.
 - **floating_modifier resizes by the corner** (2026-11-10): the modifier and
   the resize button resize a floating window by its bottom right corner,
   which the pointer jumps to, as tidewm's and dwl's do, where sway resized
