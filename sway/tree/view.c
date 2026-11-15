@@ -1052,7 +1052,7 @@ void view_unmap(struct sway_view *view) {
 
 	struct sway_container *parent = view->container->pending.parent;
 	struct sway_workspace *ws = view->container->pending.workspace;
-	bool tide_refocus = tide_focus_closing(view); // tide: SPEC §14.2
+	bool tide_refocus = tide_focus_leaving(view); // tide: SPEC §14.2
 	container_begin_destroy(view->container);
 	if (parent) {
 		container_reap_empty(parent);
@@ -1068,7 +1068,7 @@ void view_unmap(struct sway_view *view) {
 		workspace_detect_urgent(ws);
 	}
 	if (tide_refocus) {
-		tide_focus_closed(); // tide: to the window under the pointer
+		tide_focus_left(NULL); // tide: to the window under the pointer
 	}
 
 	struct sway_seat *seat;

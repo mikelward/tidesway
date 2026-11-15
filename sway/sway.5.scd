@@ -1308,8 +1308,10 @@ windows and picture-in-picture place themselves, so theirs isn't kept.
 
 *minimize* [enable|disable|toggle]
 	Hides the window, as tidewm does: it leaves the layout, and focus on it
-	goes to the window you were in before. It stays on its workspace, which
-	stays while it waits, and keeps its states. Focusing it by any means
+	goes to the window under the pointer, as closing it does (*TIDE'S FOCUS
+	GUARD*), but only with the pointer on the window's own output; otherwise
+	focus goes to the window you were in before. It stays on its workspace,
+	which stays while it waits, and keeps its states. Focusing it by any means
 	brings it back, at the end of the stack. Alone, it toggles. An app's own
 	request to minimize does nothing.
 

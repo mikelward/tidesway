@@ -1134,7 +1134,7 @@ struct cmd_results *cmd_focus_guard(int argc, char **argv) {
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
 
-bool tide_focus_closing(struct sway_view *view) {
+bool tide_focus_leaving(struct sway_view *view) {
 	struct sway_seat *seat = input_manager_get_default_seat();
 	if (!view->container || seat_get_focus(seat) != &view->container->node) {
 		return false;
@@ -1196,7 +1196,7 @@ static void tile_under(struct sway_container *con, void *data) {
 	}
 }
 
-void tide_focus_closed(void) {
+void tide_focus_left(struct sway_output *only) {
 	struct sway_seat *seat = input_manager_get_default_seat();
 	if (server.session_lock.lock || root->fullscreen_global) {
 		return;
@@ -1205,6 +1205,12 @@ void tide_focus_closed(void) {
 	struct wlr_output *wlr_output =
 		wlr_output_layout_output_at(root->output_layout, lx, ly);
 	struct sway_output *output = wlr_output ? wlr_output->data : NULL;
+	/* Only the windows of the output under the pointer count, so with
+	 * only, a floating window of only's reaching onto another output
+	 * doesn't take focus there */
+	if (only && output != only) {
+		return;
+	}
 	struct sway_workspace *ws = output && output->enabled
 		? output_get_active_workspace(output) : NULL;
 	if (!ws) {
