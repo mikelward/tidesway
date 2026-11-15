@@ -3,6 +3,7 @@ of an unfocused window are darkened at dim_inactive's strength, to its
 edges, as tide's layouts, sway's own and floating lay it out, and the
 focused window's and a dimmed window's menu aren't."""
 
+import re
 import select
 import subprocess
 import unittest
@@ -14,6 +15,16 @@ STRENGTH = 0.5
 # The test client's color, and it under the dim
 BLUE = (0x33, 0x66, 0x99)
 DIMMED = tuple(c * (1 - STRENGTH) for c in BLUE)
+
+
+def ppm_pixels(test, shot, width, height):
+    """A PPM's pixels: what follows P6, its width, height and maximum, and
+    one whitespace byte. A pixel's byte can be a whitespace's, so the
+    header isn't split off as words."""
+    header = re.match(rb"P6\s+(\d+)\s+(\d+)\s+(\d+)\s", shot)
+    test.assertIsNotNone(header, shot[:32])
+    test.assertEqual(header.groups(), (b"%d" % width, b"%d" % height, b"255"), shot[:32])
+    return shot[header.end():]
 
 
 class DimOnScreenHelpers(TidewmTest):
@@ -60,10 +71,7 @@ class DimOnScreenHelpers(TidewmTest):
         shot = subprocess.run(["grim", "-t", "ppm", "-g", f"{x},{y} 1x1", "-"],
                               env=self.wm.env, check=True, timeout=TIMEOUT,
                               capture_output=True).stdout
-        # P6, width, height, maximum, then the pixel
-        fields = shot.split(maxsplit=4)
-        self.assertEqual(fields[:4], [b"P6", b"1", b"1", b"255"], shot[:32])
-        return tuple(fields[4][:3])
+        return tuple(ppm_pixels(self, shot, 1, 1)[:3])
 
     def looks(self, color, expected):
         return all(abs(c - e) <= 3 for c, e in zip(color, expected))
