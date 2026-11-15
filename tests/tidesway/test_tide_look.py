@@ -11,7 +11,7 @@ import unittest
 import tidesway  # noqa: F401  (sets up harness)
 import test_xwayland as x11  # noqa: E402  (tidewm's, from the checkout)
 from harness import EVENT_WINDOW, GET_OUTPUTS, ROOT, RUN_COMMAND, TIMEOUT
-from test_tide_dimming import BLUE, DIMMED, STRENGTH, DimOnScreenHelpers
+from test_tide_dimming import BLUE, DIMMED, STRENGTH, DimOnScreenHelpers, ppm_pixels
 
 POINTER = os.path.join(ROOT, "tests", "pointer")
 
@@ -417,9 +417,7 @@ class ScaledLookTest(LookHelpers):
         shot = subprocess.run(["grim", "-t", "ppm", "-g", f"{x},{y} 1x1", "-"],
                               env=self.wm.env, check=True, timeout=TIMEOUT,
                               capture_output=True).stdout
-        fields = shot.split(maxsplit=4)
-        self.assertEqual(fields[:4], [b"P6", b"2", b"2", b"255"], shot[:32])
-        return tuple(fields[4][9:12])
+        return tuple(ppm_pixels(self, shot, 2, 2)[9:12])
 
     def test_corners_are_cut_at_a_scale_of_two(self):
         window = self.open("test.app")
