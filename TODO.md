@@ -134,7 +134,15 @@ release binding being a tap (2026-11-15), 34 more pass, 27 of them
 fail: two read `tidewm:` in the log, where tidesway says `tidesway:`
 (*Decisions needing review*), and the escaped space at a line's end, which
 tidesway keeps (its own `test_tide_config.py`), is in an `exec` whose `;`
-sway still splits.
+sway still splits. Then 18
+more, each passing in seven runs: tidewm's quoted workspace names and
+grants, its button-binding and rule-match errors, a floating window moved
+by direction, the pointer starting in the middle, an enabled output's kept
+layouts, a switch with no output, and a keyboard's layout when the
+environment's fails: 768. With them, two more that waited on GET_CONFIG
+or tidewm's log, in five runs: `test_rules`' rule errors, and
+`test_config`'s environment keymap, as the XKB environment's message says
+`tidewm:` (*A layout XKB hasn't got in the environment*): 770.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
