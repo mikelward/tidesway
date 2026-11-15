@@ -6,7 +6,7 @@ import math
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
-from harness import GET_OUTPUTS, GET_TREE, RUN_COMMAND, TidewmTest
+from harness import EVENT_WINDOW, GET_OUTPUTS, GET_TREE, RUN_COMMAND, TidewmTest
 
 
 def edge(start, length, frac):
@@ -259,3 +259,66 @@ class BorderTest(FlatTreeTest):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FloatingLayoutTest(TidewmTest):
+    """tidewm's floating layout: no layout places a tile, so each stays
+    where it was, and gets its place back as a floating window does."""
+
+    CONFIG = 'shadows floating\nfor_window [app_id="^test.float$"] floating enable\n'
+
+    def setUp(self):
+        super().setUp()
+        self.ipc = self.connect()
+        self.ipc.subscribe("window")
+
+    def open(self, app_id, **kwargs):
+        self.wm.open_window(app_id, app_id, **kwargs)
+        return self.ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "new"
+                                   and e["container"]["app_id"] == app_id)["container"]["id"]
+
+    def rect(self, con):
+        r = self.windows()[con]["rect"]
+        return r["x"], r["y"], r["width"], r["height"]
+
+    def layout(self):
+        tree = self.connect().request(GET_TREE)
+        return [ws["layout"] for o in tree["nodes"] for ws in o["nodes"] if ws["name"] == "1"][0]
+
+    def test_tiles_stay_where_they_were_and_a_new_one_opens_in_the_middle(self):
+        first, second = self.open("test.first"), self.open("test.second")
+        before = {con: self.rect(con) for con in (first, second)}
+        self.command(self.connect(), "layout floating")
+        self.assertEqual({con: self.rect(con) for con in (first, second)}, before)
+        third = self.open("test.third", size="300x200")
+        out = self.connect().request(GET_OUTPUTS)[0]["rect"]
+        x, y, w, h = self.rect(third)
+        self.assertEqual((w, h), (300, 200))
+        self.assertEqual((x, y), (out["x"] + (out["width"] - 300) // 2,
+                                  out["y"] + (out["height"] - 200) // 2))
+        self.assertEqual({con: self.rect(con) for con in (first, second)}, before)
+        self.command(self.connect(), "layout tile")
+        self.assertNotEqual(self.rect(third)[2:], (300, 200), "tile lays them out again")
+
+    def test_a_tile_gets_its_place_back_after_fullscreen(self):
+        first, _ = self.open("test.first"), self.open("test.second")
+        self.command(self.connect(), "layout floating")
+        before = self.rect(first)
+        self.command(self.connect(), f"[con_id={first}] fullscreen enable")
+        self.command(self.connect(), f"[con_id={first}] fullscreen disable")
+        self.assertEqual(self.rect(first), before)
+
+    def test_floating_gives_and_takes_the_shadow_where_it_is(self):
+        window = self.open("test.float", size="300x200")
+        self.command(self.connect(), "layout floating")
+        before = self.rect(window)
+        self.command(self.connect(), f"[con_id={window}] floating disable")
+        self.assertEqual((self.rect(window), self.windows()[window]["shadow"]), (before, False))
+        self.command(self.connect(), f"[con_id={window}] floating enable")
+        self.assertEqual((self.rect(window), self.windows()[window]["shadow"]), (before, True))
+
+    def test_toggle_goes_to_floating_first_as_in_tidewm(self):
+        self.command(self.connect(), "layout toggle")
+        self.assertEqual(self.layout(), "floating")
+        self.command(self.connect(), "layout toggle")
+        self.assertEqual(self.layout(), "tile")

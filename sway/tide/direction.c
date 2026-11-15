@@ -216,7 +216,9 @@ const char *tide_move_in_direction(struct sway_container *con, enum wlr_directio
 	}
 	struct wlr_box from;
 	container_get_box(con, &from);
-	struct sway_container *t = window_in(ws, from, dir, con, true, true);
+	// In the floating layout no tile is beside it to swap with, as in tidewm
+	struct sway_container *t = tide_workspace_layout(ws) == TIDE_FLOATING ? NULL
+		: window_in(ws, from, dir, con, true, true);
 	if (t) {
 		// Swaps with the tile that way, in a flat tree
 		tide_flatten(ws);

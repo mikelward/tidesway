@@ -40,6 +40,7 @@
 #include "sway/server.h"
 #include "sway/tide/dim.h"
 #include "sway/tide/fade.h"
+#include "sway/tide/layout.h"
 #include "sway/tide/look.h"
 #include "sway/tide/maximize.h"
 #include "sway/tree/container.h"
@@ -1171,7 +1172,8 @@ static void place(struct wlr_scene_buffer *part, struct shadow_pixels *pixels,
 
 static void update_shadow(struct sway_container *con, struct sway_container *active) {
 	struct tide_look_shadow *shadow = &con->tide_shadow;
-	bool tile = !container_is_floating(con);
+	// A tile in the floating layout is over the others, as a floating one is
+	bool tile = !container_is_floating(con) && !tide_placed_by_hand(con);
 	struct wlr_box area;
 	int blur = config->tide_look.shadow_blur_radius;
 	int r = con->view ? tide_look_radius(con->view) : 0;

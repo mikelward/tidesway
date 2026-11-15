@@ -54,8 +54,8 @@ this order, one PR each; each makes more of tidewm's suite pass.
 - ~~**The color behind windows**~~. Done: tidewm's `rootcolor`, `#222222`,
   where no window or wallpaper is, rather than black unless swaybg runs
   (`sway/tide/background.c`), so `test_effects`' tests of a shadow on it
-  and of a window that opens dimmed fading in pass. Two more, in tidewm's
-  floating layout, wait for tidesway to have it.
+  and of a window that opens dimmed fading in pass, and so do its two in
+  tidewm's floating layout, now that tidesway has it.
 - **Track sway**. A weekly check of swaywm/sway: new commits on the current release
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
@@ -220,9 +220,16 @@ Each patch's PR says how far it moves this.
   failing; a `layout` naming one of tide's puts it back in tide's. `mfact`,
   `nmaster`, `single_width` and `movestack` fail on a workspace in sway's
   layouts, as tidewm's fail in its floating layout.
-- **No floating layout** (2026-11-08): sway has none, so `layout floating`
-  fails, and `layout toggle` on a workspace that's had only one layout does
-  nothing, where tidewm's goes to floating.
+- **tidewm's floating layout** (2026-11-15): `layout floating` places no
+  tile: each stays where it was, taking its place back after fullscreen or
+  maximize, and `layout toggle` with no layout before goes there, as in
+  tidewm. A new tile there opens in the middle at its own size, at most
+  4/5 of the window area, where tidewm's opens at the monitor's corner. A
+  tile there casts a shadow as a floating window does, over the tiles, but
+  only `shadows all` and `active` give it one, as in tidewm. Still sway's: floating windows stay above
+  every tile, where tidewm stacks them all by focus; among the tiles, the
+  focused one is on top. A drag with `floating_modifier` moves a tile as a
+  tile, where tidewm floats it.
 - **A flat tree in a tide layout** (2026-11-08): a workspace in a tide layout
   keeps its windows direct children of the workspace. Setting a tide layout
   drops sway's split containers (and makes a tabbed or stacked workspace a
@@ -430,9 +437,6 @@ Each patch's PR says how far it moves this.
   where sway sent it only on success; a key bound to `kill` in a window kept
   open says it ran. Criteria that match nothing fail with tidewm's "No
   window matches the criteria", where sway said "No matching node."
-- **No maximize in a floating layout** (2026-11-10): tidewm's maximize
-  tests that use its floating layout fail here, as tidesway has none
-  (above).
 - **A window keeps its id as it maps again** (2026-11-10): sway gave the new
   container a new id; tidesway gives it the window's first, as tidewm does,
   so a shell that knows it by id still does.

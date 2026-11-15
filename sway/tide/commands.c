@@ -1,9 +1,10 @@
 /*
  * tide's layout commands and config lines, as tidewm takes them (its
- * docs/ipc.md and docs/config.md): layout tile|threecol|twocol|monocle,
- * layout next|prev|toggle, mfact, nmaster, single_width, zoom and
- * movestack; and single_window, ultrawide_aspect, default_layout,
- * layout_defaults, layout_cycle and new_window.
+ * docs/ipc.md and docs/config.md): layout
+ * tile|threecol|twocol|monocle|floating, layout next|prev|toggle, mfact,
+ * nmaster, single_width, zoom and movestack; and single_window,
+ * ultrawide_aspect, default_layout, layout_defaults, layout_cycle and
+ * new_window.
  */
 #include <errno.h>
 #include <math.h>
@@ -91,9 +92,6 @@ struct cmd_results *tide_cmd_layout(int argc, char **argv) {
 			tide_set_layout(ws, TIDE_NONE);
 			return cmd_results_new(CMD_SUCCESS, NULL);
 		}
-		if (strcasecmp(argv[0], "floating") == 0) {
-			return cmd_results_new(CMD_FAILURE, "tidesway has no floating layout");
-		}
 	}
 	// One of sway's layouts: sway's command checks it, then leaves tide's
 	return NULL;
@@ -112,6 +110,9 @@ struct cmd_results *cmd_mfact(int argc, char **argv) {
 	struct sway_workspace *ws = tide_workspace(&error);
 	if (!ws) {
 		return error;
+	}
+	if (tide_workspace_layout(ws) == TIDE_FLOATING) {
+		return cmd_results_new(CMD_FAILURE, "The floating layout has no master area");
 	}
 	if (relative) {
 		f += ws->tide.mfact;
@@ -231,7 +232,8 @@ struct cmd_results *cmd_default_layout(int argc, char **argv) {
 	bool wide = argc == 2 && strcmp(argv[0], "ultrawide") == 0;
 	enum tide_layout lt = argc == 2 ? parse_layout(argv[1]) : TIDE_NONE;
 	if (argc != 2 || (!wide && strcmp(argv[0], "normal") != 0)
-			|| lt == TIDE_NONE || strcmp(argv[1], tide_layout_name(lt)) != 0) {
+			|| lt == TIDE_NONE || lt == TIDE_FLOATING
+			|| strcmp(argv[1], tide_layout_name(lt)) != 0) {
 		return cmd_results_new(CMD_INVALID, "default_layout takes normal or "
 			"ultrawide, then tile, threecol, twocol or monocle");
 	}
