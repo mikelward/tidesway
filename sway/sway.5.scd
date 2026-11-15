@@ -1206,7 +1206,14 @@ These may only be used in the configuration file:
 A plain left press near the edge between the masters and the stack drags it,
 setting _mfact_; either side of _threecol_'s centered master drags it both
 ways, and a lone window's sides drag its width, centered, as *single_width*
-sets it. Over a floating window, a layer surface or a popup, on an output
+sets it. A tile's shadow across the edge drags it too, as far as the shadow
+reaches (*shadow\_blur\_radius*). With *shadows active* that's the focused
+tile's, on its neighbor's side of the edge and only beside that tile. With
+*shadows all* it's both sides, all down the edge. The pointer shows a resize
+cursor there, and the window under it doesn't get the press. Focus doesn't
+follow the pointer into the zone, so the shadow stays where it is to be
+dragged; it moves once the pointer is past it. Over a floating
+window, a layer surface or a popup, on an output
 that isn't focused, or under a fullscreen window, the press goes where it
 would without the edge. *floating_modifier*'s resize button on a tile drags
 its nearest edge the same way, or floats a tile with none.
@@ -1429,8 +1436,23 @@ tiles' are under every tile, so they show only in the gaps between tiles,
 if there are any. Of tabbed or stacked windows, the one showing casts the
 shadow, around its tabs too. A tile's shadow stops at the edge of its
 output's window area, so none reaches a bar or the next output. A shadow
-takes no clicks and moves no window. GET_TREE and window events say whether
-a window casts one, as its _shadow_.
+moves no window. GET_TREE and window events say whether a window casts one,
+as its _shadow_.
+
+A window's shadow is where a drag resizes it, as on Hyprland. A plain left
+press just outside a floating window's edge or corner resizes it from there,
+and the pointer shows a resize cursor. That zone reaches as far as a shadow
+does, *shadow\_blur\_radius* pixels, or 8 pixels where no window has a shadow:
+with *shadows disable*, a radius of 0 or a color that can't be seen. A
+floating window that casts none now, as an unfocused one with *shadows
+active*, has the same zone. Beside the end of an edge, the press resizes by
+the corner. A press in the zone focuses the window and doesn't reach the
+window under it, and focus doesn't follow the pointer into the zone. A
+press inside the window always reaches the app. A floating window
+above it, a fullscreen window, a top or overlay layer surface, a popup or
+the lock keeps the press, and a fullscreen or maximized window has no zone. A tile's shadow
+across the edge between the masters and the stack drags that edge (TIDE'S
+LAYOUTS, *resize\_grab*).
 
 These may only be used in the configuration file:
 

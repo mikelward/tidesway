@@ -40,8 +40,10 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 
 	// The amount the mouse has moved since the start of the resize operation
 	// Positive is down/right
-	double mouse_move_x = cursor->cursor->x - e->ref_lx;
-	double mouse_move_y = cursor->cursor->y - e->ref_ly;
+	// tide: in whole pixels, as tidewm's, so the window's size is the
+	// drag's and not a fraction short of it
+	double mouse_move_x = round(cursor->cursor->x - e->ref_lx);
+	double mouse_move_y = round(cursor->cursor->y - e->ref_ly);
 
 	if (edge == WLR_EDGE_TOP || edge == WLR_EDGE_BOTTOM) {
 		mouse_move_x = 0;

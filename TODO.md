@@ -161,7 +161,12 @@ main at `2942f4f`, on 2026-11-15, with tidewm's test of a grant you moved on
 from waiting for its key, and a skipped block's inner blocks no longer
 closing its mode: of its 828 tests, 818 are in `passing.txt`. The grant
 test, now `MovedOnNotificationTest`'s, passes each time, so it's out of
-`flaky.txt`, and the new mode-block test passes, each in four runs.
+`flaky.txt`, and the new mode-block test passes, each in four runs. It moved again, to
+tidewm's main at `7064216`, on 2026-11-15, with tidewm's shadow as the drag
+zone, which tidesway takes in the same change: of its 856 tests, 846 are in
+`passing.txt`. 29 are new, each passing in three runs: all 28 of
+`test_shadow_drag`, and `test_effects`' click through a tile's shadow away
+from the edge, which takes the place of the one on the edge.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -239,6 +244,24 @@ Each patch's PR says how far it moves this.
   failing; a `layout` naming one of tide's puts it back in tide's. `mfact`,
   `nmaster`, `single_width` and `movestack` fail on a workspace in sway's
   layouts, as tidewm's fail in its floating layout.
+- **A shadow as the drag zone** (2026-11-15): as tide's Hyprland config has
+  it since tide#521 (tide's SPEC §6, "Resizing by an edge"). A plain left
+  press just outside a floating window resizes it by that edge or corner:
+  as far out as a shadow reaches (`shadow_blur_radius`), or 8 pixels where
+  the config gives no window one. Stock sway resizes a floating window by
+  its border alone, so with tide's `default_border none` it had no edge to
+  drag. The zone takes the press from what's under it. A tile's shadow
+  across the master/stack edge widens `resize_grab`'s zone: the focused
+  tile's with `shadows active`, on its neighbor's side and only beside it,
+  and both sides with `shadows all`. The pointer shows a resize cursor
+  over either zone, which the tiles' edge didn't have. Focus doesn't
+  follow the pointer into a zone, as in tidewm: else, with `shadows
+  active`, the shadow, and the zone, would go as the pointer reached it.
+  Floating windows' zones stack as the scene does, across outputs.
+  Guesses: a tile in the floating layout has no zone, as it isn't a
+  floating window; a touch or a pen's tap in a zone still goes to the
+  window under it; with a shadow color that can't be seen the zone is the
+  8 pixels.
 - **tidewm's floating layout** (2026-11-15): `layout floating` places no
   tile: each stays where it was, taking its place back after fullscreen or
   maximize, and `layout toggle` with no layout before goes there, as in

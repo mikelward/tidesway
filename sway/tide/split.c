@@ -1,9 +1,11 @@
 /*
  * Dragging the master/stack edge, as tidewm's split.h has it (tide's SPEC
  * §6.6): a plain left press within resize_grab pixels either side of the
- * edge between the masters and the stack drags it, setting mfact, until a
- * button comes up. threecol's centered master grows or shrinks both ways
- * from either side, and a lone window's sides drag its width, centered.
+ * edge between the masters and the stack, or on a shadow across it, drags
+ * it, setting mfact, until a button comes up. threecol's centered master
+ * grows or shrinks both ways from either side, and a lone window's sides
+ * drag its width, centered. The pointer shows a resize cursor over the
+ * zone, where the windows don't get it.
  * Anything over the edge takes the press as usual: a floating window, a
  * layer surface or a window's popup; so does a press on an output that
  * isn't focused, under a fullscreen or maximized window, or while a popup
@@ -22,6 +24,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/look.h"
 #include "sway/tide/maximize.h"
 #include "sway/tide/split.h"
 #include "sway/tree/arrange.h"
@@ -135,11 +138,52 @@ static struct sway_workspace *pressed_workspace(struct sway_seat *seat) {
 	return ws;
 }
 
-bool tide_split_press(struct sway_seat *seat, struct sway_node *node,
-		struct wlr_surface *surface) {
+/* How far the zone reaches left and right of edge at the cursor's y:
+ * resize_grab pixels, and as far as a shadow across the edge does. With
+ * shadows all, every tile casts one, so that's both ways, all down the
+ * edge. With shadows active only the focused tile does, out from its own
+ * side of the edge, and only beside it: from its top to its bottom, and
+ * past each as far as the shadow reaches. */
+static void reach(struct sway_seat *seat, struct sway_workspace *ws,
+		const struct tide_edge *edge, int g, int *left, int *right) {
+	*left = *right = g;
+	int shadow = tide_look_shadow_reach();
+	if (shadow <= g) {
+		return;
+	}
+	if (config->tide_look.shadows == TIDE_SHADOWS_ALL) {
+		*left = *right = shadow;
+		return;
+	}
+	struct sway_container *con = seat_get_focused_container(seat);
+	if (config->tide_look.shadows != TIDE_SHADOWS_ACTIVE || !con || !con->view
+			|| container_is_floating_or_child(con) || con->pending.workspace != ws
+			|| !tide_look_shadow(con)) {
+		return;
+	}
+	double y = seat->cursor->cursor->y;
+	if (y < con->pending.y - shadow
+			|| y >= con->pending.y + con->pending.height + shadow) {
+		return;
+	}
+	int x = (int)round(con->pending.x);
+	if (edge->x == x) {
+		*left = shadow;
+	}
+	if (edge->x == x + (int)round(con->pending.width)) {
+		*right = shadow;
+	}
+}
+
+/* The edge whose zone the cursor is in, on node and surface as
+ * node_at_coords found them, into *edge and its workspace into *ws.
+ * Returns whether there is one. */
+static bool zone(struct sway_seat *seat, struct sway_node *node,
+		struct wlr_surface *surface, struct sway_workspace **ws,
+		struct tide_edge *edge) {
 	int g = grab();
-	struct sway_workspace *ws = g > 0 ? pressed_workspace(seat) : NULL;
-	if (!ws) {
+	*ws = g > 0 ? pressed_workspace(seat) : NULL;
+	if (!*ws) {
 		return false;
 	}
 	/* What's over the tiles takes the press: a layer surface or its popup,
@@ -158,14 +202,34 @@ bool tide_split_press(struct sway_seat *seat, struct sway_node *node,
 	}
 	double x = seat->cursor->cursor->x;
 	struct tide_edge edges[2];
-	int n = tide_edges(ws, edges);
+	int n = tide_edges(*ws, edges);
 	for (int i = 0; i < n; i++) {
-		if (x >= edges[i].x - g && x < edges[i].x + g) {
-			begin(seat, ws, &edges[i]);
+		int left, right;
+		reach(seat, *ws, &edges[i], g, &left, &right);
+		if (x >= edges[i].x - left && x < edges[i].x + right) {
+			*edge = edges[i];
 			return true;
 		}
 	}
 	return false;
+}
+
+bool tide_split_press(struct sway_seat *seat, struct sway_node *node,
+		struct wlr_surface *surface) {
+	struct sway_workspace *ws;
+	struct tide_edge edge;
+	if (!zone(seat, node, surface, &ws, &edge)) {
+		return false;
+	}
+	begin(seat, ws, &edge);
+	return true;
+}
+
+bool tide_split_hover(struct sway_seat *seat, struct sway_node *node,
+		struct wlr_surface *surface) {
+	struct sway_workspace *ws;
+	struct tide_edge edge;
+	return zone(seat, node, surface, &ws, &edge);
 }
 
 bool tide_split_press_tile(struct sway_seat *seat, struct sway_container *con) {

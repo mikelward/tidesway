@@ -13,6 +13,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/scene_descriptor.h"
+#include "sway/tide/dragzone.h"
 #include "sway/tide/grab.h"
 #include "sway/tide/split.h"
 #include "sway/tree/view.h"
@@ -395,9 +396,10 @@ static void handle_button_unheld(struct sway_seat *seat, uint32_t time_msec,
 		return;
 	}
 
-	// tide: a plain left press on a tide layout's edge drags it
+	// tide: a plain left press in a floating window's drag zone resizes
+	// it, and one on a tide layout's edge drags that
 	if (state == WL_POINTER_BUTTON_STATE_PRESSED && button == BTN_LEFT
-			&& !mod_pressed && tide_split_press(seat, node, surface)) {
+			&& !mod_pressed && tide_dragzone_press(seat, node, surface)) {
 		return;
 	}
 
@@ -667,12 +669,15 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 	double sx, sy;
 	struct sway_node *node = node_at_coords(seat,
 			cursor->cursor->x, cursor->cursor->y, &surface, &sx, &sy);
+	// tide: in a drag zone the pointer is on no surface, and focus
+	// doesn't follow it
+	bool zone = tide_dragzone_hover(seat, node, &surface);
 
 	// tide: a motion with no time, a virtual pointer's jump, moves the
 	// pointer without focus following it, as in tidewm; the next motion
 	// with a time over a new window is what focuses it
 	bool jump = time_msec == 0;
-	if (config->focus_follows_mouse != FOLLOWS_NO && !jump) {
+	if (config->focus_follows_mouse != FOLLOWS_NO && !jump && !zone) {
 		check_focus_follows_mouse(seat, e, node);
 	}
 
@@ -691,7 +696,7 @@ static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 
 	drag_icons_update_position(seat);
 
-	if (!jump) {
+	if (!jump && !zone) {
 		e->previous_node = node;
 	}
 }
@@ -1197,6 +1202,11 @@ static void handle_rebase(struct sway_seat *seat, uint32_t time_msec) {
 	double sx = 0.0, sy = 0.0;
 	e->previous_node = node_at_coords(seat,
 			cursor->cursor->x, cursor->cursor->y, &surface, &sx, &sy);
+	// tide: in a drag zone the pointer is on no surface, and what's
+	// focused is what it was last over, so focus follows it out
+	if (tide_dragzone_hover(seat, e->previous_node, &surface)) {
+		e->previous_node = seat_get_focus(seat);
+	}
 
 	if (surface) {
 		if (seat_is_input_allowed(seat, surface) && !cursor->hidden) {

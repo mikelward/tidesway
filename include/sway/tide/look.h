@@ -130,6 +130,11 @@ bool tide_look_is_shadow(struct wlr_scene_buffer *buffer);
  * shown casts none. */
 bool tide_look_shadow(struct sway_container *con);
 
+/* How far a shadow reaches past its window, in layout pixels, or 0 if the
+ * config gives no window one: shadows disable, a shadow_blur_radius of 0,
+ * or a shadow_color that can't be seen */
+int tide_look_shadow_reach(void);
+
 /* How see-through a shadow's buffer is, for output_configure_scene, which
  * has opacity for it: a tile's shadow isn't in its window's tree, so it
  * takes its window's own, fading in as it opens */

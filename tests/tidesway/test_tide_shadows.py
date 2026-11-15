@@ -115,12 +115,16 @@ class ActiveShadowTest(TileShadowHelpers):
         self.assertShadowed(floating)
         self.assertNoneBetween(left, right)
 
-    def test_a_click_on_a_tiles_shadow_goes_to_the_tile_under_it(self):
+    def test_a_click_on_a_tiles_shadow_doesnt_reach_the_tile_under_it(self):
+        """The shadow is where a drag moves the tiles' edge
+        (test_tide_dragzone.py); a click past it goes to the tile."""
         left, right = self.tiles()
         self.settle()
         onto, own = self.beside(right, left)
-        # Under the shadow, and clear of the tiles' edge, where sway resizes
-        self.click_at(*onto[BLUR - 2])
+        self.click_at(*onto[BLUR - 1])  # the last of the shadow
+        self.assertTrue(self.windows()[right]["focused"])
+        self.assertFallsOn(right, left)
+        self.click_at(*onto[BLUR])
         self.assertTrue(self.windows()[left]["focused"])
         self.assertFallsOn(left, right)
 

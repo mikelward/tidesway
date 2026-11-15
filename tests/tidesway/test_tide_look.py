@@ -350,12 +350,16 @@ class ShadowTest(ShadowHelpers):
         self.assertPixels(self.kept(floating) + self.cut(floating), BLUE)
         self.assertTrue(self.windows()[right]["rect"]["x"] > x1)
 
-    def test_a_click_on_a_shadow_goes_to_the_window_under_it(self):
+    def test_a_click_on_a_shadow_is_the_floating_windows(self):
+        """Its shadow is where a drag resizes it (test_tide_dragzone.py),
+        so a click there focuses it; one past it goes to the window under."""
         tiled = self.open("test.tiled")
         floating = self.open("test.float")
-        self.assertTrue(self.windows()[floating]["focused"])
+        self.command(self.connect(), f"[con_id={tiled}] focus")
         x0, y0, x1, y1 = self.rect(floating)
         self.click_at(x0 - 3, (y0 + y1) // 2)
+        self.assertTrue(self.windows()[floating]["focused"])
+        self.click_at(x0 - BLUR - 1, (y0 + y1) // 2)
         self.assertTrue(self.windows()[tiled]["focused"])
 
     def test_a_window_no_longer_floating_loses_its_shadow(self):
