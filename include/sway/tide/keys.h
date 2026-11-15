@@ -4,6 +4,7 @@
 
 struct sway_config;
 struct sway_mode;
+struct sway_seat;
 
 // A mode of tidewm's built-in keys, config.h's, for the config to keep
 struct sway_mode *tide_keys_builtin(void);
@@ -14,5 +15,10 @@ bool tide_keys_bound(struct sway_config *config);
 /* The mode whose keys a key press looks in: the current one, or the
  * built-in keys at the top level of a config that binds none there */
 struct sway_mode *tide_keys_mode(void);
+
+/* A button, scroll or touchpad gesture came while a key was down, so its
+ * --release binding isn't a tap and doesn't run: Super tapped alone, not
+ * Super and a click, a drag or a scroll, as tidewm has it */
+void tide_keys_pointer_used(struct sway_seat *seat);
 
 #endif

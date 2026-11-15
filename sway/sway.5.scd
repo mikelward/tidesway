@@ -538,7 +538,10 @@ runtime.
 	The priority for matching bindings is as follows: input device, group,
 	and locked state.
 
-	In tidesway, as in tidewm, Caps Lock is ignored: a key combo naming _Lock_
+	In tidesway, as in tidewm, a _--release_ binding runs only if no pointer
+	button, scroll or touchpad gesture came while the key was down, as no
+	other key may: *bindsym --release Super_L* is Super tapped alone, and not
+	Super and a click, a drag or a scroll. Caps Lock is ignored: a key combo naming _Lock_
 	is the same as one that doesn't, and replaces it. Any flag tidesway doesn't
 	take, such as sway's _--border_, which tidewm hasn't either, is an error.
 

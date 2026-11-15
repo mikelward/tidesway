@@ -13,6 +13,8 @@
 #include "stringop.h"
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/input/keyboard.h"
+#include "sway/input/seat.h"
 #include "sway/tide/keys.h"
 
 // Each key and its command, as tidewm's config.def.h's keys[] does it.
@@ -105,4 +107,19 @@ struct sway_mode *tide_keys_mode(void) {
 		return config->tide_builtin_keys;
 	}
 	return mode;
+}
+
+void tide_keys_pointer_used(struct sway_seat *seat) {
+	struct sway_seat_device *device;
+	wl_list_for_each(device, &seat->devices, link) {
+		if (device->keyboard) {
+			device->keyboard->held_binding = NULL;
+		}
+	}
+	struct sway_keyboard_group *group;
+	wl_list_for_each(group, &seat->keyboard_groups, link) {
+		if (group->seat_device && group->seat_device->keyboard) {
+			group->seat_device->keyboard->held_binding = NULL;
+		}
+	}
 }

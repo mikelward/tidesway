@@ -28,6 +28,7 @@
 #include "sway/server.h"
 #include "sway/desktop/transaction.h"
 #include "sway/tide/focus.h"
+#include "sway/tide/keys.h"
 #include "sway/tide/look.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -381,6 +382,7 @@ void dispatch_cursor_button(struct sway_cursor *cursor,
 
 	// tide: a click is you moving on, then the window it went to
 	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		tide_keys_pointer_used(cursor->seat); // tide: and no tap
 		// tide: a window placed but still waiting on its client is there
 		transaction_flush();
 		tide_focus_click();
@@ -412,6 +414,7 @@ static void handle_pointer_button(struct wl_listener *listener, void *data) {
 
 void dispatch_cursor_axis(struct sway_cursor *cursor,
 		struct wlr_pointer_axis_event *event) {
+	tide_keys_pointer_used(cursor->seat); // tide: a scroll is no tap
 	seatop_pointer_axis(cursor->seat, event);
 }
 
