@@ -311,6 +311,13 @@ Each patch's PR says how far it moves this.
   not "unmaximized", though WAYLAND_DEBUG shows sway sending the configure
   without the maximized state each time. Not found yet; it's in
   `flaky.txt`.
+- **Known flaky: a grant you moved on from** (2026-11-15):
+  `test_focus.NotificationTest.test_a_notification_grant_you_moved_on_from_brings_nothing_up`
+  makes a grant that lapses in 0.05s, then presses a key with wtype to
+  cancel it. Under load wtype takes longer than that, the grant lapses
+  first, and the app's window comes up as it should. tidewm at the pin
+  fails it the same way (23 of 48 runs, 8 at once on 4 cores), so the race
+  is the test's; it's in `flaky.txt` until tidewm's test stops racing.
 - **floating_modifier resizes by the corner** (2026-11-10): the modifier and
   the resize button resize a floating window by its bottom right corner,
   which the pointer jumps to, as tidewm's and dwl's do, where sway resized
