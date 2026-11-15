@@ -39,4 +39,11 @@ struct sway_container *tide_focus_next(struct sway_workspace *ws,
 const char *tide_move_in_direction(struct sway_container *con,
 	enum wlr_direction dir);
 
+/* move left|right|up|down for floating con with no distance, as tidewm's:
+ * straight to the next output that way, at the same spot relative to its
+ * window area, no bigger than it; past the last output, nowhere. Returns
+ * an error, or NULL. */
+const char *tide_move_floating_in_direction(struct sway_container *con,
+	enum wlr_direction dir);
+
 #endif

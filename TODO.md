@@ -120,8 +120,8 @@ each time, where sway's colors and errors aren't tidewm's: a failed reload's,
 a translucent border's, urgent over focused, `client.focused_inactive`'s
 default and two errors' words. Its test of a minimize focusing the window
 under the pointer passes now that tidesway's does: 694. Its test of a floating window reaching
-onto another output can't pass, as sway moves a floating window to the output
-its middle is on, where tidewm keeps its monitor. Then (2026-11-15) tidesway
+onto another output passes now that a floating window moved by pixels keeps
+its output, as tidewm's keeps its monitor (2026-11-15). Then (2026-11-15) tidesway
 took tidewm's border colors, its `default_border` and the color behind windows,
 and three single failures: 23 more pass, in `test_borders`, `test_effects`,
 `test_fullscreen`, `test_resize` and `test_vt`. Two of `test_borders`' can't
@@ -378,6 +378,12 @@ Each patch's PR says how far it moves this.
   says which, as tidewm's does ("tidewm: XKB can't make a keymap of the
   environment's ..."), and every keymap leaves them out from then on, so a
   keyboard gets XKB's own layout, us, where sway's had no keymap at all.
+- **A floating window moved by direction** (2026-11-15): `move left` and
+  the rest with no distance send a floating window straight to the next
+  output that way, at the same place in its window area, as tidewm's do,
+  where sway moved it 10 px. Moved by pixels it keeps its output, as
+  tidewm's keeps its monitor, where sway gave it to the output its middle
+  was on. A distance that isn't one is a parse error.
 - **floating_modifier resizes by the corner** (2026-11-10): the modifier and
   the resize button resize a floating window by its bottom right corner,
   which the pointer jumps to, as tidewm's and dwl's do, where sway resized

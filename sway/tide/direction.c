@@ -4,6 +4,7 @@
  * by sway's split tree, which a tide layout keeps as one flat row.
  */
 #include <limits.h>
+#include <math.h>
 #include <wlr/util/box.h>
 #include "list.h"
 #include "sway/input/input-manager.h"
@@ -13,6 +14,7 @@
 #include "sway/tide/direction.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/workspace.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
@@ -248,6 +250,70 @@ const char *tide_move_in_direction(struct sway_container *con, enum wlr_directio
 		workspace_add_tiling(next, con);
 	}
 	container_update_representation(con);
+	ipc_event_window(con, "move");
+	workspace_detect_urgent(ws);
+	workspace_detect_urgent(next);
+	arrange_workspace(ws);
+	arrange_workspace(next);
+	if (focused) {
+		seat_set_focus_container(seat, con);
+	}
+	return NULL;
+}
+
+/* A floating box b moved from window area old to new, as tidewm's
+ * dir_place: at the same spot relative to the area, its size but no
+ * bigger than the area, and then just inside */
+static struct wlr_box place(struct wlr_box b, struct wlr_box old, struct wlr_box new) {
+	struct wlr_box p = {
+		.width = DIR_MIN(b.width, new.width),
+		.height = DIR_MIN(b.height, new.height),
+	};
+	p.x = new.x + (old.width > 0 ? (int)lround((double)(b.x - old.x) * new.width / old.width) : 0);
+	p.y = new.y + (old.height > 0 ? (int)lround((double)(b.y - old.y) * new.height / old.height) : 0);
+	p.x = DIR_MAX(new.x, DIR_MIN(p.x, new.x + new.width - p.width));
+	p.y = DIR_MAX(new.y, DIR_MIN(p.y, new.y + new.height - p.height));
+	return p;
+}
+
+const char *tide_move_floating_in_direction(struct sway_container *con,
+		enum wlr_direction dir) {
+	struct sway_workspace *ws = con->pending.workspace;
+	if (!ws || !ws->output) {
+		return "The window isn't on an output";
+	}
+	if (!workspace_is_visible(ws)) {
+		return "The window's workspace isn't shown";
+	}
+	struct sway_output *output = next_output(ws->output, dir);
+	struct sway_workspace *next = output ? tide_ws_part(ws, output) : NULL;
+	if (!next || next->output != output) {
+		next = output ? output_get_active_workspace(output) : NULL;
+	}
+	if (!next) {
+		return NULL; // past the last output, nothing moves
+	}
+	struct sway_seat *seat = input_manager_current_seat();
+	bool focused = seat_get_focused_container(seat) == con;
+	struct wlr_box old = { ws->x, ws->y, ws->width, ws->height };
+	struct wlr_box new = { next->x, next->y, next->width, next->height };
+	container_detach(con);
+	/* Placed by its box once it's there, as an X11 window in its output's
+	 * own pixels takes the new output's scale (tide_x11_moved) */
+	workspace_add_floating(next, con);
+	struct wlr_box was = { con->pending.x, con->pending.y,
+		con->pending.width, con->pending.height };
+	struct wlr_box p = place(was, old, new);
+	if (!con->view) {
+		// A floating split keeps its size: its children are laid out in it
+		p.width = was.width;
+		p.height = was.height;
+	}
+	con->pending.content_width -= was.width - p.width;
+	con->pending.content_height -= was.height - p.height;
+	con->pending.width = p.width;
+	con->pending.height = p.height;
+	container_floating_translate(con, p.x - was.x, p.y - was.y);
 	ipc_event_window(con, "move");
 	workspace_detect_urgent(ws);
 	workspace_detect_urgent(next);

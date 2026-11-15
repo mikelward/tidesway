@@ -50,6 +50,18 @@ class TwoOutputTest(x11.X11Helpers):
             rect = self.windows()[window["id"]]["rect"]
             self.assertEqual((rect["width"], rect["height"]), size, output)
 
+    def test_a_floating_x11_window_moved_by_direction_keeps_its_pixels(self):
+        client = self.wm.open_x11_window("test.x11", "X11", report=True, fixed_size="400x300")
+        window = self.opened(client)
+        self.sized(client, 400, 300)
+        x11.TwoOutputTest.on_the_left(self, window)
+        for way, output, size in [("right", "HEADLESS-2", (200, 150)),
+                                  ("left", "HEADLESS-1", (400, 300))]:
+            self.command(self.connect(), f"[con_id={window['id']}] move {way}")
+            moved = self.windows()[window["id"]]
+            self.assertEqual((moved["output"], moved["rect"]["width"], moved["rect"]["height"]),
+                             (output, *size), way)
+
     def test_a_floating_x11_window_moved_by_place_keeps_its_pixels(self):
         # As a drag across the monitors moves it
         self.command(self.connect(), "focus output HEADLESS-1")
