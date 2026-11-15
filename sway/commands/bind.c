@@ -366,6 +366,17 @@ static struct cmd_results *binding_remove(struct sway_binding *binding,
 			"for the given flags", keycombo);
 }
 
+// refine region of interest for mouse binding once we are certain
+// that this is one
+static void refine_region(struct sway_binding *binding, bool exclude_titlebar) {
+	if (exclude_titlebar) {
+		binding->flags &= ~BINDING_TITLEBAR;
+	} else if (binding->type == BINDING_MOUSECODE
+			|| binding->type == BINDING_MOUSESYM) {
+		binding->flags |= BINDING_TITLEBAR;
+	}
+}
+
 static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 		bool bindcode, bool unbind) {
 	const char *bindtype;
@@ -486,6 +497,14 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 			"(expected at least %d non-option arguments, got %d)",
 			bindtype, minargs, argc);
 	}
+	if (!unbind && strcmp(argv[0], "none") == 0) { // tide: a name with no key yet
+		binding->command = join_args(argv + 1, argc - 1);
+		refine_region(binding, exclude_titlebar); // as a rebind's key will be
+		struct cmd_results *named = tide_names_keyless(bindtype, tide_name, binding,
+			bindcode, (int)(argv - tide_flags), tide_flags);
+		free_sway_binding(binding);
+		return named;
+	}
 
 	list_t *split = split_string(argv[0], "+");
 	for (int i = 0; i < split->length; ++i) {
@@ -551,14 +570,7 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 	}
 	list_free_items_and_destroy(split);
 
-	// refine region of interest for mouse binding once we are certain
-	// that this is one
-	if (exclude_titlebar) {
-		binding->flags &= ~BINDING_TITLEBAR;
-	} else if (binding->type == BINDING_MOUSECODE
-			|| binding->type == BINDING_MOUSESYM) {
-		binding->flags |= BINDING_TITLEBAR;
-	}
+	refine_region(binding, exclude_titlebar);
 
 	// sort ascending
 	list_qsort(binding->keys, key_qsort_cmp);
