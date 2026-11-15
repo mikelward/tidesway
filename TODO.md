@@ -350,10 +350,9 @@ Each patch's PR says how far it moves this.
   own, so GET_CONFIG's `config`, `path` and `included_configs`, and
   GET_VERSION's `loaded_config_file_name`, are that file's, as tidewm's are,
   not the written config's. A file `-c` names that isn't there is an error at
-  startup, said with the rest as tidewm says them, but with `tidesway:`
-  where tidewm says `tidewm:`, so the two of tidewm's tests that read that
-  word (`MissingConfigTest`, `BadEnvironmentKeymapTest`) can't pass. sway run
-  on a config of its own shows that config, as before.
+  startup, said as tidewm says it, `tidewm:` and all, as tidesway's other
+  messages in tidewm's words are. sway run on a config of its own shows that
+  config, as before.
 - **tidewm's built-in keys** (2026-11-15): while tidewm's file is missing or
   binds no key at its top level, the keys of tidewm's `config.def.h` work
   there, as tidewm's tests expect (`sway/tide/keys.c`), each as the IPC
