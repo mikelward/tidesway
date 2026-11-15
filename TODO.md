@@ -127,8 +127,14 @@ and three single failures: 23 more pass, in `test_borders`, `test_effects`,
 `test_fullscreen`, `test_resize` and `test_vt`. Two of `test_borders`' can't
 pass while `look.conf` says `default_border none`, as they start from tidewm's
 1px border (*Decisions needing review*), and two of `test_effects`' are in
-tidewm's floating layout. `test_dimming`'s failed reload reads GET_CONFIG, which
-shows the harness's wrapper config, not tidewm's file.
+tidewm's floating layout. With tidewm's config file in GET_CONFIG,
+its built-in keys and rules, its mode blocks and binding checks, and a
+release binding being a tap (2026-11-15), 34 more pass, 27 of them
+`test_config`'s, in four runs of four: 750. Three of `test_config`'s still
+fail: two read `tidewm:` in the log, where tidesway says `tidesway:`
+(*Decisions needing review*), and the escaped space at a line's end, which
+tidesway keeps (its own `test_tide_config.py`), is in an `exec` whose `;`
+sway still splits.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
