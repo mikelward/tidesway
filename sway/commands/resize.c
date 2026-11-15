@@ -541,8 +541,8 @@ static struct cmd_results *cmd_resize_adjust(int argc, char **argv,
 		} else if (second_amount.unit == MOVEMENT_UNIT_DEFAULT) {
 			return resize_adjust_floating(axis, &second_amount);
 		} else {
-			return cmd_results_new(CMD_INVALID,
-					"Floating containers cannot use ppt measurements");
+			// tide: in tidewm's words
+			return cmd_results_new(CMD_INVALID, "A floating window resizes in px");
 		}
 	}
 

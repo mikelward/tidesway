@@ -589,6 +589,7 @@ test_resize.FloatingResizeTest.test_a_bad_resize_is_a_parse_error (command='resi
 test_resize.FloatingResizeTest.test_a_bad_resize_is_a_parse_error (command='resize grow width 10px20')
 test_resize.FloatingResizeTest.test_a_bad_resize_is_a_parse_error (command='resize grow width ten')
 test_resize.FloatingResizeTest.test_a_bad_resize_is_a_parse_error (command='resize width 10')
+test_resize.FloatingResizeTest.test_a_floating_window_takes_the_px_amount
 test_resize.FloatingResizeTest.test_a_side_grows_or_shrinks_that_side
 test_resize.FloatingResizeTest.test_a_unit_may_be_joined_to_its_amount
 test_resize.FloatingResizeTest.test_ten_pixels_without_an_amount
