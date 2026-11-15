@@ -233,6 +233,7 @@ sway_sources = files(
 	'tide/minimize.c',
 	'tide/names.c',
 	'tide/output.c',
+	'tide/rules.c',
 	'tide/shortcut.c',
 	'tide/split.c',
 	'tide/switch.c',

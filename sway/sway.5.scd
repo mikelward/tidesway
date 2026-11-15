@@ -868,7 +868,9 @@ The default colors are:
 
 *for_window* <criteria> <command>
 	Whenever a window that matches _criteria_ appears, run list of commands.
-	See *CRITERIA* for more details.
+	See *CRITERIA* for more details. As in tidewm, a criterion named twice,
+	a value with no closing quote or a pattern PCRE2 can't compile fails
+	the line, and a match PCRE2 can't finish runs nothing and is logged.
 
 *gaps* inner|outer|horizontal|vertical|top|right|bottom|left <amount>
 	Sets default _amount_ pixels of _inner_ or _outer_ gap, where the inner

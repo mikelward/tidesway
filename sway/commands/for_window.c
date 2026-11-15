@@ -1,12 +1,17 @@
 #include <string.h>
 #include "sway/commands.h"
 #include "sway/criteria.h"
+#include "sway/tide/rules.h"
 #include "list.h"
 #include "log.h"
 #include "stringop.h"
 
 struct cmd_results *cmd_for_window(int argc, char **argv) {
 	struct cmd_results *error = NULL;
+	// tide: checked as tidewm checks it, in its words
+	if ((error = tide_rule_check(argc, argv))) {
+		return error;
+	}
 	if ((error = checkarg(argc, "for_window", EXPECTED_AT_LEAST, 2))) {
 		return error;
 	}

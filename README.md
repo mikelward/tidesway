@@ -38,7 +38,8 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   dialogs placed and taken along with their window, floating places
   remembered per app, `position auto` outputs, GET_BINDINGS and the capture
   and output-focus events (`man 5 sway`, `man 7 sway-ipc`);
-* tidewm's checks of input lines, failing in its words (`man 5 sway-input`);
+* tidewm's checks of input lines and `for_window` rules, failing in its
+  words (`man 5 sway-input`, `man 5 sway`);
 * sharp X11 windows at a fractional scale, with tidewm's `xwayland_scaling
   disable` (`man 5 sway`);
 * fixes for what tide hit in sway: a floating window's dialogs stay above it,
