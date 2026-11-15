@@ -442,6 +442,9 @@ struct cmd_results *cmd_focus(int argc, char **argv) {
 				seat_set_focus_container(seat, next);
 				seat_consider_warp_to_focus(seat);
 				container_raise_floating(next);
+			} else if (!container) {
+				// tide: as tidewm's, with no window to go round
+				return cmd_results_new(CMD_FAILURE, "No window to focus from");
 			}
 			return cmd_results_new(CMD_SUCCESS, NULL);
 		}
