@@ -29,6 +29,7 @@
 #include "sway/layers.h"
 #include "sway/output.h"
 #include "sway/server.h"
+#include "sway/tide/cursor.h"
 #include "sway/tide/grab.h"
 #include "sway/tide/keys.h"
 #include "sway/tide/maximize.h"
@@ -1003,7 +1004,7 @@ static bool xcursor_manager_is_named(const struct wlr_xcursor_manager *manager,
 }
 
 void seat_configure_xcursor(struct sway_seat *seat) {
-	unsigned cursor_size = 24;
+	unsigned cursor_size = tide_cursor_size(); // tide: XCURSOR_SIZE's
 	const char *cursor_theme = NULL;
 
 	const struct seat_config *seat_config = seat_get_config(seat);

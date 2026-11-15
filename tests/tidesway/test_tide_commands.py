@@ -126,3 +126,15 @@ class MaximizedOnAnotherOutputTest(TidewmTest):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ThemeCursorSizeTest(TidewmTest):
+    """A theme without a size keeps the size tidesway was started with."""
+
+    ENV = {"XCURSOR_SIZE": "48"}
+    CONFIG = "seat * xcursor_theme default\n"
+    exec_output = ExecQuotedTest.exec_output
+
+    def test_a_theme_without_a_size_keeps_the_size_tidesway_was_given(self):
+        self.assertEqual(self.exec_output('exec printf %s "$XCURSOR_SIZE" > "$XDG_RUNTIME_DIR/out"'),
+                         b"48")

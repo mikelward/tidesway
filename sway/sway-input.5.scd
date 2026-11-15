@@ -328,7 +328,9 @@ correct seat.
 	Override the system default XCursor theme. The default seat's
 	(_seat0_) theme is also used as the default cursor theme in
 	XWayland, and exported through the _XCURSOR_THEME_ and
-	_XCURSOR_SIZE_ environment variables.
+	_XCURSOR_SIZE_ environment variables. Without a _size_, or without the
+	line, the size is _XCURSOR\_SIZE_'s as sway was started with it, from 1
+	to 512, as in tidewm, or 24.
 
 # SEE ALSO
 

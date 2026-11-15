@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sway/config.h"
+#include "sway/tide/cursor.h"
 #include "log.h"
 
 struct seat_config *new_seat_config(const char* name) {
@@ -33,7 +34,7 @@ struct seat_config *new_seat_config(const char* name) {
 	seat->shortcuts_inhibit = SHORTCUTS_INHIBIT_DEFAULT;
 	seat->keyboard_grouping = KEYBOARD_GROUP_DEFAULT;
 	seat->xcursor_theme.name = NULL;
-	seat->xcursor_theme.size = 24;
+	seat->xcursor_theme.size = tide_cursor_size(); // tide: XCURSOR_SIZE's
 
 	return seat;
 }
