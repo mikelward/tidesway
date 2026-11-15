@@ -56,7 +56,7 @@ class RunTest(unittest.TestCase):
         self.assertTrue(text.startswith("-c\n"))
         self.assertIn("default_border none", text)
         look = text.index("default_border none")
-        include = text.index(f"include {config}\n")
+        include = text.index(f"tidewm_config --named {config}\n")
         startup = text.index("exec sh ")
         self.assertLess(look, include)
         self.assertLess(include, startup)
@@ -76,9 +76,10 @@ class RunTest(unittest.TestCase):
                 self.assertEqual("floating_modifier Mod1 normal\n" in self.written(), alt)
 
     def test_without_c_includes_tidewms_own_config_path(self):
+        # Not --named: a file at tidewm's own place may be missing
         self.assertEqual(self.run_harness("-s", "true").returncode, 0)
         path = os.path.join(self.dir.name, "xdg", "tidewm", "config")
-        self.assertIn(f"include {path}\n", self.written())
+        self.assertIn(f"tidewm_config {path}\n", self.written())
 
     def test_refuses_an_unknown_argument(self):
         proc = self.run_harness("-x")
@@ -98,13 +99,13 @@ class RunTest(unittest.TestCase):
         text = self.written()
         extra = f"include {self.dir.name}/tidesway.d/*.conf\n"
         self.assertIn(extra, text)
-        self.assertLess(text.index(f"include {config}\n"), text.index(extra))
+        self.assertLess(text.index(f"tidewm_config --named {config}\n"), text.index(extra))
 
     def test_a_relative_config_is_included_by_its_whole_path(self):
         proc = subprocess.run([RUN, "-c", "config", "-s", "true"], env=self.env,
                               cwd=self.dir.name, capture_output=True, text=True, timeout=10)
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn(f"include {self.dir.name}/config\n", self.written())
+        self.assertIn(f"tidewm_config --named {self.dir.name}/config\n", self.written())
 
     def test_refuses_a_config_path_sways_include_would_read_as_another(self):
         for name in "my config", "con$fig", "con*fig", "it's":

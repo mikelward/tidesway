@@ -89,6 +89,13 @@ The following commands may only be used in the configuration file.
 	It can be disabled by setting the command to a single dash:
 	_swaynag\_command -_
 
+*tidewm_config* [--named] <path>
+	tidesway's: includes tidewm's config file, the one the *tidesway*
+	command was given, which the config that command writes for sway has as
+	its own line. The IPC's GET_CONFIG and GET_VERSION show that file, as
+	tidewm's do. With _--named_, the file was named by
+	*tidesway -c*, and its being missing at startup is an error.
+
 *workspace_layout* default|stacking|tabbed
 	Specifies the initial layout for new containers in an empty workspace.
 

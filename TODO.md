@@ -287,10 +287,15 @@ Each patch's PR says how far it moves this.
   flags and lines stay: `--border`, `bindswitch --reload` and `bindswitch` in
   a mode, which tidewm's tests call errors; so does `mode NAME` alone in the
   file, which starts sway in that mode, and a mode name with a `;`.
-- **GET_CONFIG under the harness** (2026-11-10): the harness's config
-  includes the test's, so `config` and `path` are the harness's and the
-  test's file is in `included_configs`; tidewm's tests of those fail for that
-  alone.
+- **GET_CONFIG shows tidewm's file** (2026-11-15): the config the `tidesway`
+  command writes includes tidewm's file by a `tidewm_config` line, tidesway's
+  own, so GET_CONFIG's `config`, `path` and `included_configs`, and
+  GET_VERSION's `loaded_config_file_name`, are that file's, as tidewm's are,
+  not the written config's. A file `-c` names that isn't there is an error at
+  startup, said with the rest as tidewm says them, but with `tidesway:`
+  where tidewm says `tidewm:`, so the two of tidewm's tests that read that
+  word (`MissingConfigTest`, `BadEnvironmentKeymapTest`) can't pass. sway run
+  on a config of its own shows that config, as before.
 - **Workspaces are named by number** (2026-11-10): a new workspace takes the
   next free number, so tidesway starts on `1`, as tidewm does. sway named it
   after the first workspace a binding shows.

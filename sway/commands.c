@@ -120,6 +120,7 @@ static const struct cmd_handler config_handlers[] = {
 	{ "single_window", cmd_single_window }, // tide
 	{ "swaybg_command", cmd_swaybg_command },
 	{ "swaynag_command", cmd_swaynag_command },
+	{ "tidewm_config", cmd_tidewm_config }, // tide
 	{ "ultrawide_aspect", cmd_ultrawide_aspect }, // tide
 	{ "workspace_layout", cmd_workspace_layout },
 	{ "xwayland", cmd_xwayland },

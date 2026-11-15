@@ -3,13 +3,17 @@
  * it: a load's errors, each "FILE:LINE: ERROR", a failed reload's reply
  * naming the first few, and GET_CONFIG's path, errors and included files.
  */
+#define _XOPEN_SOURCE 700 // realpath
 #include <json.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "list.h"
 #include "log.h"
 #include "stringop.h"
+#include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/tide/configinfo.h"
 
@@ -40,6 +44,22 @@ void tide_config_error(const char *path, int line, const char *error) {
 		return;
 	}
 	list_add(errors, s);
+}
+
+void tide_config_file_error(const char *path, const char *error) {
+	if (!errors) {
+		tide_config_errors_reset();
+	}
+	char *s = format_str("%s: %s", path, error);
+	if (!s) {
+		sway_log(SWAY_ERROR, "tide: can't allocate a config error");
+		return;
+	}
+	list_add(errors, s);
+}
+
+bool tide_config_has_errors(void) {
+	return errors && errors->length;
 }
 
 char *tide_config_errors_summary(void) {
@@ -99,6 +119,12 @@ static char *slurp(const char *path) {
 }
 
 void tide_config_included(struct sway_config *config, const char *path) {
+	// Under tidesway's command, only what tidewm's file includes, as tidewm
+	// lists them, not the file itself or what the command's config adds
+	struct tide_user_config *user = &config->tide_user;
+	if (user->path && (user->depth == 0 || (user->real && strcmp(path, user->real) == 0))) {
+		return;
+	}
 	if (!config->tide_included && !(config->tide_included = create_list())) {
 		sway_log(SWAY_ERROR, "tide: can't allocate the included files");
 		return;
@@ -140,10 +166,77 @@ void tide_config_describe(struct sway_config *config, json_object *json) {
 	json_object_object_add(json, "included_configs", included);
 	const char *path = config->config_chain && config->config_chain->length
 		? config->config_chain->items[0] : NULL;
+	if (config->tide_user.path) {
+		// tidewm's file, as tidewm shows it: "" when it isn't there
+		path = config->tide_user.path;
+		json_object_object_add(json, "config",
+			json_object_new_string(config->tide_user.text ? config->tide_user.text : ""));
+	}
 	json_object_object_add(json, "path", path ? json_object_new_string(path) : NULL);
 	json_object *list = json_object_new_array();
 	for (int i = 0; errors && i < errors->length; i++) {
 		json_object_array_add(list, json_object_new_string(errors->items[i]));
 	}
 	json_object_object_add(json, "errors", list);
+}
+
+struct cmd_results *cmd_tidewm_config(int argc, char **argv) {
+	struct tide_user_config *user = &config->tide_user;
+	// Only the line tidesway's command writes, once
+	if (user->path || user->depth) {
+		return cmd_results_new(CMD_INVALID, "no setting is called tidewm_config");
+	}
+	bool named = argc > 0 && strcmp(argv[0], "--named") == 0;
+	if (argc != (named ? 2 : 1)) {
+		return cmd_results_new(CMD_INVALID, "tidewm_config needs [--named] FILE");
+	}
+	const char *path = argv[named ? 1 : 0];
+	user->path = strdup(path);
+	if (!user->path) {
+		return cmd_results_new(CMD_FAILURE, "can't allocate the config's path");
+	}
+	user->named = named;
+	user->real = realpath(path, NULL);
+	if (!user->real) {
+		// One -c names that isn't there is an error at startup, as in
+		// tidewm; one at tidewm's place isn't, nor is either on a reload,
+		// which goes back to config.h's keys
+		if (named && !config->reloading) {
+			tide_config_file_error(path, "there's no such file");
+			sway_log(SWAY_ERROR, "tidesway: %s: there's no such file", path);
+		}
+		return cmd_results_new(CMD_SUCCESS, NULL);
+	}
+	user->depth = 1;
+	bool loaded = load_include_configs(path, config, &config->swaynag_config_errors);
+	user->depth = 0;
+	// As loaded, errors and all: tidewm leaves out only the bad lines
+	user->text = slurp(user->real);
+	return loaded ? cmd_results_new(CMD_SUCCESS, NULL)
+		: cmd_results_new(CMD_FAILURE, "%s", TIDE_INCLUDE_FAILED);
+}
+
+void tide_user_config_free(struct sway_config *config) {
+	free(config->tide_user.path);
+	free(config->tide_user.real);
+	free(config->tide_user.text);
+	config->tide_user = (struct tide_user_config){0};
+}
+
+const char *tide_config_loaded_name(struct sway_config *config) {
+	if (config->tide_user.path) {
+		return config->tide_user.text ? config->tide_user.path : "";
+	}
+	return config->current_config_path ? config->current_config_path : "";
+}
+
+void tide_config_started(struct sway_config *config) {
+	struct tide_user_config *user = &config->tide_user;
+	if (user->path && !user->text && user->named) {
+		sway_log(SWAY_ERROR, "tidesway: not using %s: config.h's keys work instead",
+			user->path);
+	} else if (tide_config_has_errors()) {
+		sway_log(SWAY_ERROR, "tidesway: left out the lines above from the config; "
+			"the rest is loaded");
+	}
 }

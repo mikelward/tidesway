@@ -18,6 +18,7 @@
 #include "swaynag.h"
 #include "tree/container.h"
 #include "sway/input/tablet.h"
+#include "sway/tide/configinfo.h"
 #include "sway/tide/dim.h"
 #include "sway/tide/fade.h"
 #include "sway/tide/focus.h"
@@ -643,6 +644,8 @@ struct sway_config {
 	bool tide_xwayland_unscaled;
 	// tide: each file include lines read, with its text, for GET_CONFIG
 	list_t *tide_included;
+	// tide: tidewm's config file, which tidesway's command names
+	struct tide_user_config tide_user;
 	// tide: its named bindings, as bindsym --name lines first name them
 	list_t *tide_named;
 };
