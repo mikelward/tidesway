@@ -369,6 +369,10 @@ Each patch's PR says how far it moves this.
   match PCRE2 can't finish is logged as tidewm logs it, "tidewm: for_window
   rule N: couldn't match its KEY: WHY", as tidewm's tests look for that
   prefix; the rule runs nothing, as before.
+- **A button's binding needs --whole-window** (2026-11-15): `bindsym
+  Mod4+button2` without it fails, as tidewm's does: sway would bind it over
+  title bars and borders, which tide's look has none of. A button's binding takes no `--release`,
+  as tidewm's takes none, and a key that isn't a button says so.
 - **floating_modifier resizes by the corner** (2026-11-10): the modifier and
   the resize button resize a floating window by its bottom right corner,
   which the pointer jumps to, as tidewm's and dwl's do, where sway resized
