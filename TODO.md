@@ -75,6 +75,14 @@ this order, one PR each; each makes more of tidewm's suite pass.
   layouts, and XKB's errors as "XKB can't make a keymap of its xkb_ settings".
   Still sway's: a keymap that fails only once a later line merges into it is
   blamed on that later line, not on the line that set its layout as tidewm's is.
+- ~~**Outputs and IPC as tidewm's**~~. Done, for nwg-displays, which tide's
+  Displays page runs: output lines checked in tidewm's words, the file never
+  leaving every output off, an output refusing its settings keeping what it
+  had, the file's `power` taken but left, a command's power after its other
+  settings, a head a display tool didn't move left beside the others, and
+  linear scaling; tidewm's socket name and GET_VERSION, an answer to any
+  message type, a command list running past a failure, and a tree of outputs
+  alone (`sway/tide/outputapply.c`, `outputcheck.c`, `ipc.c`).
 
 ## Baseline
 
@@ -146,6 +154,9 @@ or tidewm's log, in five runs: `test_rules`' rule errors, and
 `exec` taking the rest of its line, which passes that escaped space, its
 floating layout, which passes `test_effects`' two there, and its other
 command fixes make 22 more pass, each in three runs: 792.
+tidewm's outputs and IPC (2026-11-15) make 23 more pass, in three runs
+each: 815. One of `test_ipc`'s still fails, the unsupported message, which
+asks for GET_MARKS (*sway's GET_MARKS stays*).
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -545,3 +556,15 @@ Each patch's PR says how far it moves this.
   tidewm. Windows drawn at a lower scale than their output's look softer at
   an integer scale than on sway; `scale_filter smart` or `nearest` brings
   sway's back.
+- **Outputs keep what they had** (2026-11-15): an output that refuses its
+  settings keeps its mode, scale and turn, as tidewm's does, where sway
+  searched for others it might take, which could leave it off. Each output
+  is tried alone first, so on hardware where outputs share a limit (bandwidth)
+  and fail only together, sway's search still decides.
+- **`tidewm:` in the log where tidewm's tests read it** (2026-11-15): an
+  output that's on though its line disables it, or refuses its settings, is
+  said in the log as tidewm says it, `tidewm: ...`, as the XKB environment's
+  message is, so tidewm's tests that read it pass. The config's own startup
+  errors say `tidesway:` (*GET_CONFIG shows tidewm's file*), so two of
+  `test_config`'s can't pass. One word for them all is the maintainer's call;
+  either is a one-word change at each `sway_log`.

@@ -27,6 +27,7 @@
 #include "sway/ipc-server.h"
 #include "sway/layers.h"
 #include "sway/output.h"
+#include "sway/tide/outputapply.h"
 #include "sway/tide/dim.h"
 #include "sway/tide/fade.h"
 #include "sway/tide/look.h"
@@ -453,6 +454,7 @@ void force_modeset(void) {
 }
 
 static void begin_destroy(struct sway_output *output) {
+	bool was_enabled = output->enabled; // tide
 
 	wl_list_remove(&output->layout_destroy.link);
 	wl_list_remove(&output->destroy.link);
@@ -477,6 +479,7 @@ static void begin_destroy(struct sway_output *output) {
 	wl_event_source_remove(output->repaint_timer);
 	output->repaint_timer = NULL;
 
+	tide_output_gone(was_enabled); // tide: one the file has off may come on
 	request_modeset();
 }
 
@@ -647,8 +650,11 @@ static struct output_config *output_config_for_config_head(
 		oc->refresh_rate =
 			config_head->state.custom_mode.refresh / 1000.f;
 	}
-	oc->x = config_head->state.x;
-	oc->y = config_head->state.y;
+	// tide: a head the client didn't move keeps its output's placement
+	if (!tide_output_head_unmoved(config_head)) {
+		oc->x = config_head->state.x;
+		oc->y = config_head->state.y;
+	}
 	oc->transform = config_head->state.transform;
 	oc->scale = config_head->state.scale;
 	oc->adaptive_sync = config_head->state.adaptive_sync_enabled;
@@ -685,7 +691,9 @@ static void output_manager_apply(struct sway_server *server,
 	// Try to commit without degrade to off enabled. Note that this will fail
 	// if any output configured for enablement fails to be enabled, even if it
 	// was not part of the config heads we were asked to configure.
+	tide_output_heads_begin(cfg); // tide: which outputs it turns on or off
 	ok = apply_output_configs(configs, configs_len, test_only, false);
+	tide_output_heads_end(ok && !test_only);
 
 error_config:
 	for (size_t idx = start_new_configs; idx < configs_len; idx++) {

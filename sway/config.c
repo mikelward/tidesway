@@ -24,6 +24,7 @@
 #include "sway/config.h"
 #include "sway/tide/border.h"
 #include "sway/tide/cmdline.h"
+#include "sway/tide/outputapply.h"
 #include "sway/tide/configinfo.h"
 #include "sway/tide/inputcheck.h"
 #include "sway/tide/x11scale.h"
@@ -569,6 +570,7 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 
 		config->reloading = false;
 		tide_x11_apply(); // tide: xwayland_scaling, as the config has it now
+		tide_output_file_loaded(); // tide: the outputs' next settings are the file's
 		if (is_active) {
 			request_modeset();
 			if (config->swaynag_config_errors.client != NULL) {

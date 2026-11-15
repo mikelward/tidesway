@@ -17,6 +17,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/tide/ipc.h"
+#include "sway/tide/outputapply.h"
 #include "sway/tide/announce.h"
 #include "sway/tide/configinfo.h"
 #include "sway/tide/names.h"
@@ -714,6 +715,7 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 		}
 
 		tide_grab_ask_begin(); // tide: you asked, so a focus grab ends
+		tide_output_reply_begin(); // tide: and a reload's outputs answer
 		list_t *res_list = execute_command(buf, NULL, NULL);
 		tide_grab_ask_end();
 		// tide: a reload has happened by the time its answer comes, as
@@ -728,6 +730,7 @@ void ipc_client_handle_command(struct ipc_client *client, uint32_t payload_lengt
 			// here to avoid modesetting for every output command in sequence.
 			force_modeset();
 		}
+		tide_output_reply_end(res_list);
 		transaction_commit_dirty();
 		char *json = cmd_results_to_json(res_list);
 		int length = strlen(json);

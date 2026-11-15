@@ -3,6 +3,7 @@
 #include "sway/config.h"
 #include "sway/output.h"
 #include "sway/tide/output.h"
+#include "sway/tide/outputapply.h"
 #include "sway/tide/outputcheck.h"
 #include "list.h"
 #include "log.h"
@@ -122,8 +123,15 @@ struct cmd_results *cmd_output(int argc, char **argv) {
 	config->handler_context.leftovers.argv = NULL;
 
 	bool background = output->background;
+	// tide: a command's enable or disable, the file's lines no longer
+	bool enables = !config->reading && output->enabled != -1;
+	char *name = enables ? strdup(output->name) : NULL;
 
 	store_output_config(output);
+	if (name) {
+		tide_output_commanded(name);
+		free(name);
+	}
 
 	if (config->reading) {
 		// When reading the config file, we wait till the end to do a single

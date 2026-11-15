@@ -40,6 +40,11 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   and output-focus events (`man 5 sway`, `man 7 sway-ipc`);
 * tidewm's checks of input lines and `for_window` rules, failing in its
   words (`man 5 sway-input`, `man 5 sway`);
+* tidewm's outputs, for nwg-displays and tide's Displays page: output lines
+  checked in tidewm's words, never every output off from the config file,
+  an output that refuses its settings keeping what it had, the file's
+  `power` taken but left, and scaling linear by default (`man 5
+  sway-output`);
 * tidewm's socket, `tidewm-ipc.UID.PID.sock`, which GET_VERSION calls
   tidewm's, every command run in a list with one that fails, and a tree of
   only outputs, as tidewm's (`man 7 sway-ipc`);

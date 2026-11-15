@@ -2,6 +2,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/tide/configinfo.h"
+#include "sway/tide/outputapply.h"
 #include "sway/ipc-server.h"
 #include "sway/server.h"
 #include "sway/tree/arrange.h"
@@ -94,5 +95,6 @@ struct cmd_results *cmd_reload(int argc, char **argv) {
 	wl_event_loop_add_idle(server.wl_event_loop, do_reload, NULL);
 	reload_scheduled = true;
 
+	tide_output_reload_ran(); // tide: its result fails if an output refuses the file
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }

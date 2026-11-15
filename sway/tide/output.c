@@ -3,6 +3,7 @@
  * include/sway/tide/output.h says how it behaves.
  */
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <wlr/types/wlr_output.h>
@@ -30,9 +31,52 @@ static struct cmd_results *apply(struct sway_output *output, bool on) {
 	return result;
 }
 
+/* The output command's settings, then its power, as nwg-displays sends
+ * them together: an output that goes off has taken the rest first, as
+ * tidewm's has */
+static bool power_after(int argc, char **argv, struct cmd_results **result) {
+	int at = -1;
+	for (int i = 1; i + 1 < argc && at < 0; i++) {
+		if (strcasecmp(argv[i], "power") == 0 || strcasecmp(argv[i], "dpms") == 0) {
+			at = i;
+		}
+	}
+	if (at < 0) {
+		return false;
+	}
+	char **rest = calloc(argc, sizeof(*rest));
+	if (!rest) {
+		*result = cmd_results_new(CMD_FAILURE, "No memory for the output's settings");
+		return true;
+	}
+	int n = 0;
+	for (int i = 0; i < argc; i++) {
+		if (i != at && i != at + 1) {
+			rest[n++] = argv[i];
+		}
+	}
+	applying = true;
+	struct cmd_results *r = cmd_output(n, rest);
+	applying = false;
+	free(rest);
+	if (!r || r->status != CMD_SUCCESS) {
+		*result = r;
+		return true;
+	}
+	free_cmd_results(r);
+	force_modeset();
+	char *power[] = { argv[0], "power", argv[at + 1] };
+	return tide_output_power(3, power, result);
+}
+
 bool tide_output_power(int argc, char **argv, struct cmd_results **result) {
-	if (applying || config->reading || argc < 2 || (strcasecmp(argv[1], "power") != 0
-			&& strcasecmp(argv[1], "dpms") != 0)) {
+	if (applying || config->reading || argc < 2) {
+		return false;
+	}
+	if (argc > 3) {
+		return power_after(argc, argv, result);
+	}
+	if (strcasecmp(argv[1], "power") != 0 && strcasecmp(argv[1], "dpms") != 0) {
 		return false;
 	}
 	if (argc != 3) {

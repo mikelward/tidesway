@@ -45,6 +45,8 @@ struct sway_output {
 
 	struct wlr_box usable_area;
 	int tide_position_side; // tide: TIDE_POSITION_AUTO_*, or 0 for none
+	// tide: the file's line has it off; it's on as no other is; it's had settings
+	bool tide_file_off, tide_kept, tide_configured;
 
 	int lx, ly; // layout coords
 	int width, height; // transformed buffer size

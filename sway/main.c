@@ -21,6 +21,7 @@
 #include "sway/tide/focus.h"
 #include "sway/desktop/transaction.h"
 #include "sway/tree/root.h"
+#include "sway/tide/outputapply.h"
 #include "sway/ipc-server.h"
 #include "ipc-client.h"
 #include "log.h"
@@ -371,6 +372,7 @@ int main(int argc, char **argv) {
 	}
 
 	config->active = true;
+	tide_output_started(); // tide: every output there is at startup is listed
 	force_modeset();
 	tide_focus_pointer_start(); // tide: in the middle of the left output
 	load_swaybars();

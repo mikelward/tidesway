@@ -32,7 +32,11 @@ output command fails for a name no output has.
 
 tidesway checks an output line as tidewm does, and says what's wrong in its
 words, as _output HDMI-A-1: no setting is called brightness_; once a setting
-only sway has comes, sway checks the rest.
+only sway has comes, sway checks the rest. An output that refuses its
+settings, as one given a mode it can't show, keeps what it had, or, as it
+starts or is plugged in, takes its preferred mode; when it's the config
+file's settings it refuses, that's an error of the file's, and *reload*
+fails naming it, though the rest of the file is loaded.
 
 # COMMANDS
 
@@ -89,6 +93,9 @@ only sway has comes, sway checks the rest.
 	beside the others, on that side, in the order they connected, beside
 	those put at positions and those placed before it, at 0 across. _auto_
 	is _auto-right_. It moves as the one beside it changes size or goes.
+	When a display settings tool, as *wlr-randr*(1), moves another output,
+	one with no position, or placed beside the others, stays beside them,
+	rather than being put where it was.
 
 *output* <name> scale <factor>
 	Scales the specified output by the specified scale _factor_. An integer is
@@ -141,6 +148,15 @@ only sway has comes, sway checks the rest.
 	As opposed to the _power_ command, the output will lose its current
 	workspace and windows.
 
+	In tidesway, as in tidewm, the config file never leaves every output
+	off: when its lines would, as one saved while another screen was plugged
+	in, one output stays on, one that's on already if any is, and that's an
+	error of the file's, which fails a *reload*. When the only output that's
+	on is unplugged, one the file's line has off comes on, the same way. A
+	command, as a lid's *bindswitch* runs, may still turn every output off,
+	and one that enables or disables an output, or a display settings tool
+	turning it on or off, says it's no longer the file's line that has it so.
+
 *output* <name> toggle
 	Toggle the specified output.
 
@@ -149,6 +165,11 @@ only sway has comes, sway checks the rest.
 
 	As opposed to the _enable_ and _disable_ commands, the output keeps its
 	current workspaces and windows.
+
+	In tidesway, as in tidewm, the config file's _power_ is taken but left:
+	every output starts on, as the file nwg-displays saves says _dpms off_
+	for one that was off when it saved. A command with other settings, as
+	nwg-displays sends, sets them first, then turns the output off or on.
 
 *output* <name> dpms on|off|toggle
 	Deprecated. Alias for _power_.
