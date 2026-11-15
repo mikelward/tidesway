@@ -50,6 +50,9 @@ It installs a `tidesway` command beside `sway`, started as tidewm is:
 (`share/tidesway/look.conf`), then CONFIG, tidewm's own
 (`~/.config/tidewm/config`) by default, then any `tidesway.d/*.conf` beside
 CONFIG, for lines tidewm doesn't know, and runs STARTUP once sway is up.
+While CONFIG isn't there or binds no key at its top level, tidewm's
+built-in keys work, as its `config.def.h` has them: Alt and a number shows
+that workspace, Alt+Shift+Return opens foot, and so on.
 tide's tidesway session starts it. CONFIG's path can't hold a space or a
 character a shell reads specially, as sway's `include` can't take one.
 

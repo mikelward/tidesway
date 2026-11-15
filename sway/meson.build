@@ -226,6 +226,7 @@ sway_sources = files(
 	'tide/inputcheck.c',
 	'tide/inputname.c',
 	'tide/keepopen.c',
+	'tide/keys.c',
 	'tide/layout.c',
 	'tide/look.c',
 	'tide/maximize.c',

@@ -27,6 +27,7 @@
 #include "sway/tide/inputcheck.h"
 #include "sway/tide/x11scale.h"
 #include "sway/tide/names.h"
+#include "sway/tide/keys.h"
 #include "sway/criteria.h"
 #include "sway/desktop/transaction.h"
 #include "sway/server.h"
@@ -177,6 +178,7 @@ void free_config(struct sway_config *config) {
 	list_free_items_and_destroy(config->config_chain);
 	tide_config_included_free(config);
 	tide_user_config_free(config);
+	free_mode(config->tide_builtin_keys);
 	tide_names_free(config);
 	free(config->floating_scroll_up_cmd);
 	free(config->floating_scroll_down_cmd);
@@ -531,6 +533,11 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 		free_config(config);
 		config = old_config;
 		return success;
+	}
+
+	// tide: tidewm's built-in keys, for while its file binds none
+	if (config->tide_user.path) {
+		config->tide_builtin_keys = tide_keys_builtin();
 	}
 
 	// Only really necessary if not explicitly `font` is set in the config.

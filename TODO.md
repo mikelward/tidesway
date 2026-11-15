@@ -296,6 +296,15 @@ Each patch's PR says how far it moves this.
   where tidewm says `tidewm:`, so the two of tidewm's tests that read that
   word (`MissingConfigTest`, `BadEnvironmentKeymapTest`) can't pass. sway run
   on a config of its own shows that config, as before.
+- **tidewm's built-in keys** (2026-11-15): while tidewm's file is missing or
+  binds no key at its top level, the keys of tidewm's `config.def.h` work
+  there, as tidewm's tests expect (`sway/tide/keys.c`), each as the IPC
+  command tidewm's own would run, but for Alt+f, tidewm's floating layout,
+  which tidesway hasn't, and Ctrl+Alt+F1 to F12, which change VT in sway
+  anyway. Only under the `tidesway` command: sway's own config binds what it
+  binds. They're keys tidewm users know, but a tidesway build has no
+  `config.h` to change them in, and the messages still call them
+  `config.h`'s, as tidewm's docs do.
 - **Workspaces are named by number** (2026-11-10): a new workspace takes the
   next free number, so tidesway starts on `1`, as tidewm does. sway named it
   after the first workspace a binding shows.
