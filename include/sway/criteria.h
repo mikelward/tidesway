@@ -40,6 +40,7 @@ struct criteria {
 	struct pattern *app_id;
 	struct pattern *con_mark;
 	uint32_t con_id; // internal ID
+	bool has_con_id; // tide: con_id=0, as tidewm has it, names no window
 #if WLR_HAS_XWAYLAND
 	struct pattern *class;
 	uint32_t id; // X11 window ID
