@@ -828,7 +828,7 @@ struct sway_container *tide_focus_unready_at(double lx, double ly,
 	return con;
 }
 
-void tide_focus_describe_seat(json_object *object) {
+void tide_focus_describe_seat(struct sway_seat *seat, json_object *object) {
 	json_object *last = NULL;
 	if (last_input.at) {
 		last = json_object_new_object();
@@ -842,6 +842,11 @@ void tide_focus_describe_seat(json_object *object) {
 	json_object_object_add(object, "last_input", last);
 	json_object_object_add(object, "prompt_may_focus",
 		json_object_new_boolean(prompt_may_focus()));
+	// Where the pointer is, in the layout, as tidewm's GET_SEATS says
+	json_object *pointer = json_object_new_object();
+	json_object_object_add(pointer, "x", json_object_new_int((int)seat->cursor->cursor->x));
+	json_object_object_add(pointer, "y", json_object_new_int((int)seat->cursor->cursor->y));
+	json_object_object_add(object, "pointer", pointer);
 }
 
 bool tide_focus_activate(struct sway_view *view) {
@@ -1211,6 +1216,30 @@ static void tile_under(struct sway_container *con, void *data) {
 	if (!u->con && !container_is_floating_or_child(con)
 			&& pending_at(con, u->lx, u->ly) && shown_tab(u->seat, con)) {
 		u->con = con;
+	}
+}
+
+void tide_focus_pointer_start(void) {
+	struct sway_output *start = NULL;
+	struct wlr_box box, best = {0};
+	for (int i = 0; i < root->outputs->length; i++) {
+		struct sway_output *output = root->outputs->items[i];
+		if (!output->enabled) {
+			continue;
+		}
+		output_get_box(output, &box);
+		if (!start || box.x < best.x || (box.x == best.x && box.y < best.y)) {
+			start = output;
+			best = box;
+		}
+	}
+	if (!start) {
+		return;
+	}
+	struct sway_seat *seat;
+	wl_list_for_each(seat, &server.input->seats, link) {
+		wlr_cursor_warp_closest(seat->cursor->cursor, NULL,
+			best.x + best.width / 2.0, best.y + best.height / 2.0);
 	}
 }
 
