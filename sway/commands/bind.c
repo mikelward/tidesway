@@ -420,6 +420,7 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 
 	bool exclude_titlebar = false;
 	bool warn = true;
+	bool whole_window = false; // tide: --whole-window, for its errors
 	const char *tide_name = NULL; // tide: its --name
 	char **tide_flags = argv; // tide: its flags, for a rebind's
 
@@ -463,6 +464,7 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 		} else if (strcmp("--whole-window", argv[0]) == 0 && (!bindcode || unbind)) {
 			// tide: a button's, by its name, as tidewm has it
 			binding->flags |= BINDING_BORDER | BINDING_CONTENTS | BINDING_TITLEBAR;
+			whole_window = true; // tide
 		} else if (strcmp("--border", argv[0]) == 0 && unbind) {
 			// tide: as tidewm, which has no borders to click on, has none
 			binding->flags |= BINDING_BORDER;
@@ -582,9 +584,11 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 		if (error) {
 			// tide: in tidewm's words
 			free_cmd_results(error);
-			error = cmd_results_new(CMD_FAILURE,
-				"%s %s: no modifier or key is called %s", bindtype, argv[0],
-				(char *)split->items[i]);
+			bool button = binding->type == BINDING_MOUSECODE
+				|| binding->type == BINDING_MOUSESYM;
+			error = cmd_results_new(CMD_FAILURE, "%s%s %s: no %s is called %s",
+				bindtype, whole_window ? " --whole-window" : "", argv[0],
+				button ? "button" : "modifier or key", (char *)split->items[i]);
 			free_sway_binding(binding);
 			list_free_items_and_destroy(split);
 			return error;
@@ -601,6 +605,24 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 		list_add(binding->keys, key);
 	}
 	list_free_items_and_destroy(split);
+
+	// tide: a button's binding as tidewm takes one, there being no title
+	// bars or borders in tide's look for the rest
+	if (!unbind && (binding->type == BINDING_MOUSECODE
+			|| binding->type == BINDING_MOUSESYM)) {
+		const char *why = NULL;
+		if (!(binding->flags & BINDING_CONTENTS)) {
+			why = "a button's binding needs --whole-window";
+		} else if (binding->flags & BINDING_RELEASE) {
+			why = "a button's binding takes no --release";
+		}
+		if (why) {
+			error = cmd_results_new(CMD_FAILURE, "%s%s %s: %s", bindtype,
+				whole_window ? " --whole-window" : "", argv[0], why);
+			free_sway_binding(binding);
+			return error;
+		}
+	}
 
 	refine_region(binding, exclude_titlebar);
 

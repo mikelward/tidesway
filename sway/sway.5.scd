@@ -546,8 +546,9 @@ runtime.
 	take, such as sway's _--border_, which tidewm hasn't either, is an error.
 
 	_--whole-window_ and _--exclude-titlebar_ are mouse-only options
-	which affect the region in which the mouse bindings can be triggered.  By
-	default, mouse bindings are only triggered when over the title bar.
+	which affect the region in which the mouse bindings can be triggered. A
+	mouse binding needs _--whole-window_, as in tidewm, since tide's look has
+	no title bars or borders, and takes no _--release_.
 	With the _--whole-window_ option, the cursor can be anywhere over a window
 	including the title, border, and content. _--exclude-titlebar_ can be used in
 	conjunction with any other option to specify that the titlebar should be
