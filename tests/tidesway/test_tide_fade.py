@@ -9,7 +9,7 @@ import tidesway  # noqa: F401  (sets up harness)
 from harness import RUN_COMMAND
 from test_tide_dimming import BLUE, DIMMED, STRENGTH, DimOnScreenHelpers
 
-BLACK = (0, 0, 0)  # nothing: no window and no wallpaper
+BACKGROUND = (0x22, 0x22, 0x22)  # tidewm's rootcolor: no window and no wallpaper
 HOUR = "fade_duration 3600000\n"
 DIM = f"dim_inactive {STRENGTH}\n"
 
@@ -41,7 +41,7 @@ class FadeInTest(FadeHelpers):
         window = self.open("test.app")
         self.settle()
         color = self.pixel(*self.middle(window))
-        self.assertTrue(nearer(color, BLACK, BLUE), f"{color} already shows")
+        self.assertTrue(nearer(color, BACKGROUND, BLUE), f"{color} already shows")
 
     def test_a_window_that_was_open_before_fades_stays_shown(self):
         self.assertTrue(self.reload(DIM)["success"])
@@ -81,7 +81,7 @@ class RoundedFadeTest(FadeHelpers):
         x = r["x"] + r["width"] // 2
         for y in r["y"] + 2, r["y"] + r["height"] // 2, r["y"] + r["height"] - 3:
             color = self.pixel(x, y)
-            self.assertTrue(nearer(color, BLACK, BLUE), f"{color} at {x},{y} already shows")
+            self.assertTrue(nearer(color, BACKGROUND, BLUE), f"{color} at {x},{y} already shows")
 
 
 class ShortFadeTest(FadeHelpers):

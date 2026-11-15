@@ -16,7 +16,7 @@ from test_tide_dimming import BLUE, DIMMED, STRENGTH, DimOnScreenHelpers, ppm_pi
 POINTER = os.path.join(ROOT, "tests", "pointer")
 
 RADIUS = 12
-BLACK = (0, 0, 0)  # nothing: no window and no wallpaper
+BACKGROUND = (0x22, 0x22, 0x22)  # tidewm's rootcolor: no window and no wallpaper
 FLOATING = ('for_window [app_id="^test.float$"] floating enable, '
             "resize set 300 200, move position 100 100\n")
 
@@ -58,18 +58,18 @@ class LookHelpers(DimOnScreenHelpers):
 class RoundedTest(LookHelpers):
     def test_a_windows_corners_are_cut_and_the_rest_of_it_isnt(self):
         window = self.open("test.app")
-        self.assertPixels(self.cut(window), BLACK)
+        self.assertPixels(self.cut(window), BACKGROUND)
         self.assertPixels(self.kept(window), BLUE)
 
     def test_each_tiles_corners_are_cut_as_the_tiles_change(self):
         first = self.open("test.first")
         second = self.open("test.second")
         for window in first, second:
-            self.assertPixels(self.cut(window), BLACK)
+            self.assertPixels(self.cut(window), BACKGROUND)
             self.assertPixels(self.kept(window), BLUE)
         third = self.open("test.third")
         for window in first, second, third:
-            self.assertPixels(self.cut(window), BLACK)
+            self.assertPixels(self.cut(window), BACKGROUND)
             self.assertPixels(self.kept(window), BLUE)
 
     def test_a_fullscreen_windows_corners_are_square(self):
@@ -77,7 +77,7 @@ class RoundedTest(LookHelpers):
         self.command(self.connect(), f"[con_id={window}] fullscreen enable")
         self.assertPixels(self.cut(window) + self.kept(window), BLUE)
         self.command(self.connect(), f"[con_id={window}] fullscreen disable")
-        self.assertPixels(self.cut(window), BLACK)
+        self.assertPixels(self.cut(window), BACKGROUND)
         self.assertPixels(self.kept(window), BLUE)
 
     def test_a_bordered_windows_corners_are_square(self):
@@ -88,11 +88,11 @@ class RoundedTest(LookHelpers):
 
     def test_a_reload_takes_the_new_radius(self):
         window = self.open("test.app")
-        self.assertPixels(self.cut(window), BLACK)
+        self.assertPixels(self.cut(window), BACKGROUND)
         self.assertEqual(self.reload(""), [{"success": True}])
         self.assertPixels(self.cut(window) + self.kept(window), BLUE)
         self.assertEqual(self.reload(f"corner_radius {RADIUS}\n"), [{"success": True}])
-        self.assertPixels(self.cut(window), BLACK)
+        self.assertPixels(self.cut(window), BACKGROUND)
         self.assertPixels(self.kept(window), BLUE)
 
     def test_a_click_in_a_corners_rows_goes_to_the_window(self):
@@ -141,7 +141,7 @@ class SubsurfaceTest(LookHelpers):
         middle = (x0 + x1) // 2
         self.assertPixels([(middle, y0), (middle, y0 + 3), (x0 + RADIUS, y0)], GREEN)
         self.assertPixels([(middle, y0 + 4), (middle, y1)], BLUE)
-        self.assertPixels(self.cut(self.window), BLACK)
+        self.assertPixels(self.cut(self.window), BACKGROUND)
 
     def test_a_subsurfaces_own_commit_in_a_corners_rows_is_shown_and_told_its_frame(self):
         self.settle()
@@ -170,8 +170,8 @@ class SubsurfaceTest(LookHelpers):
         x0, y0, x1, y1 = self.rect(self.window)
         middle = (x0 + x1) // 2
         self.say(self.window, "fade", "faded")
-        # Half as blue over black, in the rows between the corners and in theirs
-        half = tuple(c // 2 for c in BLUE)
+        # Half blue over the background, in the rows between the corners and in theirs
+        half = tuple((c + b) // 2 for c, b in zip(BLUE, BACKGROUND))
         between = self.pixel(middle, (y0 + y1) // 2)
         self.assertTrue(self.looks(between, half), between)
         for y in y0 + 6, y1 - 1:
@@ -207,18 +207,18 @@ class FloatingRoundedTest(LookHelpers):
 
     def test_a_floating_windows_corners_follow_it_as_it_moves_and_resizes(self):
         floating = self.open("test.float")
-        self.assertPixels(self.cut(floating), BLACK)
+        self.assertPixels(self.cut(floating), BACKGROUND)
         self.assertPixels(self.kept(floating), BLUE)
         was = self.rect(floating)
         self.command(self.connect(), f"[con_id={floating}] resize set 420 260")
         self.command(self.connect(), f"[con_id={floating}] move position 30 40")
         self.assertNotEqual(self.rect(floating), was)
-        self.assertPixels(self.cut(floating), BLACK)
+        self.assertPixels(self.cut(floating), BACKGROUND)
         self.assertPixels(self.kept(floating), BLUE)
 
     def test_a_window_too_small_for_its_corners_is_square(self):
         floating = self.open("test.float")
-        self.assertPixels(self.cut(floating), BLACK)
+        self.assertPixels(self.cut(floating), BACKGROUND)
         self.command(self.connect(), f"[con_id={floating}] resize set 200 {2 * RADIUS}")
         self.settle()
         self.assertEqual(self.windows()[floating]["rect"]["height"], 2 * RADIUS)
@@ -234,7 +234,7 @@ class RoundedDimTest(LookHelpers):
         # The floating window is focused, so the tile behind it is dimmed
         self.assertPixels(self.cut(floating), DIMMED)
         self.assertPixels(self.kept(floating), BLUE)
-        self.assertPixels(self.cut(tiled), BLACK)
+        self.assertPixels(self.cut(tiled), BACKGROUND)
 
     def test_a_dimmed_window_is_dimmed_to_its_rounded_corners_and_no_further(self):
         tiled = self.open("test.tiled")
@@ -252,8 +252,8 @@ class RoundedDimTest(LookHelpers):
         self.settle()
         x0, y0, x1, y1 = self.rect(first)
         middle = (x0 + x1) // 2
-        # Over black: half there, then dimmed by half of the strength
-        expected = tuple(c * 0.5 * (1 - STRENGTH * 0.5) for c in BLUE)
+        # Half there over the background, then dimmed by half of the strength
+        expected = tuple((c + b) * 0.5 * (1 - STRENGTH * 0.5) for c, b in zip(BLUE, BACKGROUND))
         between = self.pixel(middle, (y0 + y1) // 2)
         self.assertTrue(self.looks(between, expected), between)
         for y in y0 + 2, y1 - 2:
@@ -289,7 +289,7 @@ class X11Helpers(x11.X11Helpers, LookHelpers):
         white = (255, 255, 255)
         self.assertEqual(self.pixel(40, 2), white)
         self.assertEqual(self.pixel(5, 5), white)
-        self.assertEqual(self.pixel(1, 1), BLACK if cut else white)
+        self.assertEqual(self.pixel(1, 1), BACKGROUND if cut else white)
 
 
 class X11RoundedTest(X11Helpers):
@@ -385,9 +385,9 @@ class MaximizedShadowTest(ShadowHelpers):
         beside = (first["x"] + first["width"] + 1, 200)  # level with the window
         self.command(self.connect(), f"[con_id={floating}] move position {first['width'] - 300} 100")
         self.settle()
-        self.assertGreater(self.lightness(*beside), 9)  # its shadow, on the next output
+        self.assertGreater(self.lightness(*beside), sum(BACKGROUND) + 9)  # its shadow, on the next output
         self.command(self.connect(), f"[con_id={floating}] maximize enable")
-        self.assertPixels([beside], BLACK)
+        self.assertPixels([beside], BACKGROUND)
 
 
 class RoundedShadowTest(ShadowHelpers):
@@ -421,7 +421,7 @@ class ScaledLookTest(LookHelpers):
 
     def test_corners_are_cut_at_a_scale_of_two(self):
         window = self.open("test.app")
-        self.assertPixels(self.cut(window), BLACK)
+        self.assertPixels(self.cut(window), BACKGROUND)
         self.assertPixels(self.kept(window), BLUE)
         # The corner's edge is smoothed in the output's pixels, not the
         # layout's: the edge crosses this pixel of the layout, and the

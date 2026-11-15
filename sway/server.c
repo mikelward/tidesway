@@ -62,6 +62,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/input/cursor.h"
+#include "sway/tide/background.h"
 #include "sway/tide/capture.h"
 #include "sway/tide/dialog.h"
 #include "sway/tide/grab.h"
@@ -275,6 +276,7 @@ bool server_init(struct sway_server *server) {
 		wl_display_destroy(server->wl_display);
 		return false;
 	}
+	tide_background_init(); // tide: tidewm's rootcolor behind the windows
 
 	server->backend = wlr_backend_autocreate(server->wl_event_loop, &server->session);
 	if (!server->backend) {
@@ -760,6 +762,7 @@ void server_fini(struct sway_server *server) {
 	input_manager_finish(server->input);
 	tide_capture_fini(); // tide
 	tide_x11_fini(); // tide
+	tide_background_fini(); // tide
 
 	// TODO: free sway-specific resources
 #if WLR_HAS_XWAYLAND

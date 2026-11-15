@@ -51,11 +51,11 @@ this order, one PR each; each makes more of tidewm's suite pass.
   - Then, in tide: its tidesway session (mikelward/tide#495) runs that
     command; the Appearance page writes `corner_radius` to
     `tidesway.d/`; and `tide-setup` builds tidesway.
-- **The color behind windows**. tidewm draws its `rootcolor`, `#222222`,
-  where no window is; tidesway shows black unless swaybg runs. Nine of
-  tidewm's `test_effects` read that color, so they can't pass: its tests
-  of a shadow on the wallpaper, and a window that opens dimmed fading in.
-  A tenth is in tidewm's floating layout, which tidesway hasn't.
+- ~~**The color behind windows**~~. Done: tidewm's `rootcolor`, `#222222`,
+  where no window or wallpaper is, rather than black unless swaybg runs
+  (`sway/tide/background.c`), so `test_effects`' tests of a shadow on it
+  and of a window that opens dimmed fading in pass. Two more, in tidewm's
+  floating layout, wait for tidesway to have it.
 - **Track sway**. A weekly check of swaywm/sway: new commits on the current release
   branch (`v1.12`) become a PR cherry-picking them; a new release tag becomes an issue,
   since moving to it is a rebase of `main` (`RELEASE_BASE`). Today `v1.12` has nothing
