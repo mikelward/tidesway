@@ -326,7 +326,7 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 			list_add(res_list, cmd_results_new(CMD_INVALID,
 					"Unknown/invalid command '%s'", argv[0]));
 			free_argv(argc, argv);
-			goto cleanup;
+			continue; // tide: the rest still run, each with its result, as tidewm's
 		}
 
 		// Var replacement, for all but first argument of set
@@ -346,7 +346,7 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 			list_add(res_list, res);
 			if (res->status == CMD_INVALID) {
 				free_argv(argc, argv);
-				goto cleanup;
+				continue; // tide: as tidewm's, the rest still run
 			}
 		} else if (containers->length == 0) {
 			list_add(res_list,
@@ -366,9 +366,7 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 					}
 					fail_res = res;
 					if (res->status == CMD_INVALID) {
-						list_add(res_list, fail_res);
-						free_argv(argc, argv);
-						goto cleanup;
+						break; // tide: no more windows, but the rest still run
 					}
 				}
 			}

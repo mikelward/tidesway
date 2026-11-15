@@ -515,3 +515,6 @@ Each patch's PR says how far it moves this.
   and xdg-decoration is server-side, floating or not. A GTK dialog keeps its
   own title bar inside the border; with tide's `default_border none` nothing
   changes but GET_TREE saying `none` rather than `csd`.
+- **A command list runs on past a failure** (2026-11-15): sway stopped a
+  `RUN_COMMAND` at the first command it didn't know or couldn't parse;
+  tidesway runs the rest and gives each its result, as tidewm does.
