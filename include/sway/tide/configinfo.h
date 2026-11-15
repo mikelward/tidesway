@@ -2,7 +2,21 @@
 #define _SWAY_TIDE_CONFIGINFO_H
 #include <json.h>
 
+#include <stdbool.h>
+
 struct sway_config;
+struct cmd_results;
+
+/* tidewm's config file, which tidesway's command names with a
+ * tidewm_config line in the config it writes for sway: what GET_CONFIG and
+ * GET_VERSION show, as tidewm's do, rather than that config */
+struct tide_user_config {
+	char *path; // as tidewm's -c or its place names it; NULL without the line
+	char *real; // its real path, or NULL if it isn't there
+	char *text; // its text, as loaded; NULL if it isn't there
+	bool named; // named by -c, so its being missing is an error
+	int depth; // while it loads: above 0 in it or a file it includes
+};
 
 // A file an include line read, as it was then
 struct tide_included_config {
@@ -19,6 +33,24 @@ void tide_config_errors_reset(void);
 
 // Notes an error at path's line, for a reload's reply and GET_CONFIG
 void tide_config_error(const char *path, int line, const char *error);
+
+// Notes an error of path's as a whole, as "PATH: ERROR"
+void tide_config_file_error(const char *path, const char *error);
+
+// Whether the last load had any errors
+bool tide_config_has_errors(void);
+
+/* tidewm_config [--named] FILE: includes tidewm's config file, the one
+ * tidesway's command was given, as the user's own */
+struct cmd_results *cmd_tidewm_config(int argc, char **argv);
+void tide_user_config_free(struct sway_config *config);
+
+/* The loaded file's path, or "" when it wasn't there, for GET_VERSION's
+ * loaded_config_file_name, as tidewm's */
+const char *tide_config_loaded_name(struct sway_config *config);
+
+// Says at startup what of the config was left out, as tidewm does
+void tide_config_started(struct sway_config *config);
 
 /* The first few errors the last load met, joined by "; ", then how many
  * more, or NULL with none; the caller frees it */

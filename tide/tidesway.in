@@ -7,7 +7,10 @@
 #
 #   look.conf       tidewm's look and behavior, where sway has a setting
 #   the mouse       tidewm's built-in Alt-drag, unless CONFIG says its own
-#   include CONFIG  by path, so a reload reads CONFIG again
+#   tidewm_config CONFIG
+#                   an include by path, so a reload reads CONFIG again,
+#                   which GET_CONFIG shows as tidewm's would, with tidewm's
+#                   built-in keys while CONFIG is missing or binds none
 #   include CONFIG's directory/tidesway.d/*.conf
 #                   lines tidewm doesn't know (corner_radius, say), which a
 #                   config both read can't hold: tidewm fails on them
@@ -34,12 +37,13 @@ sway=${TIDESWAY:-@bindir@/sway}
 look=${TIDESWAY_LOOK:-@lookdir@/look.conf}
 
 config=
+named=
 startup=
 while test "$#" -gt 0; do
     case $1 in
         -c | -s)
             test "$#" -ge 2 || fail "$1 takes an argument"
-            if test "$1" = -c; then config=$2; else startup=$2; fi
+            if test "$1" = -c; then config=$2 named="--named "; else startup=$2; fi
             shift 2
             ;;
         -v)
@@ -99,8 +103,10 @@ fi
     # tidewm's built-in mouse: Alt and the left button drag a floating
     # window, and Alt and the right one resize it
     test -z "$mouse" || echo "$mouse"
-    # sway skips an include that's missing, and one that matches nothing
-    echo "include $config"
+    # tidewm's file, as an include sway shows in GET_CONFIG as tidewm does,
+    # with config.h's keys if it's missing or binds none; --named, one -c
+    # named, whose being missing is an error
+    echo "tidewm_config $named$config"
     echo "include ${config%/*}/tidesway.d/*.conf"
     echo "exec sh $state/startup.sh"
 } > "$state/sway.conf" || fail "can't write $state/sway.conf"

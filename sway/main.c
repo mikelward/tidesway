@@ -360,6 +360,7 @@ int main(int argc, char **argv) {
 		sway_terminate(EXIT_FAILURE);
 		goto shutdown;
 	}
+	tide_config_started(config); // tide: what was left out, as tidewm says
 
 	set_rr_scheduling();
 

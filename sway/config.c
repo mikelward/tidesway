@@ -176,6 +176,7 @@ void free_config(struct sway_config *config) {
 	list_free(config->active_bar_modifiers);
 	list_free_items_and_destroy(config->config_chain);
 	tide_config_included_free(config);
+	tide_user_config_free(config);
 	tide_names_free(config);
 	free(config->floating_scroll_up_cmd);
 	free(config->floating_scroll_down_cmd);
