@@ -30,6 +30,7 @@
 #include "sway/output.h"
 #include "sway/server.h"
 #include "sway/tide/grab.h"
+#include "sway/tide/keys.h"
 #include "sway/tide/maximize.h"
 #include "sway/tide/minimize.h"
 #include "sway/tide/focus.h"
@@ -1686,6 +1687,7 @@ void seatop_tablet_tool_motion(struct sway_seat *seat,
 
 void seatop_hold_begin(struct sway_seat *seat,
 		struct wlr_pointer_hold_begin_event *event) {
+	tide_keys_pointer_used(seat); // tide: a gesture is no tap
 	if (seat->seatop_impl->hold_begin) {
 		seat->seatop_impl->hold_begin(seat, event);
 	}
@@ -1700,6 +1702,7 @@ void seatop_hold_end(struct sway_seat *seat,
 
 void seatop_pinch_begin(struct sway_seat *seat,
 		struct wlr_pointer_pinch_begin_event *event) {
+	tide_keys_pointer_used(seat); // tide: a gesture is no tap
 	if (seat->seatop_impl->pinch_begin) {
 		seat->seatop_impl->pinch_begin(seat, event);
 	}
@@ -1721,6 +1724,7 @@ void seatop_pinch_end(struct sway_seat *seat,
 
 void seatop_swipe_begin(struct sway_seat *seat,
 		struct wlr_pointer_swipe_begin_event *event) {
+	tide_keys_pointer_used(seat); // tide: a gesture is no tap
 	if (seat->seatop_impl->swipe_begin) {
 		seat->seatop_impl->swipe_begin(seat, event);
 	}
