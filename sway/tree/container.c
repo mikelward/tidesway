@@ -167,7 +167,8 @@ static struct border_colors *container_get_current_colors(
 		colors = &config->border_colors.focused;
 	} else if (config->has_focused_tab_title && container_has_focused_child(con)) {
 		colors = &config->border_colors.focused_tab_title;
-	} else if (con == active_child) {
+	} else if (con == active_child && config->tide_has_focused_inactive) {
+		// tide: without its line, it's as unfocused, as tidewm's
 		colors = &config->border_colors.focused_inactive;
 	} else {
 		colors = &config->border_colors.unfocused;

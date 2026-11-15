@@ -602,6 +602,7 @@ struct sway_config {
 	} border_colors;
 
 	bool has_focused_tab_title;
+	bool tide_has_focused_inactive; // tide: a client.focused_inactive line was given
 
 	// floating view
 	int32_t floating_maximum_width;

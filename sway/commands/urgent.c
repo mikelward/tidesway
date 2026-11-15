@@ -24,7 +24,7 @@ struct cmd_results *cmd_urgent(int argc, char **argv) {
 	if (!container || !container->view) {
 		return cmd_results_new(CMD_FAILURE, "No window to mark");
 	}
-	view_set_urgent(container->view, enable);
+	view_mark_urgent(container->view, enable); // tide: even the focused one
 
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
