@@ -384,6 +384,10 @@ Each patch's PR says how far it moves this.
   where sway moved it 10 px. Moved by pixels it keeps its output, as
   tidewm's keeps its monitor, where sway gave it to the output its middle
   was on. A distance that isn't one is a parse error.
+- **The pointer starts in the middle** (2026-11-15): of the leftmost
+  output, the top one of those level with it, as tidewm's does, where
+  sway's started near the first output's corner; GET_SEATS says where it
+  is, as tidewm's `pointer`.
 - **floating_modifier resizes by the corner** (2026-11-10): the modifier and
   the resize button resize a floating window by its bottom right corner,
   which the pointer jumps to, as tidewm's and dwl's do, where sway resized

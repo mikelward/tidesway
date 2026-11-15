@@ -18,6 +18,7 @@
 #include "sway/config.h"
 #include "sway/server.h"
 #include "sway/swaynag.h"
+#include "sway/tide/focus.h"
 #include "sway/desktop/transaction.h"
 #include "sway/tree/root.h"
 #include "sway/ipc-server.h"
@@ -371,6 +372,7 @@ int main(int argc, char **argv) {
 
 	config->active = true;
 	force_modeset();
+	tide_focus_pointer_start(); // tide: in the middle of the left output
 	load_swaybars();
 	run_deferred_commands();
 	run_deferred_bindings();

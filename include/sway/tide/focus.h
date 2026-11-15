@@ -166,8 +166,13 @@ bool tide_focus_activate(struct sway_view *view);
 // ws was renamed: a grant made on it keeps the new name
 void tide_focus_renamed(struct sway_workspace *ws);
 
-// GET_SEATS' last_input and prompt_may_focus, added to a seat's object
-void tide_focus_describe_seat(json_object *object);
+/* At startup, once the outputs are laid out: every seat's pointer starts
+ * in the middle of the leftmost output, the top one of those level with
+ * it, where focus starts, as tidewm's does */
+void tide_focus_pointer_start(void);
+
+// GET_SEATS' last_input, prompt_may_focus and pointer, added to seat's object
+void tide_focus_describe_seat(struct sway_seat *seat, json_object *object);
 
 // The commands: grant, and focus recent (argv after "recent")
 struct cmd_results *tide_cmd_focus_recent(int argc, char **argv);

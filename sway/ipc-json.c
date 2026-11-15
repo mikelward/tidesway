@@ -1289,7 +1289,7 @@ json_object *ipc_json_describe_seat(struct sway_seat *seat) {
 		json_object_array_add(devices, ipc_json_describe_input(device->input_device));
 	}
 	json_object_object_add(object, "devices", devices);
-	tide_focus_describe_seat(object); // tide: last_input, prompt_may_focus
+	tide_focus_describe_seat(seat, object); // tide: last_input, pointer, ...
 
 	return object;
 }

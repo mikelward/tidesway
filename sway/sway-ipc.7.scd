@@ -1441,6 +1441,10 @@ one seat. Each object has the following properties:
 :  boolean
 :  tidesway's: whether a polkit prompt opening now may take focus, a key
    having been pressed within the focus guard's _prompt\_seconds_
+|- pointer
+:  object
+:  tidesway's: where the pointer is, as _x_ and _y_ in the layout. It starts
+   in the middle of the leftmost output, as tidewm's does
 
 
 *Example Reply:*
