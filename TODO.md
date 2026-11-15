@@ -108,7 +108,17 @@ one run of two, so it's out. It moved again, to tidewm's main at `1f28603`, on
 2026-11-14, with tidewm's `shadows disable|floating|active|all` and its
 `shadow` in GET_TREE: of its 800 tests, 674 are in `passing.txt`, 30 of them
 its new shadow tests. Its other 5 new ones can't pass: four read the color
-behind windows and one is in its floating layout (above).
+behind windows and one is in its floating layout (above). It moved again, to
+tidewm's main at `6a2a706`, on 2026-11-15, with tidewm's named bindings with no
+key (`bindsym --name NAME none`), which tidesway now takes too, and its
+minimize focusing the window under the pointer: of its 826 tests, 693 are in
+`passing.txt`. 18 are its new ones: twelve of `test_borders`' colors, three of
+named bindings with no key, and three minimizes that leave focus with the
+window you were in before. `FadeTest`'s dim fading as focus moves passed in
+eight runs of eight, so it's in too. Six of the new `test_borders` ones fail
+each time, where sway's colors and errors aren't tidewm's: a failed reload's,
+a translucent border's, urgent over focused, `client.focused_inactive`'s
+default and two errors' words.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with

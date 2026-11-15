@@ -9,10 +9,17 @@ struct sway_config;
 
 /* Names binding, which a bindsym or bindcode line with --name NAME made in
  * the mode being read, its keys as written and its flags as flagv has
- * them: an error if the name's other lines differ, else NULL */
+ * them, or NULL for none: an error if the name's other lines differ, else
+ * NULL */
 struct cmd_results *tide_names_bind(const char *bindtype, const char *name,
 	struct sway_binding *binding, const char *keys, bool code,
 	int flagc, char **flagv);
+
+/* A bindsym or bindcode line whose keys are none: it names binding, for a
+ * rebind line to give it keys, adding no default key; with no name, an
+ * error */
+struct cmd_results *tide_names_keyless(const char *bindtype, const char *name,
+	struct sway_binding *binding, bool code, int flagc, char **flagv);
 
 // The rebind config line
 struct cmd_results *cmd_rebind(int argc, char **argv);

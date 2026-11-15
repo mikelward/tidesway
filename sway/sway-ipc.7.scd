@@ -1586,8 +1586,9 @@ tidesway's, as tidewm's: retrieve each binding the config names with
 *REPLY*++
 An array of objects with _name_, _type_ (_key_ or _mouse_), _keys_, its keys
 now, after any *rebind* line, as GET_BINDINGS gives them, _default\_keys_, the
-ones its *bindsym* lines give it, _command_, _mode_, _release_, _locked_,
-_kept\_open_ and _description_ (its lines' *--desc*, or an empty string)
+ones its *bindsym* lines give it, either empty for none, _command_, _mode_,
+_release_, _locked_, _kept\_open_ and _description_ (its lines' *--desc*, or an
+empty string)
 
 *Example Reply:*
 ```

@@ -499,6 +499,10 @@ runtime.
 	keys. A later line that gives the name another command, flags or mode
 	redefines it, as tidewm's does, so a config that includes another can
 	bind its names to commands of its own: the name's earlier keys go.
+	_none_ in place of the key combo, as tidewm's, names a binding with no
+	key, for a shell to give it one: nothing runs it until a *rebind* line
+	gives it keys, and it adds no default key. Only a named binding can have
+	no keys.
 
 	With _--desc_ _text_, or _--desc=text_, tidewm's, the binding says what
 	it does, for a shell's list of keyboard shortcuts (GET_BINDINGS). _text_

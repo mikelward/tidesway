@@ -2,7 +2,8 @@
  * Named bindings, as tidewm's are (its docs/config.md, "Named bindings"):
  * `bindsym --name NAME` names a binding, and `rebind NAME KEYS...` gives
  * it other keys, so a shell's keyboard shortcuts can change a binding's
- * keys in a file the config includes. GET_BINDINGS lists the config's
+ * keys in a file the config includes, or `none` for its keys names one
+ * with none until then. GET_BINDINGS lists the config's
  * bindings and GET_NAMED_BINDINGS the named ones, with their default keys.
  */
 #include <ctype.h>
@@ -161,13 +162,27 @@ struct cmd_results *tide_names_bind(const char *bindtype, const char *name,
 		n->default_keys = create_list();
 		list_add(config->tide_named, n);
 	}
-	list_add(n->default_keys, strdup(keys));
+	if (keys) {
+		list_add(n->default_keys, strdup(keys));
+	}
 	// A line's --desc is the name's, for all its keys
 	if (binding->tide_desc) {
 		free(n->description);
 		n->description = strdup(binding->tide_desc);
 	}
 	return NULL;
+}
+
+struct cmd_results *tide_names_keyless(const char *bindtype, const char *name,
+		struct sway_binding *binding, bool code, int flagc, char **flagv) {
+	// Only a name can have no key, as only a rebind line can give it one
+	if (!name) {
+		return cmd_results_new(CMD_FAILURE, "%s none: a binding with no keys "
+			"needs a --name, for a rebind line to give it some", bindtype);
+	}
+	struct cmd_results *error =
+		tide_names_bind(bindtype, name, binding, NULL, code, flagc, flagv);
+	return error ? error : cmd_results_new(CMD_SUCCESS, NULL);
 }
 
 static struct sway_mode *mode_named(const char *name) {
