@@ -518,3 +518,24 @@ Each patch's PR says how far it moves this.
 - **A command list runs on past a failure** (2026-11-15): sway stopped a
   `RUN_COMMAND` at the first command it didn't know or couldn't parse;
   tidesway runs the rest and gives each its result, as tidewm does.
+- **tidesway calls itself tidewm over IPC** (2026-11-15): tide's shell and
+  `tide-msg` speak to tidewm, and tidesway answers as it, so they work
+  unchanged: its socket is tidewm's, `tidewm-ipc.UID.PID.sock`, and a dead
+  one's is removed as tidewm's is; GET_VERSION's `variant` is `tidewm`, its
+  `human_readable` is `tidewm VERSION (tidesway)`, and a `tidesway` field of
+  its own gives its version. tide still needs to know which it is where
+  versions differ: `tide-msg --if-current` compares the running tidewm's
+  version with the installed `tidewm -v`'s, so on tidesway it finds them
+  different and leaves the reload unsent; it should compare `tidesway` with
+  `tidesway -v`'s (a tide change).
+- **sway's GET_MARKS stays** (2026-11-15): tidewm answers a message type it
+  hasn't, GET_MARKS among them, with `{"success": false}`. tidesway has
+  sway's marks, so it answers GET_MARKS as sway does, and only a type
+  neither has fails, as tidewm's does, where sway sent nothing. So tidewm's
+  `test_an_unsupported_message_fails_politely`, which asks for GET_MARKS,
+  can't pass.
+- **The scratchpad in the tree only while it's used** (2026-11-15): tidewm's
+  tree is the root and its outputs; sway's has the `__i3` output for the
+  scratchpad too. tidesway leaves it out while the scratchpad is empty, as
+  tide never uses it, so a client walking the tree finds only outputs; a
+  window moved there brings it back.

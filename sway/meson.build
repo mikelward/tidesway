@@ -227,6 +227,7 @@ sway_sources = files(
 	'tide/grab.c',
 	'tide/inputcheck.c',
 	'tide/inputname.c',
+	'tide/ipc.c',
 	'tide/keepopen.c',
 	'tide/keys.c',
 	'tide/layout.c',
