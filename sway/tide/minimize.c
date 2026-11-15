@@ -27,7 +27,7 @@ bool tide_minimized(struct sway_container *con) {
 
 /* The window focus goes to as con leaves, unless the one under the
  * pointer takes it (tide_focus_left): the most recent one left on its
- * workspace, else the workspace */
+ * workspace that the guard doesn't hold, else the workspace */
 static void focus_after(struct sway_seat *seat, struct sway_container *con) {
 	struct sway_workspace *ws = con->pending.workspace;
 	/* It loses the keyboard first: forgotten, it would leave its workspace
@@ -39,7 +39,8 @@ static void focus_after(struct sway_seat *seat, struct sway_container *con) {
 		return;
 	}
 	struct sway_container *next = seat_get_focus_inactive_view(seat, &ws->node);
-	seat_set_focus(seat, next && !tide_minimized(next) ? &next->node : &ws->node);
+	seat_set_focus(seat, tide_focus_after_close(seat,
+		next && !tide_minimized(next) ? &next->node : &ws->node));
 }
 
 static void minimize(struct sway_container *con) {

@@ -99,6 +99,26 @@ class MinimizedRemapTest(TidewmTest):
         self.assertTrue(self.windows()[con]["visible"])
 
 
+class HeldMinimizeTest(TidewmTest):
+    """Minimizing the window you're in hands focus to no window the focus
+    guard holds, as tidewm's doesn't: one left alone on the workspace waits
+    for you there, and the workspace has focus."""
+    CONFIG = "focus_guard enable\n"
+
+    def test_a_held_window_left_alone_waits_when_the_focused_one_is_minimized(self):
+        ipc = self.connect()
+        ipc.subscribe("window")
+        self.command(self.connect(), "grant test.one")
+        _, one = self.open_window(ipc, "test.one")
+        _, held = self.open_window(ipc, "test.held")
+        self.command(self.connect(), f"[con_id={one['id']}] minimize enable")
+        ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "minimize")
+        windows = self.windows()
+        self.assertEqual(((windows[held["id"]]["focused"], windows[held["id"]]["urgent"]),
+                          [i for i, w in windows.items() if w["focused"]]),
+                         ((False, True), []))
+
+
 class RuleMinimizedTest(TidewmTest):
     CONFIG = 'for_window [app_id="^test.hidden$"] minimize enable\n'
 
