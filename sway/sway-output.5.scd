@@ -104,7 +104,8 @@ only sway has comes, sway checks the rest.
 	hi-dpi screens. Linear is smoother and blurrier, nearest (also known as
 	nearest neighbor) is sharper and blockier. Setting "smart" will apply
 	nearest scaling when the output has an integer scale factor, otherwise
-	linear. The default is "smart".
+	linear. sway's default is "smart"; tidesway's is "linear", as tidewm
+	always scales.
 
 *output* <name> subpixel rgb|bgr|vrgb|vbgr|none
 	Manually sets the subpixel hinting for the specified output. This value is
