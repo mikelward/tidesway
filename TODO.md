@@ -142,7 +142,10 @@ layouts, a switch with no output, and a keyboard's layout when the
 environment's fails: 768. With them, two more that waited on GET_CONFIG
 or tidewm's log, in five runs: `test_rules`' rule errors, and
 `test_config`'s environment keymap, as the XKB environment's message says
-`tidewm:` (*A layout XKB hasn't got in the environment*): 770.
+`tidewm:` (*A layout XKB hasn't got in the environment*): 770. tidewm's
+`exec` taking the rest of its line, which passes that escaped space, its
+floating layout, which passes `test_effects`' two there, and its other
+command fixes make 22 more pass, each in three runs: 792.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
