@@ -291,11 +291,16 @@ static bool keyboard_execute_compositor_binding(struct sway_keyboard *keyboard,
 	for (size_t i = 0; i < keysyms_len; ++i) {
 		xkb_keysym_t keysym = pressed_keysyms[i];
 
-		if (keysym >= XKB_KEY_XF86Switch_VT_1 &&
-				keysym <= XKB_KEY_XF86Switch_VT_12) {
+		// tide: Ctrl+Alt and F1…F12 too, as tidewm has them, whatever the
+		// keymap makes of them, so a config that lost its keys leaves a way out
+		bool tide_vt = keysym >= XKB_KEY_F1 && keysym <= XKB_KEY_F12 &&
+			(modifiers & ~WLR_MODIFIER_CAPS) == (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT);
+		if (tide_vt || (keysym >= XKB_KEY_XF86Switch_VT_1 &&
+				keysym <= XKB_KEY_XF86Switch_VT_12)) {
 #if WLR_HAS_SESSION
 			if (server.session) {
-				unsigned vt = keysym - XKB_KEY_XF86Switch_VT_1 + 1;
+				unsigned vt = tide_vt ? keysym - XKB_KEY_F1 + 1 :
+					keysym - XKB_KEY_XF86Switch_VT_1 + 1;
 				wlr_session_change_vt(server.session, vt);
 			}
 #endif
@@ -552,12 +557,14 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	}
 
 	// Compositor bindings
-	if (!handled && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+	// tide: not on keys a release binding of the config's is armed on, as
+	// tidewm's: the binding keeps them, and the window sees them
+	if (!handled && !binding_released && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		handled = keyboard_execute_compositor_binding(
 				keyboard, keyinfo.translated_keysyms,
 				keyinfo.translated_modifiers, keyinfo.translated_keysyms_len);
 	}
-	if (!handled && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+	if (!handled && !binding_released && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		handled = keyboard_execute_compositor_binding(
 				keyboard, keyinfo.raw_keysyms, keyinfo.raw_modifiers,
 				keyinfo.raw_keysyms_len);
