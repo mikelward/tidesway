@@ -1,6 +1,7 @@
 #include <string.h>
 #include "sway/commands.h"
 #include "sway/config.h"
+#include "sway/tide/cursor.h"
 
 struct cmd_results *seat_cmd_xcursor_theme(int argc, char **argv) {
 	struct cmd_results *error = NULL;
@@ -13,7 +14,7 @@ struct cmd_results *seat_cmd_xcursor_theme(int argc, char **argv) {
 	}
 
 	const char *theme_name = argv[0];
-	unsigned size = 24;
+	unsigned size = tide_cursor_size(); // tide: XCURSOR_SIZE's, not 24
 
 	if (argc == 2) {
 		char *end;
