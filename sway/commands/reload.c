@@ -34,6 +34,8 @@ static void do_reload(void *data) {
 	if (config->user_config_path) {
 		path = config->current_config_path;
 	}
+	// tide: a reload goes back to the top level, which it says, as tidewm does
+	bool in_mode = config->current_mode != config->modes->items[0];
 
 	if (!load_main_config(path, true, false)) {
 		sway_log(SWAY_ERROR, "Error(s) reloading config");
@@ -42,6 +44,9 @@ static void do_reload(void *data) {
 	}
 
 	ipc_event_workspace(NULL, NULL, "reload");
+	if (in_mode) { // tide
+		ipc_event_mode(config->current_mode->name, config->current_mode->pango);
+	}
 
 	load_swaybars();
 
@@ -75,6 +80,9 @@ struct cmd_results *cmd_reload(int argc, char **argv) {
 	if (!load_main_config(path, true, true)) {
 		// tide: the first few errors, naming their files and lines, as tidewm's
 		char *errors = tide_config_errors_summary();
+		// and it says it reloaded, as i3 and tidewm do, so a client that
+		// shows the errors reads them again
+		ipc_event_workspace(NULL, NULL, "reload");
 		struct cmd_results *res = cmd_results_new(CMD_FAILURE, "%s",
 			errors ? errors : "Error(s) reloading config.");
 		free(errors);
