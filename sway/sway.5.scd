@@ -1455,9 +1455,11 @@ workspace. *move workspace to output* fails, as a workspace is on every
 output already.
 
 An output that's disabled gives each part's windows to the part of the same
-workspace on the first output left. One that's enabled gets a part of every
-workspace, showing the current one. An output that's only powered off keeps
-its windows.
+workspace on the first output left, and its parts' layouts wait for it. One
+that's enabled gets a part of every workspace, with the layouts it had there
+or its own defaults, showing the current one, with a *layout* event. With
+no output enabled, *workspace* still switches. An output that's only
+powered off keeps its windows.
 
 *output* <name>|\* power|dpms on|off|toggle
 	As tidewm's, at runtime: turns the output off as an idle daemon does,
