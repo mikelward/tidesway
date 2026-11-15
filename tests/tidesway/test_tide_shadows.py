@@ -13,7 +13,7 @@ from test_tide_dimming import BLUE
 
 WHITE = look.WHITE
 BLUR = look.BLUR
-BLACK = look.BLACK
+BACKGROUND = look.BACKGROUND
 # Inside the first tile, whichever layout puts it there, clear of the seam
 FLOATING = ('for_window [app_id="^test.float$"] floating enable, '
             "resize set 200 150, move position 60 60\n")
@@ -211,7 +211,7 @@ class ActiveOutputsTest(TileShadowHelpers):
         self.assertFallsOn(right, left)
         x1 = self.rect(right)[2]
         self.assertEqual(x1 + 1, second["rect"]["x"])  # the next output starts there
-        self.assertPixels([(x1 + 1, 300), (x1 + 4, 300)], BLACK)
+        self.assertPixels([(x1 + 1, 300), (x1 + 4, 300)], BACKGROUND)
 
 
 class AllShadowTest(TileShadowHelpers):
@@ -259,9 +259,9 @@ class AllGapsTest(TileShadowHelpers):
 
     def test_each_tiles_shadow_shows_in_the_gap(self):
         left, right, by_left, by_right, between = self.gap()
-        self.assertGreater(self.lightness(*by_left), 9)
-        self.assertGreater(self.lightness(*by_right), 9)
-        self.assertPixels([between], BLACK)
+        self.assertGreater(self.lightness(*by_left), sum(BACKGROUND) + 9)
+        self.assertGreater(self.lightness(*by_right), sum(BACKGROUND) + 9)
+        self.assertPixels([between], BACKGROUND)
         self.assertNoneBetween(left, right)  # and none is on a tile
 
 
@@ -270,12 +270,12 @@ class ActiveGapsTest(AllGapsTest):
 
     def test_each_tiles_shadow_shows_in_the_gap(self):
         left, right, by_left, by_right, between = self.gap()
-        self.assertGreater(self.lightness(*by_right), 9)  # the focused one's
-        self.assertPixels([by_left, between], BLACK)
+        self.assertGreater(self.lightness(*by_right), sum(BACKGROUND) + 9)  # the focused one's
+        self.assertPixels([by_left, between], BACKGROUND)
         self.focus(left)
         self.settle()
-        self.assertGreater(self.lightness(*by_left), 9)
-        self.assertPixels([by_right, between], BLACK)
+        self.assertGreater(self.lightness(*by_left), sum(BACKGROUND) + 9)
+        self.assertPixels([by_right, between], BACKGROUND)
 
 
 class ConfigTest(look.LookHelpers):
