@@ -245,3 +245,69 @@ void tide_config_started(struct sway_config *config) {
 			user->path);
 	}
 }
+
+// s's first size - 1 bytes, without quotes, in out
+static void unquoted(char *out, size_t size, const char *s, size_t len) {
+	size_t n = 0;
+	for (size_t i = 0; i < len && s[i] && n + 1 < size; i++) {
+		if (s[i] != '"' && s[i] != '\'') {
+			out[n++] = s[i];
+		}
+	}
+	out[n] = '\0';
+}
+
+static bool first_word_is(const char *s, const char *word) {
+	size_t n = strlen(word);
+	return strncmp(s, word, n) == 0 && (s[n] == '\0' || s[n] == ' ' || s[n] == '\t');
+}
+
+bool tide_config_block_ok(const char *block, const char *new_block, char *err,
+		size_t size) {
+	char name[256];
+	if (block && first_word_is(block, "mode")) {
+		// A block's lines are the block's, after its own words
+		const char *rest = new_block + strlen(block);
+		rest += strspn(rest, " \t");
+		size_t n = strcspn(rest, " \t");
+		if (first_word_is(rest, "mode")) {
+			unquoted(name, sizeof(name), block, strlen(block));
+			snprintf(err, size, "%s is still open: modes don't nest", name);
+		} else {
+			unquoted(name, sizeof(name), rest, n);
+			snprintf(err, size, "%s can't be in a mode", name);
+		}
+		return false;
+	}
+	if (block || !first_word_is(new_block, "mode")) {
+		return true;
+	}
+	int argc;
+	char **argv = split_args(new_block, &argc);
+	bool ok = false;
+	if (argc != 2) {
+		snprintf(err, size, "mode needs a name, then {");
+	} else {
+		unquoted(name, sizeof(name), argv[1], strlen(argv[1]));
+		if (strcmp(name, "default") == 0) {
+			snprintf(err, size, "default is the top level, not a mode to open");
+		} else if (strchr(name, ';')) {
+			// The mode command couldn't name it: ; ends a command
+			snprintf(err, size, "mode %s: a mode's name can't hold ;", name);
+		} else {
+			ok = true;
+		}
+	}
+	free_argv(argc, argv);
+	return ok;
+}
+
+void tide_config_block_end(char *line) {
+	if (line[0] != '}' || (line[1] != ' ' && line[1] != '\t')) {
+		return;
+	}
+	const char *rest = line + 1 + strspn(line + 1, " \t");
+	if (*rest == '#') {
+		line[1] = '\0';
+	}
+}
