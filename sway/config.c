@@ -26,6 +26,7 @@
 #include "sway/tide/configinfo.h"
 #include "sway/tide/inputcheck.h"
 #include "sway/tide/x11scale.h"
+#include "sway/tide/xkbenv.h"
 #include "sway/tide/names.h"
 #include "sway/tide/keys.h"
 #include "sway/criteria.h"
@@ -363,8 +364,11 @@ static void config_defaults(struct sway_config *config) {
 
 	// The keysym to keycode translation
 	struct xkb_rule_names rules = {0};
-	config->keysym_translation_state = keysym_translation_state_create(rules, 0);
+	// tide: the environment's names until they fail, which is said
+	config->keysym_translation_state = keysym_translation_state_create(rules,
+		tide_xkb_flags());
 	if (config->keysym_translation_state == NULL) {
+		tide_xkb_drop_environment();
 		config->keysym_translation_state = keysym_translation_state_create(rules,
 			XKB_CONTEXT_NO_ENVIRONMENT_NAMES);
 	}
@@ -1109,7 +1113,8 @@ void translate_keysyms(struct input_config *input_config) {
 
 	struct xkb_rule_names rules = {0};
 	input_config_fill_rule_names(input_config, &rules);
-	config->keysym_translation_state = keysym_translation_state_create(rules, 0);
+	config->keysym_translation_state = keysym_translation_state_create(rules,
+		tide_xkb_flags()); // tide
 	if (config->keysym_translation_state == NULL) {
 		sway_log(SWAY_ERROR, "Failed to create keysym translation XKB state "
 			"for device '%s'", input_config->identifier);

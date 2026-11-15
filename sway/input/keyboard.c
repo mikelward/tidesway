@@ -18,6 +18,7 @@
 #include "sway/tide/focus.h"
 #include "sway/tide/keepopen.h"
 #include "sway/tide/keys.h"
+#include "sway/tide/xkbenv.h"
 #include "log.h"
 
 #if WLR_HAS_SESSION
@@ -815,7 +816,8 @@ static void handle_xkb_context_log(struct xkb_context *context,
 
 struct xkb_keymap *sway_keyboard_compile_keymap(struct input_config *ic,
 		char **error) {
-	struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_SECURE_GETENV);
+	struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_SECURE_GETENV
+		| tide_xkb_flags()); // tide: the environment's names, until they fail
 	if (!sway_assert(context, "cannot create XKB context")) {
 		return NULL;
 	}
@@ -1039,6 +1041,13 @@ static void sway_keyboard_set_layout(struct sway_keyboard *keyboard,
 	if (!keymap) {
 		sway_log(SWAY_ERROR, "Failed to compile keymap. Attempting defaults");
 		keymap = sway_keyboard_compile_keymap(NULL, NULL);
+		// tide: without the environment's names, if they're what fails
+		if (!keymap && tide_xkb_drop_environment()) {
+			keymap = sway_keyboard_compile_keymap(input_config, NULL);
+			if (!keymap) {
+				keymap = sway_keyboard_compile_keymap(NULL, NULL);
+			}
+		}
 		if (!keymap) {
 			sway_log(SWAY_ERROR,
 					"Failed to compile default keymap. Aborting configure");

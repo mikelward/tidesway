@@ -373,6 +373,11 @@ Each patch's PR says how far it moves this.
   Mod4+button2` without it fails, as tidewm's does: sway would bind it over
   title bars and borders, which tide's look has none of. A button's binding takes no `--release`,
   as tidewm's takes none, and a key that isn't a button says so.
+- **A layout XKB hasn't got in the environment** (2026-11-15): once XKB
+  can't make a keymap of the environment's `XKB_DEFAULT_*` names, the log
+  says which, as tidewm's does ("tidewm: XKB can't make a keymap of the
+  environment's ..."), and every keymap leaves them out from then on, so a
+  keyboard gets XKB's own layout, us, where sway's had no keymap at all.
 - **floating_modifier resizes by the corner** (2026-11-10): the modifier and
   the resize button resize a floating window by its bottom right corner,
   which the pointer jumps to, as tidewm's and dwl's do, where sway resized
