@@ -28,6 +28,7 @@
 struct cmd_results;
 struct sway_output;
 struct sway_seat;
+struct cmd_results;
 struct sway_workspace;
 struct wlr_ext_workspace_group_handle_v1;
 
@@ -92,6 +93,20 @@ bool tide_ws_persistent(struct sway_workspace *ws);
 
 // A workspace's IPC: its workspace's urgency and persistence
 void tide_ws_describe(struct sway_workspace *ws, json_object *object);
+
+/* A workspace's name in a command, as tidewm reads it: argv[0] in double
+ * quotes, alone, is a name whatever it says, next or back_and_forth too,
+ * and *quoted gets it, to free. Without one, *quoted is NULL and each
+ * quoted argument is stripped, as sway's commands are. Fails for a quote
+ * that isn't closed or more after the closing one. */
+struct cmd_results *tide_ws_quoted_name(int argc, char **argv, char **quoted);
+
+// Whether command's arguments reach it with their quotes, as tidewm reads
+// them: the above's, and grant's
+bool tide_keeps_quotes(const char *command);
+
+// The workspace named name, ignoring case, made if there's none
+struct sway_workspace *tide_ws_named(const char *name);
 
 // ext-workspace's one group, on every output
 struct wlr_ext_workspace_group_handle_v1 *tide_ws_ext_group(uint32_t caps);

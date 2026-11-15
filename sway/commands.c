@@ -7,6 +7,7 @@
 #include <json.h>
 #include "sway/commands.h"
 #include "sway/tide/names.h"
+#include "sway/tide/workspace.h"
 #include "sway/config.h"
 #include "sway/criteria.h"
 #include "sway/input/input-manager.h"
@@ -301,7 +302,8 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 		char **argv = split_args(cmd, &argc);
 		if (strcmp(argv[0], "exec") != 0 &&
 				strcmp(argv[0], "exec_always") != 0 &&
-				strcmp(argv[0], "mode") != 0) {
+				strcmp(argv[0], "mode") != 0 &&
+				!tide_keeps_quotes(argv[0])) {
 			for (int i = 1; i < argc; ++i) {
 				if (*argv[i] == '\"' || *argv[i] == '\'') {
 					strip_quotes(argv[i]);

@@ -984,11 +984,29 @@ static struct cmd_results *grant_extend(unsigned long key, unsigned long pid,
  *   grant --or-recent APP ...
  *   grant extend --key KEY [--pid PID] APP ID ...
  */
+/* Takes the double quotes off s, a word in them, as tidewm's grant reads
+ * one. Returns false for a quote that isn't closed, or more after it. */
+static bool unquote(char *s) {
+	size_t len = strlen(s);
+	if (len < 2 || s[len - 1] != '"' || memchr(s + 1, '"', len - 2)) {
+		return false;
+	}
+	memmove(s, s + 1, len - 2);
+	s[len - 2] = '\0';
+	return true;
+}
+
 struct cmd_results *cmd_grant(int argc, char **argv) {
 	unsigned long pid = 0, key = 0;
 	const char *value, *workspace = NULL;
 	bool extend = false, or_recent = false;
 	int i = 0, r;
+	// Its arguments come with their quotes (tide_keeps_quotes)
+	for (int j = 0; j < argc; j++) {
+		if (argv[j][0] == '"' && !unquote(argv[j])) {
+			return cmd_results_new(CMD_FAILURE, "grant: expected app ids");
+		}
+	}
 	if (argc > 0 && strcmp(argv[0], "extend") == 0) {
 		extend = true;
 		i++;
