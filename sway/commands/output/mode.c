@@ -38,7 +38,7 @@ struct cmd_results *output_cmd_mode(int argc, char **argv) {
 			}
 			++end;
 			output->refresh_rate = strtof(end, &end);
-			if (strcasecmp("Hz", end) != 0) {
+			if (*end && strcasecmp("Hz", end) != 0) { // tide: Hz or not, as tidewm's
 				return cmd_results_new(CMD_INVALID,
 					"Invalid mode refresh rate.");
 			}
