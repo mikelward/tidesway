@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
-from harness import EVENT_BINDING, GET_BINDINGS, GET_CONFIG, RUN_COMMAND, TIMEOUT, Tidewm, TidewmTest
+from harness import EVENT_BINDING, EVENT_WORKSPACE, GET_BINDINGS, GET_CONFIG, RUN_COMMAND, TIMEOUT, Tidewm, TidewmTest
 
 
 class EscapedSpaceTest(TidewmTest):
@@ -33,6 +33,32 @@ class EscapedSpaceTest(TidewmTest):
             output += chunk
             select.select([fd], [], [], TIMEOUT)
         self.assertEqual(output, b"<foo >")
+
+
+class DefaultModTest(TidewmTest):
+    """As tidewm's ConfigTest of it, until tidesway's pin of tidewm has it."""
+    CONFIG = "bindsym Mod1+z nop\n"
+
+    def shown(self, ipc):
+        return ipc.next_event(EVENT_WORKSPACE, lambda e: e["change"] == "focus")["current"]["name"]
+
+    def test_mod_is_super_unless_the_config_sets_it(self):
+        # A config whose set $mod is lost, with tide.conf say, keeps its keys
+        self.wm.write_config("bindsym $mod+x workspace super\n")
+        self.command(self.connect(), "reload")
+        self.assertEqual(self.connect().request(GET_CONFIG)["errors"], [])
+        ipc = self.connect()
+        ipc.subscribe("workspace")
+        self.press("-M", "logo", "-k", "x", "-m", "logo")
+        self.assertEqual(self.shown(ipc), "super")
+
+    def test_a_config_sets_mod_to_its_own(self):
+        self.wm.write_config("set $mod Mod1\nbindsym $mod+x workspace alt\n")
+        self.command(self.connect(), "reload")
+        ipc = self.connect()
+        ipc.subscribe("workspace")
+        self.press("-M", "alt", "-k", "x", "-m", "alt")
+        self.assertEqual(self.shown(ipc), "alt")
 
 
 class SymlinkedConfigTest(TidewmTest):
@@ -96,7 +122,7 @@ class KeysToFixWithTest(TidewmTest):
         return ran[:-1]
 
     def test_a_config_with_an_error_keeps_them(self):
-        self.assertEqual(self.ran_after("bindsym Print nop\nbindsym $mod+t nop\n"
+        self.assertEqual(self.ran_after("bindsym Print nop\nbindsym $nosuch+t nop\n"
                                         "bindsym Mod4+Shift+e exit\n"),
                          ["exec xdg-terminal-exec || exec foot"])
 

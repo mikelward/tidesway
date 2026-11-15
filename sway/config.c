@@ -237,6 +237,8 @@ static void config_defaults(struct sway_config *config) {
 	config->swaynag_config_errors.detailed = true;
 
 	if (!(config->symbols = create_list())) goto cleanup;
+	// tide: $mod is Super until the config sets it, as in tidewm
+	if (!tide_keys_default_vars(config->symbols)) goto cleanup;
 	if (!(config->modes = create_list())) goto cleanup;
 	if (!(config->bars = create_list())) goto cleanup;
 	if (!(config->workspace_configs = create_list())) goto cleanup;
