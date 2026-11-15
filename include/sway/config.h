@@ -646,6 +646,8 @@ struct sway_config {
 	list_t *tide_included;
 	// tide: tidewm's config file, which tidesway's command names
 	struct tide_user_config tide_user;
+	// tide: tidewm's built-in keys, under the tidesway command; NULL without
+	struct sway_mode *tide_builtin_keys;
 	// tide: its named bindings, as bindsym --name lines first name them
 	list_t *tide_named;
 };

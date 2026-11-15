@@ -16,6 +16,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/tide/configinfo.h"
+#include "sway/tide/keys.h"
 
 // A reload's reply names this many, then says how many more there are
 #define SHOWN 3
@@ -238,5 +239,9 @@ void tide_config_started(struct sway_config *config) {
 	} else if (tide_config_has_errors()) {
 		sway_log(SWAY_ERROR, "tidesway: left out the lines above from the config; "
 			"the rest is loaded");
+	}
+	if (user->text && !tide_keys_bound(config)) {
+		sway_log(SWAY_ERROR, "tidesway: %s binds no key, so config.h's keys work with it",
+			user->path);
 	}
 }
