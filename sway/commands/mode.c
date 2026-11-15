@@ -72,6 +72,10 @@ struct cmd_results *cmd_mode(int argc, char **argv) {
 	struct sway_mode *stored_mode = config->current_mode;
 	config->current_mode = mode;
 	if (argc == 1) {
+		// tide: entering the mode you're in says nothing, as tidewm has it
+		if (mode == stored_mode) {
+			return cmd_results_new(CMD_SUCCESS, NULL);
+		}
 		// trigger IPC mode event
 		sway_log(SWAY_DEBUG, "Switching to mode `%s' (pango=%d)",
 				mode->name, mode->pango);
