@@ -86,9 +86,11 @@ struct cmd_results *cmd_mode(int argc, char **argv) {
 		return cmd_results_new(CMD_SUCCESS, NULL);
 	}
 
-	// tide: a line that isn't a mode's, but is the top level's, says so
-	if (!find_handler(argv[1], mode_handlers, sizeof(mode_handlers))
-			&& tide_is_command(argv[1])) {
+	// tide: a line that isn't a mode's, but is the top level's, says so;
+	// a switch's binding is the top level's, as in tidewm
+	if ((strcmp(argv[1], "bindswitch") == 0 && config->reading)
+			|| (!find_handler(argv[1], mode_handlers, sizeof(mode_handlers))
+			&& tide_is_command(argv[1]))) {
 		config->current_mode = stored_mode;
 		return cmd_results_new(CMD_FAILURE, "%s can't be in a mode", argv[1]);
 	}

@@ -284,8 +284,13 @@ Each patch's PR says how far it moves this.
 - **Config errors in tidewm's words, sway's lines kept** (2026-11-10): an
   unknown line, a binding's unknown key or flag, and bad `bindsym`,
   `bindswitch`, `set` and `include` lines say what tidewm's do. sway's own
-  flags and lines stay: `--border`, `bindswitch --reload` and `bindswitch` in
-  a mode, which tidewm's tests call errors. A mode in the file is a block, as
+  flags and lines stay, but for those tidewm's tests call errors
+  (2026-11-15): `bindsym --border`, for a click on a border tide's look has
+  none of, `bindswitch --reload`, `bindswitch` in a mode, and `bindcode
+  --whole-window` and `--name`. A `bindcode` key is a number from 8 up,
+  where sway took any word as keycode 0. `Lock` in a binding is ignored, as
+  tidewm's `CLEANMASK` ignores Caps Lock; sway already matched a letter's
+  binding with Caps Lock on. A mode in the file is a block, as
   in tidewm (2026-11-15): `mode NAME` alone there, which started sway in that
   mode, is an error, as are `mode --pango_markup NAME {` and a block in a
   mode, and their lines go with them to their own `}`. A block inside one

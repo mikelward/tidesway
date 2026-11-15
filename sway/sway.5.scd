@@ -461,7 +461,7 @@ runtime.
 
 		for_window <criteria> move container to output <output>
 
-*bindsym* [--whole-window] [--border] [--exclude-titlebar] [--release] [--locked] \
+*bindsym* [--whole-window] [--exclude-titlebar] [--release] [--locked] \
 [--to-code] [--input-device=<device>] [--no-warn] [--no-repeat] [--inhibited] \
 [--kept-open] [--name <name>] [--desc <text>] [Group<1-4>+]<key combo> <command>
 	Binds _key combo_ to execute the sway command _command_ when pressed. You
@@ -537,10 +537,13 @@ runtime.
 	The priority for matching bindings is as follows: input device, group,
 	and locked state.
 
-	_--whole-window_, _--border_, and _--exclude-titlebar_ are mouse-only options
+	In tidesway, as in tidewm, Caps Lock is ignored: a key combo naming _Lock_
+	is the same as one that doesn't, and replaces it. Any flag tidesway doesn't
+	take, such as sway's _--border_, which tidewm hasn't either, is an error.
+
+	_--whole-window_ and _--exclude-titlebar_ are mouse-only options
 	which affect the region in which the mouse bindings can be triggered.  By
-	default, mouse bindings are only triggered when over the title bar. With the
-	_--border_ option, the border of the window will be included in this region.
+	default, mouse bindings are only triggered when over the title bar.
 	With the _--whole-window_ option, the cursor can be anywhere over a window
 	including the title, border, and content. _--exclude-titlebar_ can be used in
 	conjunction with any other option to specify that the titlebar should be
@@ -556,10 +559,13 @@ runtime.
 		bindsym Mod1+Shift+f exec firefox
 ```
 
-	*bindcode* [--whole-window] [--border] [--exclude-titlebar] [--release] \
+	*bindcode* [--exclude-titlebar] [--release] \
 [--locked] [--input-device=<device>] [--no-warn] [--no-repeat] [--inhibited] \
 [Group<1-4>+]<code> <command>
 	is also available for binding with key/button codes instead of key/button names.
+	In tidesway, as in tidewm, a code is a number from 8 up, XKB's keycode as
+	*wev*(1) shows it, and *bindcode* takes neither _--whole-window_ nor
+	_--name_.
 
 *rebind* <name> <key combo...>|none
 	tidesway's: gives the binding *bindsym --name* named _name_ these keys in
@@ -577,7 +583,7 @@ runtime.
 		rebind terminal Mod4+Return
 ```
 
-*bindswitch* [--locked] [--no-warn] [--reload] [--desc <text>] <switch>:<state> <command>
+*bindswitch* [--locked] [--no-warn] [--desc <text>] <switch>:<state> <command>
 	Binds <switch> to execute the sway command _command_ on state changes.
 	Supported switches are _lid_ (laptop lid), _tablet_ (tablet mode) and
 	_keypad_slide_ (whether the device keypad is exposed or not) switches. Valid
@@ -591,10 +597,8 @@ runtime.
 	and without _--locked_, the one with will be preferred when locked and the
 	one without will be preferred when unlocked.
 
-	If the _--reload_ flag is given, the binding will also be executed when
-	the config is reloaded. _toggle_ bindings will not be executed on reload.
-	The _--locked_ flag will operate as normal so if the config is reloaded
-	while locked and _--locked_ is not given, the binding will not be executed.
+	In tidesway, as in tidewm, there's no _--reload_ flag, as sway's ran the
+	binding again on a reload, and *bindswitch* can't be in a mode block.
 
 	By default, if you overwrite a binding, swaynag will give you a warning. To
 	silence this, use the _--no-warn_ flag.

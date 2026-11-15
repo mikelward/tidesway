@@ -9,7 +9,7 @@ from harness import GET_NAMED_BINDINGS, TidewmTest
 
 
 class KeylessButtonTest(TidewmTest):
-    CONFIG = ("bindsym --name grow --border none nop grow\n"
+    CONFIG = ("bindsym --name grow --whole-window none nop grow\n"
               "bindsym --name shrink --whole-window --exclude-titlebar none nop shrink\n")
 
     def rebind(self, line):
