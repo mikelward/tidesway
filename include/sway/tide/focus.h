@@ -118,8 +118,8 @@ void tide_focus_focused(struct sway_node *node);
 void tide_focus_quiet_begin(void);
 void tide_focus_quiet_end(void);
 
-/* The node focus goes to as the focused window closes, in place of next:
- * never a window the guard holds, which waits for you */
+/* The node focus goes to as the focused window closes or is minimized, in
+ * place of next: never a window the guard holds, which waits for you */
 struct sway_node *tide_focus_after_close(struct sway_seat *seat,
 	struct sway_node *next);
 
