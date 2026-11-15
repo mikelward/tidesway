@@ -20,6 +20,11 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
   each window's corners, and `shadows` puts a soft shadow around each
   floating window, the focused window alone or every window, with whichever
   renderer wlroots has (`man 5 sway`, "TIDE'S ROUNDED CORNERS AND SHADOWS");
+* a window's shadow as where a drag resizes it, as on Hyprland: a plain left
+  press just outside a floating window's edge or corner resizes it, as far
+  out as its shadow reaches, or 8 pixels with shadows off; a tile's shadow
+  across the edge between the masters and the stack drags that edge. A press
+  there doesn't reach the window under it;
 * tidewm's background color, `#222222`, where no window or wallpaper is;
 * tidewm's borders: `default_border` gives every window its border, tiled
   and floating, and a reload changes each one's at once; `client.*` colors

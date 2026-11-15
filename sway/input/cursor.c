@@ -27,6 +27,7 @@
 #include "sway/scene_descriptor.h"
 #include "sway/server.h"
 #include "sway/desktop/transaction.h"
+#include "sway/tide/dragzone.h"
 #include "sway/tide/focus.h"
 #include "sway/tide/keys.h"
 #include "sway/tide/look.h"
@@ -174,6 +175,10 @@ void cursor_rebase_all(void) {
 
 void cursor_update_image(struct sway_cursor *cursor,
 		struct sway_node *node) {
+	// tide: a drag zone's resize cursor
+	if (tide_dragzone_cursor(cursor)) {
+		return;
+	}
 	if (node && node->type == N_CONTAINER) {
 		// Try a node's resize edge
 		enum wlr_edges edge = find_resize_edge(node->sway_container, NULL, cursor);

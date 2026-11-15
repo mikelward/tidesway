@@ -22,9 +22,9 @@ concurrency:
 env:
   # The mikelward/tidewm commit whose suite and harness the test job runs,
   # pinned so tests/tidewm-harness/passing.txt holds against it: main at
-  # 6a2a706. To move it, change it here, re-run, and update passing.txt (and
+  # 7064216. To move it, change it here, re-run, and update passing.txt (and
   # flaky.txt) in the same pull request.
-  TIDEWM_REF: 2942f4f741c36bcf49e33bdc55b3390853b21e90
+  TIDEWM_REF: 7064216b57d68fccd78e698a2596304a2d814d31
 
 jobs:
   classify:

@@ -1035,6 +1035,12 @@ static bool shadowed(struct sway_container *con, struct sway_container *active) 
 		&& con->current.width > 0 && con->current.height > 0;
 }
 
+int tide_look_shadow_reach(void) {
+	const struct tide_look_config *look = &config->tide_look;
+	return look->shadows != TIDE_SHADOWS_NONE && look->shadow_color[3] > 0
+		&& look->shadow_blur_radius > 0 ? look->shadow_blur_radius : 0;
+}
+
 bool tide_look_shadow(struct sway_container *con) {
 	struct sway_workspace *ws = con->pending.workspace;
 	if (config->tide_look.shadow_blur_radius <= 0
