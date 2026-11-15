@@ -235,9 +235,13 @@ Each patch's PR says how far it moves this.
   most recent window, or one the guard holds, in sway's layouts as in tide's,
   where sway's did nothing; otherwise a held window in sway's layouts could
   be reached only by the pointer.
-- **Unbalanced quotes** (2026-11-08): sway strips a lone `"` before a command
-  sees it, so `grant "app` grants `app`, where tidewm fails with "expected
-  app ids".
+- **Unbalanced quotes** (2026-11-08): sway strips a lone `"` before a
+  command sees it. `grant`, `workspace`, `persist` and `unpersist` read
+  their quotes as tidewm does (2026-11-15): `grant "app` fails with
+  "expected app ids", and a name in double quotes is a name, `next` or
+  `back_and_forth` too, and one with no closing quote, or more after it,
+  fails. `workspace number NAME` with a NAME that isn't a number names it,
+  where sway failed.
 - **Activations with the guard off** (2026-11-08): `focus_on_window_activation`
   decides, as in sway, unless a grant names the app. tidewm marks every
   ungranted activation urgent, guard or no guard; here that holds with the

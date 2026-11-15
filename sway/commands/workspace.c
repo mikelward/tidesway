@@ -5,6 +5,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/input/seat.h"
+#include "sway/tide/workspace.h"
 #include "sway/tree/workspace.h"
 #include "list.h"
 #include "log.h"
@@ -142,6 +143,12 @@ struct cmd_results *cmd_workspace(int argc, char **argv) {
 			break;
 		}
 	}
+	// tide: these reach it quoted (tide_keeps_quotes), as sway strips them
+	for (int i = 0; (output_location >= 0 || gaps_location >= 0) && i < argc; ++i) {
+		if (*argv[i] == '"' || *argv[i] == '\'') {
+			strip_quotes(argv[i]);
+		}
+	}
 	if (output_location == 0) {
 		return cmd_results_new(CMD_INVALID,
 			"Expected 'workspace <name> output <output>'");
@@ -189,14 +196,24 @@ struct cmd_results *cmd_workspace(int argc, char **argv) {
 		struct sway_seat *seat = config->handler_context.seat;
 
 		struct sway_workspace *ws = NULL;
-		if (strcasecmp(argv[0], "number") == 0) {
+		// tide: a name in double quotes is a name, as in tidewm, and so is
+		// what follows number if it isn't one
+		bool number = strcasecmp(argv[0], "number") == 0;
+		char *quoted = NULL;
+		if ((error = tide_ws_quoted_name(argc - number, argv + number, &quoted))) {
+			return error;
+		}
+		if (quoted || (number && argc >= 2 && !isdigit(argv[1][0]))) {
+			char *name = quoted ? quoted : join_args(argv + 1, argc - 1);
+			ws = tide_ws_named(name);
+			free(name);
+			if (ws && auto_back_and_forth) {
+				ws = workspace_auto_back_and_forth(ws);
+			}
+		} else if (number) {
 			if (argc < 2) {
 				return cmd_results_new(CMD_INVALID,
 						"Expected workspace number");
-			}
-			if (!isdigit(argv[1][0])) {
-				return cmd_results_new(CMD_INVALID,
-						"Invalid workspace number '%s'", argv[1]);
 			}
 			if (!(ws = workspace_by_number(argv[1]))) {
 				char *name = join_args(argv + 1, argc - 1);

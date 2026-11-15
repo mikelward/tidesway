@@ -589,6 +589,38 @@ struct wlr_ext_workspace_group_handle_v1 *tide_ws_ext_group(uint32_t caps) {
 	return ext_group;
 }
 
+struct cmd_results *tide_ws_quoted_name(int argc, char **argv, char **quoted) {
+	*quoted = NULL;
+	if (argc < 1 || argv[0][0] != '"') {
+		for (int i = 0; i < argc; i++) {
+			if (*argv[i] == '"' || *argv[i] == '\'') {
+				strip_quotes(argv[i]);
+			}
+		}
+		return NULL;
+	}
+	size_t len = strlen(argv[0]);
+	if (argc > 1 || len < 2 || argv[0][len - 1] != '"') {
+		return cmd_results_new(CMD_INVALID,
+			"Expected a workspace name, or one in double quotes");
+	}
+	*quoted = strndup(argv[0] + 1, len - 2);
+	if (!*quoted) {
+		return cmd_results_new(CMD_FAILURE, "Out of memory reading a workspace name");
+	}
+	return NULL;
+}
+
+bool tide_keeps_quotes(const char *command) {
+	return strcmp(command, "workspace") == 0 || strcmp(command, "persist") == 0
+		|| strcmp(command, "unpersist") == 0 || strcmp(command, "grant") == 0;
+}
+
+struct sway_workspace *tide_ws_named(const char *name) {
+	struct sway_workspace *ws = find_named(name);
+	return ws ? ws : workspace_create(NULL, name);
+}
+
 // persist|unpersist workspace NAME
 static struct cmd_results *persist(int argc, char **argv, bool on) {
 	const char *cmd = on ? "persist" : "unpersist";
@@ -607,7 +639,13 @@ static struct cmd_results *persist(int argc, char **argv, bool on) {
 		return cmd_results_new(CMD_FAILURE,
 			"Can't run this command while there's no outputs connected.");
 	}
-	char *name = join_args(argv + 1, argc - 1);
+	char *name = NULL;
+	if ((error = tide_ws_quoted_name(argc - 1, argv + 1, &name))) {
+		return error;
+	}
+	if (!name) {
+		name = join_args(argv + 1, argc - 1);
+	}
 	struct sway_workspace *ws = find_named(name);
 	if (!ws && on) {
 		ws = workspace_create(NULL, name);
