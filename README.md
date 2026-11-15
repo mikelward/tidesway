@@ -4,10 +4,10 @@ tidesway is [tide]'s fork of sway, as [tidewm] is tide's fork of dwl: sway
 1.12 with what tide needs from a compositor, to measure against tidewm
 ([why][SWAY.md]). It has:
 
-* tide's layouts (`tile`, `threecol`, `twocol`, `monocle`), with `mfact`,
-  `nmaster`, `single_width`, `zoom` and `movestack`, placed before a new
-  window is first shown, and tidewm's layout lines and IPC (`man 5 sway`,
-  "TIDE'S LAYOUTS");
+* tide's layouts (`tile`, `threecol`, `twocol`, `monocle`) and tidewm's
+  `floating`, with `mfact`, `nmaster`, `single_width`, `zoom` and
+  `movestack`, placed before a new window is first shown, and tidewm's
+  layout lines and IPC (`man 5 sway`, "TIDE'S LAYOUTS");
 * tide's focus guard, so a window you didn't ask for never takes focus, with
   tidewm's `grant`, `focus recent` and `focus_guard` lines (`man 5 sway`,
   "TIDE'S FOCUS GUARD");

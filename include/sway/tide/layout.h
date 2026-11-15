@@ -3,10 +3,11 @@
 
 /*
  * tide's layouts, as tidewm has them (its layout.h): tile, threecol,
- * twocol and monocle, each workspace with its own layout, mfact and
- * nmaster, and each layout its own mfact and nmaster there. A workspace
- * laid out by tide's rules places its tiled windows, in tree order, as
- * tidewm places a monitor's clients; one with tide's layout off keeps
+ * twocol and monocle, and tidewm's floating, each workspace with its own
+ * layout, mfact and nmaster, and each layout its own mfact and nmaster
+ * there. A workspace laid out by tide's rules places its tiled windows, in
+ * tree order, as tidewm places a monitor's clients, but in the floating
+ * layout, which leaves each where it was; one with tide's layout off keeps
  * sway's split tree.
  */
 
@@ -22,6 +23,7 @@ enum tide_layout {
 	TIDE_THREECOL,
 	TIDE_TWOCOL,
 	TIDE_MONOCLE,
+	TIDE_FLOATING, // tidewm's floating layout: each tile where it was put
 	TIDE_LAYOUTS,
 };
 
@@ -90,6 +92,11 @@ void tide_workspace_init(struct sway_workspace *ws);
 enum tide_layout tide_workspace_layout(struct sway_workspace *ws);
 
 const char *tide_layout_name(enum tide_layout lt);
+
+/* Whether con is a tile in the floating layout, which no layout places:
+ * it stays where it was, its place given back after fullscreen or
+ * maximize, as a floating window's is */
+bool tide_placed_by_hand(struct sway_container *con);
 
 // ws's layout symbol, as tidewm's layout event has it, into buf
 void tide_layout_symbol(struct sway_workspace *ws, char *buf, int size);

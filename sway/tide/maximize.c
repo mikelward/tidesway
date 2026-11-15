@@ -10,6 +10,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/ipc-server.h"
+#include "sway/tide/layout.h"
 #include "sway/tide/maximize.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
@@ -57,7 +58,9 @@ static void set(struct sway_container *con, bool maximized, bool event) {
 		return;
 	}
 	view->tide.maximized = maximized;
-	bool floating = container_is_floating(con);
+	// A tile in the floating layout gets its place back, as a floating
+	// window does: no layout places it
+	bool floating = container_is_floating(con) || tide_placed_by_hand(con);
 	if (maximized && floating) {
 		view->tide.max_area = area_of(con);
 	}
@@ -72,12 +75,18 @@ static void set(struct sway_container *con, bool maximized, bool event) {
 		view->tide.max_y = con->pending.y;
 		view->tide.max_width = con->pending.width;
 		view->tide.max_height = con->pending.height;
+	} else if (maximized) {
+		// A layout places it, so it has no place of its own to go back to
+		view->tide.max_width = view->tide.max_height = 0;
 	} else if (floating && con->pending.fullscreen_mode != FULLSCREEN_NONE) {
 		// Fullscreen gives back the place it had as it went fullscreen
 		con->saved_x = view->tide.max_x;
 		con->saved_y = view->tide.max_y;
 		con->saved_width = view->tide.max_width;
 		con->saved_height = view->tide.max_height;
+	} else if (floating && !container_is_floating(con)
+			&& (view->tide.max_width <= 0 || view->tide.max_height <= 0)) {
+		// A tile maximized in another layout keeps the area's size, as in tidewm
 	} else if (floating && (view->tide.max_width <= 0 || view->tide.max_height <= 0)) {
 		/* It floated while maximized, so it had no floating place: it takes
 		 * the size and place a window floating anew does */

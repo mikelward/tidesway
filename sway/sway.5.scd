@@ -1115,12 +1115,16 @@ A new workspace starts in tide's layouts. One of sway's layouts or split
 commands (*layout splith*, *splitv*, *split*, ...) puts that workspace back
 in sway's layouts, until a *layout* command names one of tide's.
 
-*layout* tile|threecol|twocol|monocle
+*layout* tile|threecol|twocol|monocle|floating
 	Sets the focused workspace's layout. _tile_ puts the masters in a column
 	on the left and the stack on the right; _threecol_ centers the master,
 	with a stack either side, right first; _twocol_ puts the masters side by
 	side, with the stack on the right; _monocle_ gives each window the whole
-	area.
+	area. _floating_, tidewm's, places no window: each stays where it was,
+	getting its place back after fullscreen or *maximize*, and a new one
+	opens in the middle at its own size. It has no master area or stack, so
+	*mfact*, *movestack* and a tile's *resize* fail there, and *zoom* does
+	nothing.
 
 *layout* next|prev
 	Goes to the next or previous layout in the cycle, _tile threecol
@@ -1128,7 +1132,8 @@ in sway's layouts, until a *layout* command names one of tide's.
 	the layout before it.
 
 *layout* toggle
-	On a workspace in tide's layouts, goes back to the layout before.
+	On a workspace in tide's layouts, goes back to the layout before, or to
+	_floating_ if there's none, as in tidewm.
 
 *mfact* <F>|+<F>|-<F>
 	Sets the master area's share of the width, from 0.1 to 0.9.

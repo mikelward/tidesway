@@ -9,6 +9,9 @@
  * neighbors sharing an edge, covering the window area with no gap and no
  * overlap. A window's size hints can make it taller or shorter than its
  * box, and then the rows after it in its column start at its bottom.
+ *
+ * tidewm's floating layout places nothing: each tile stays where it was,
+ * as dwl's does, and a new one opens in the middle, at its own size.
  */
 #include <float.h>
 #include <limits.h>
@@ -37,6 +40,7 @@ static const char *const names[TIDE_LAYOUTS] = {
 	[TIDE_THREECOL] = "threecol",
 	[TIDE_TWOCOL] = "twocol",
 	[TIDE_MONOCLE] = "monocle",
+	[TIDE_FLOATING] = "floating",
 };
 
 // config.def.h's layouts' symbols in tidewm
@@ -45,6 +49,7 @@ static const char *const symbols[TIDE_LAYOUTS] = {
 	[TIDE_THREECOL] = "|M|",
 	[TIDE_TWOCOL] = "||=",
 	[TIDE_MONOCLE] = "[M]",
+	[TIDE_FLOATING] = "><>",
 };
 
 // tidewm's config.h: a lone window is 80% wide from 2.1, 60% from 3.2
@@ -113,7 +118,8 @@ static void defaults_for(struct tide_workspace *t, struct sway_output *output) {
 	enum tide_layout lt = first_layout(output);
 	memset(t->modes, 0, sizeof(t->modes));
 	t->lt[0] = lt;
-	t->lt[1] = TIDE_NONE;
+	// Toggling first goes to floating, as tidewm's second layout is
+	t->lt[1] = lt == TIDE_FLOATING ? TIDE_TILE : TIDE_FLOATING;
 	t->sellt = 0;
 	t->single = 0;
 	mode_defaults(lt, &t->mfact, &t->nmaster);
@@ -147,6 +153,12 @@ enum tide_layout tide_workspace_layout(struct sway_workspace *ws) {
 	}
 	struct tide_workspace *t = settled(ws);
 	return t->off ? TIDE_NONE : t->lt[t->sellt];
+}
+
+bool tide_placed_by_hand(struct sway_container *con) {
+	struct sway_workspace *ws = con->pending.workspace;
+	return con->view && ws && !container_is_floating_or_child(con)
+		&& tide_workspace_layout(ws) == TIDE_FLOATING;
 }
 
 // Whether con is a tile tide lays out: not fullscreen, nor minimized
@@ -428,6 +440,32 @@ static void twocol(struct tide_workspace *t, struct wlr_box area, list_t *leaves
 	free(boxes);
 }
 
+/* The floating layout's: each window stays where it is, kept on area
+ * if it's off it, at the size its hints allow; a new one, with no place
+ * yet, opens in the middle at its own size, at most 4/5 of the area's, as
+ * a window floating as it opens does in tidewm */
+static void by_hand(struct wlr_box area, list_t *leaves) {
+	for (int i = 0; i < leaves->length; i++) {
+		struct sway_container *con = leaves->items[i];
+		struct wlr_box box = { (int)con->pending.x, (int)con->pending.y,
+			(int)con->pending.width, (int)con->pending.height }, both;
+		if (box.width <= 0 || box.height <= 0) {
+			box.width = con->view->natural_width > 0 ?
+				con->view->natural_width : area.width;
+			box.height = con->view->natural_height > 0 ?
+				con->view->natural_height : area.height;
+			box.width = TIDE_MIN(box.width, area.width * 4 / 5);
+			box.height = TIDE_MIN(box.height, area.height * 4 / 5);
+			box.x = area.x + (area.width - box.width) / 2;
+			box.y = area.y + (area.height - box.height) / 2;
+		} else if (!wlr_box_intersection(&both, &box, &area)) {
+			box.x = TIDE_MAX(area.x, TIDE_MIN(box.x, area.x + area.width - box.width));
+			box.y = TIDE_MAX(area.y, TIDE_MIN(box.y, area.y + area.height - box.height));
+		}
+		resize(con, box);
+	}
+}
+
 // Split containers take the whole area, so their windows place by it
 static void cover(list_t *children, struct wlr_box area) {
 	for (int i = 0; i < children->length; i++) {
@@ -455,7 +493,9 @@ bool tide_arrange_workspace(struct sway_workspace *ws) {
 	cover(ws->tiling, area);
 	list_t *leaves = create_list();
 	collect(ws->tiling, leaves, false);
-	if (leaves->length == 1) {
+	if (lt == TIDE_FLOATING) {
+		by_hand(area, leaves);
+	} else if (leaves->length == 1) {
 		// A lone window has the single-window width, in any layout
 		struct wlr_box box = single_box(t, area);
 		place(leaves, &box, 1);
@@ -475,6 +515,7 @@ bool tide_arrange_workspace(struct sway_workspace *ws) {
 				resize(leaves->items[i], area);
 			}
 			break;
+		case TIDE_FLOATING:
 		case TIDE_NONE:
 		case TIDE_LAYOUTS:
 			break;
@@ -552,6 +593,8 @@ static int masters(struct sway_workspace *ws) {
 		return TIDE_MAX(t->nmaster, 1);
 	case TIDE_TWOCOL:
 		return TIDE_MIN(TIDE_MAX(t->nmaster, 1), 15);
+	case TIDE_FLOATING:
+		return 0;
 	default:
 		return t->nmaster;
 	}
@@ -648,7 +691,7 @@ void tide_set_layout(struct sway_workspace *ws, enum tide_layout lt) {
 		t->lt[t->sellt] = lt;
 	}
 	if (t->lt[t->sellt] == TIDE_NONE) {
-		// Nothing yet to toggle back to: tidewm's floating, which sway hasn't
+		// Nothing to toggle back to
 		t->sellt ^= 1;
 	}
 	lt_switch(t, old, t->lt[t->sellt]);
@@ -684,8 +727,10 @@ enum tide_layout tide_cycle(struct sway_workspace *ws, int step) {
 
 struct sway_container *tide_zoom(struct sway_container *con) {
 	struct sway_workspace *ws = con->pending.workspace;
+	// Nor in the floating layout, as in tidewm, which has no master
 	if (!con->view || !ws || container_is_floating_or_child(con)
-			|| tide_workspace_layout(ws) == TIDE_NONE) {
+			|| tide_workspace_layout(ws) == TIDE_NONE
+			|| tide_workspace_layout(ws) == TIDE_FLOATING) {
 		return NULL;
 	}
 	tide_flatten(ws);
@@ -716,6 +761,9 @@ const char *tide_movestack(struct sway_container *con, int step) {
 	struct sway_workspace *ws = con->pending.workspace;
 	if (!ws || tide_workspace_layout(ws) == TIDE_NONE) {
 		return "sway's layouts have no stack";
+	}
+	if (tide_workspace_layout(ws) == TIDE_FLOATING) {
+		return "The floating layout has no stack";
 	}
 	if (!con->view || container_is_floating_or_child(con) || !tiles(con)) {
 		return "A floating or fullscreen window isn't in the stack";
@@ -784,7 +832,7 @@ void tide_config_reloaded(struct sway_config *old, struct sway_config *new) {
 
 int tide_edges(struct sway_workspace *ws, struct tide_edge out[2]) {
 	enum tide_layout lt = tide_workspace_layout(ws);
-	if (lt == TIDE_NONE) {
+	if (lt == TIDE_NONE || lt == TIDE_FLOATING) {
 		return 0;
 	}
 	struct tide_workspace *t = &ws->tide;
@@ -885,6 +933,9 @@ const char *tide_resize(struct sway_container *con, bool horizontal, double amou
 		bool pixels) {
 	struct sway_workspace *ws = con->pending.workspace;
 	struct tide_workspace *t = &ws->tide;
+	if (tide_workspace_layout(ws) == TIDE_FLOATING) {
+		return "The floating layout has no master area";
+	}
 	if (!workspace_is_visible(ws)) {
 		return "The window's workspace isn't shown";
 	}

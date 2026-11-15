@@ -1259,7 +1259,8 @@ void container_fullscreen_disable(struct sway_container *con) {
 	}
 	set_fullscreen(con, false);
 
-	if (container_is_floating(con)) {
+	// tide: and a tile in the floating layout, which no layout places
+	if (container_is_floating(con) || tide_placed_by_hand(con)) {
 		con->pending.x = con->saved_x;
 		con->pending.y = con->saved_y;
 		con->pending.width = con->saved_width;
