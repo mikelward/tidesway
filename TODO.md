@@ -276,7 +276,8 @@ Each patch's PR says how far it moves this.
 - **A disabled output's windows** (2026-11-09): go to the part of their
   workspace on the first output left, as new windows go there, tiled or
   floating, each with a `move` window event. sway would move its whole
-  workspaces over.
+  workspaces over. Its parts' layouts wait for it, by its name, as tidewm
+  keeps a disabled monitor's (2026-11-15).
 - **A floating window's own resize during a configure** (2026-11-10, deferred
   from #13's review): a floating window takes a size its client chose only
   once the client has answered every configure, so a tile's size arriving
