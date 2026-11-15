@@ -994,6 +994,9 @@ The default colors are:
 	sense for the variable to be replaced at run time since some arguments do
 	need to be known at config time.
 
+	tidesway's: _$mod_ is _Mod4_, Super, until a *set* line sets it, as in
+	tidewm, so a config that lost its *set $mod* line keeps its _$mod_ keys.
+
 *show_marks* yes|no
 	If *show_marks* is yes, marks will be displayed in the window borders.
 	Any mark that starts with an underscore will not be drawn even if

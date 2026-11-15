@@ -263,3 +263,18 @@ void tide_keys_builtin_rules(void) {
 		free(line);
 	}
 }
+
+bool tide_keys_default_vars(list_t *symbols) {
+	struct sway_variable *var = calloc(1, sizeof(*var));
+	if (!var) {
+		return false;
+	}
+	var->name = strdup("$mod");
+	var->value = strdup("Mod4");
+	if (!var->name || !var->value) {
+		free_sway_variable(var);
+		return false;
+	}
+	list_add(symbols, var);
+	return true;
+}
