@@ -311,3 +311,20 @@ void tide_config_block_end(char *line) {
 		line[1] = '\0';
 	}
 }
+
+void tide_config_strip(char *line) {
+	size_t start = strspn(line, " \t\n\v\f\r");
+	size_t len = strlen(line + start);
+	memmove(line, line + start, len + 1);
+	while (len && strchr(" \t\n\v\f\r", line[len - 1])) {
+		// An odd number of backslashes before it escapes it
+		size_t n = 0;
+		while (n < len - 1 && line[len - 2 - n] == '\\') {
+			n++;
+		}
+		if (n % 2) {
+			break;
+		}
+		line[--len] = '\0';
+	}
+}

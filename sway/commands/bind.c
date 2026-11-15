@@ -1,4 +1,6 @@
+#include <errno.h>
 #include <libevdev/libevdev.h>
+#include <stdint.h>
 #include <linux/input-event-codes.h>
 #include <string.h>
 #include <strings.h>
@@ -377,6 +379,17 @@ static void refine_region(struct sway_binding *binding, bool exclude_titlebar) {
 	}
 }
 
+// tide: whether name is a keycode, a number from 8 up, as tidewm takes one
+static bool tide_keycode_ok(const char *name) {
+	if (*name < '0' || *name > '9') {
+		return false;
+	}
+	char *end;
+	errno = 0;
+	unsigned long code = strtoul(name, &end, 10);
+	return !*end && !errno && code >= 8 && code <= UINT32_MAX;
+}
+
 static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 		bool bindcode, bool unbind) {
 	const char *bindtype;
@@ -411,7 +424,7 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 	char **tide_flags = argv; // tide: its flags, for a rebind's
 
 	while (argc > 0) {
-		if (!unbind && (strcmp("--name", argv[0]) == 0
+		if (!unbind && !bindcode && (strcmp("--name", argv[0]) == 0
 				|| has_prefix(argv[0], "--name="))) { // tide
 			if (argv[0][strlen("--name")] == '=') {
 				tide_name = argv[0] + strlen("--name=");
@@ -447,9 +460,11 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 			binding->flags |= BINDING_INHIBITED;
 		} else if (strcmp("--kept-open", argv[0]) == 0) { // tide
 			binding->flags |= BINDING_KEPT_OPEN;
-		} else if (strcmp("--whole-window", argv[0]) == 0) {
+		} else if (strcmp("--whole-window", argv[0]) == 0 && (!bindcode || unbind)) {
+			// tide: a button's, by its name, as tidewm has it
 			binding->flags |= BINDING_BORDER | BINDING_CONTENTS | BINDING_TITLEBAR;
-		} else if (strcmp("--border", argv[0]) == 0) {
+		} else if (strcmp("--border", argv[0]) == 0 && unbind) {
+			// tide: as tidewm, which has no borders to click on, has none
 			binding->flags |= BINDING_BORDER;
 		} else if (strcmp("--to-code", argv[0]) == 0) {
 			if (!bindcode) {
@@ -539,8 +554,25 @@ static struct cmd_results *cmd_bindsym_or_bindcode(int argc, char **argv,
 		// Check for a modifier key
 		uint32_t mod;
 		if ((mod = get_modifier_mask_by_name(split->items[i])) > 0) {
-			binding->modifiers |= mod;
+			// tide: Caps Lock is ignored, as in tidewm, so a binding naming
+			// Lock runs, and replaces one that doesn't
+			binding->modifiers |= mod & ~WLR_MODIFIER_CAPS;
 			continue;
+		}
+
+		// tide: a keycode is a number from 8 up, as tidewm has it
+		if (bindcode && binding->type == BINDING_KEYCODE
+				&& !tide_keycode_ok(split->items[i])) {
+			error = i == split->length - 1
+				? cmd_results_new(CMD_FAILURE, "%s %s: %s is no keycode, "
+					"a number from 8 up, as wev shows it", bindtype, argv[0],
+					(char *)split->items[i])
+				: cmd_results_new(CMD_FAILURE,
+					"%s %s: no modifier or key is called %s", bindtype, argv[0],
+					(char *)split->items[i]);
+			free_sway_binding(binding);
+			list_free_items_and_destroy(split);
+			return error;
 		}
 
 		// Identify the key and possibly change binding->type
@@ -647,8 +679,12 @@ struct cmd_results *cmd_bind_or_unbind_switch(int argc, char **argv,
 			binding->flags |= BINDING_LOCKED;
 		} else if (strcmp("--no-warn", argv[0]) == 0) {
 			warn = false;
-		} else if (strcmp("--reload", argv[0]) == 0) {
+		} else if (strcmp("--reload", argv[0]) == 0 && unbind) {
+			// tide: a switch's binding runs as it changes, as tidewm's
 			binding->flags |= BINDING_RELOAD;
+		} else if (!unbind && has_prefix(argv[0], "--")) { // tide
+			free_switch_binding(binding);
+			return cmd_results_new(CMD_FAILURE, "%s has no flag %s", bindtype, argv[0]);
 		} else {
 			break;
 		}

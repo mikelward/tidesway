@@ -55,6 +55,11 @@ const char *tide_config_loaded_name(struct sway_config *config);
 bool tide_config_block_ok(const char *block, const char *new_block, char *err,
 	size_t size);
 
+/* Takes the space from either end of a config line, but for a space at its
+ * end that a backslash escapes, which an exec's shell will want, as tidewm
+ * does */
+void tide_config_strip(char *line);
+
 // Takes a comment from the end of a line that closes a block: "} # mode"
 void tide_config_block_end(char *line);
 

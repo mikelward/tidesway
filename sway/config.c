@@ -847,7 +847,7 @@ bool read_config(FILE *file, struct sway_config *config,
 		line_number += nlines;
 		sway_log(SWAY_DEBUG, "Read line %d: %s", line_number, line);
 
-		strip_whitespace(line);
+		tide_config_strip(line); // tide: keeping an escaped space at its end
 		if (!*line || line[0] == '#') {
 			continue;
 		}
