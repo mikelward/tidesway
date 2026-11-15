@@ -7,9 +7,3 @@
 # that it isn't, though sway sends the configure saying so; 2 of 60 runs
 # under load (TODO.md, "Known flaky: maximize ended by focus").
 test_maximize.MaximizeTest.test_another_window_on_the_workspace_taking_focus_ends_it
-
-# The test's 0.05s grant lapses before wtype's key press lands when the
-# machine is busy, so the app's window comes up; tidewm itself fails it the
-# same way, 23 of 48 runs under load (TODO.md, "Known flaky: a grant you
-# moved on from").
-test_focus.NotificationTest.test_a_notification_grant_you_moved_on_from_brings_nothing_up

@@ -24,7 +24,7 @@ env:
   # pinned so tests/tidewm-harness/passing.txt holds against it: main at
   # 6a2a706. To move it, change it here, re-run, and update passing.txt (and
   # flaky.txt) in the same pull request.
-  TIDEWM_REF: 6a2a7062b77250d4c2f088e987c428f959125719
+  TIDEWM_REF: 2942f4f741c36bcf49e33bdc55b3390853b21e90
 
 jobs:
   classify:
