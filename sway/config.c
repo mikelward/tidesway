@@ -23,6 +23,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/tide/border.h"
+#include "sway/tide/cmdline.h"
 #include "sway/tide/configinfo.h"
 #include "sway/tide/inputcheck.h"
 #include "sway/tide/x11scale.h"
@@ -871,7 +872,7 @@ bool read_config(FILE *file, struct sway_config *config,
 		// inside it goes too, to its own }, so that } can't close the mode
 		// around them, where tidewm's first } would
 		if (stack->length && stack->items[0] == tide_skip) {
-			if (strcmp(line, "}") == 0) {
+			if (tide_cmd_closes_block(line)) {
 				list_del(stack, 0);
 				list_del(opened, 0);
 			} else if (line[strlen(line) - 1] == '{') {
@@ -902,6 +903,9 @@ bool read_config(FILE *file, struct sway_config *config,
 		if (block && strcmp(block, "<commands>") == 0) {
 			// Special case
 			res = config_commands_command(expanded);
+		} else if (tide_cmd_closes_block(line)) {
+			// tide: } closes a block as a line's first word, as in tidewm
+			res = cmd_results_new(CMD_BLOCK_END, NULL);
 		} else {
 			res = config_command(expanded, &new_block);
 		}

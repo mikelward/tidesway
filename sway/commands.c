@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <json.h>
 #include "sway/commands.h"
+#include "sway/tide/cmdline.h"
 #include "sway/tide/names.h"
 #include "sway/tide/workspace.h"
 #include "sway/config.h"
@@ -288,8 +289,17 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 				for (; isspace(*head); ++head) {}
 			}
 		}
-		// Split command list
-		cmd = argsep(&head, ";,", &matched_delim);
+		// Split command list. tide: an exec takes the rest, as written; the
+		// others end at a ; or , outside double quotes, an apostrophe being
+		// no quote, as tidewm's
+		size_t exec_name = tide_cmd_exec_name(head);
+		if (exec_name) {
+			cmd = head;
+			head = NULL;
+			matched_delim = '\0';
+		} else {
+			cmd = tide_cmd_next(&head, &matched_delim);
+		}
 		for (; isspace(*cmd); ++cmd) {}
 
 		if (strcmp(cmd, "") == 0) {
@@ -299,7 +309,8 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 		sway_log(SWAY_INFO, "Handling command '%s'", cmd);
 		//TODO better handling of argv
 		int argc;
-		char **argv = split_args(cmd, &argc);
+		char **argv = exec_name ? tide_exec_args(cmd, exec_name, &argc) // tide
+			: split_args(cmd, &argc);
 		if (strcmp(argv[0], "exec") != 0 &&
 				strcmp(argv[0], "exec_always") != 0 &&
 				strcmp(argv[0], "mode") != 0 &&
@@ -397,11 +408,9 @@ struct cmd_results *config_command(char *exec, char **new_block) {
 		goto cleanup;
 	}
 
-	// Check for the end of a block
-	if (strcmp(argv[argc - 1], "}") == 0) {
-		results = cmd_results_new(CMD_BLOCK_END, NULL);
-		goto cleanup;
-	}
+	/* Check for the end of a block. tide: read_config does, at a line whose
+	 * first word is }, as tidewm has it, so a binding's shell command can
+	 * end in one: here a line in a block has the block's name first */
 
 	// Make sure the command is not stored in a variable
 	if (*argv[0] == '$') {

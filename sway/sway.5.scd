@@ -48,6 +48,12 @@ argument. You may also run several commands in order by separating each with
 *,* or *;*. Criteria is retained across commands separated by *,*, but will be
 reset (and allow for new criteria, if desired) for commands separated by a *;*.
 
+As in tidewm, a command ends at a *;* or *,* outside double quotes: an
+apostrophe is no quote there, so _workspace Bob's tasks; exec foot_ is two
+commands. An *exec* takes the rest of the list, *;* and all, so it comes
+last. In the config file, a *}* closes a block only as a line's first word,
+so a binding's shell command can end in one.
+
 Throughout the documentation, *|* is used to distinguish between arguments for
 which you may only select one. *[...]* is used for optional arguments, and
 *<...>* for arguments where you are expected to supply some value.
@@ -797,7 +803,9 @@ The default colors are:
 	afterwards. *default_border* sets it too.
 
 *exec* <shell command>
-	Executes _shell command_ with sh.
+	Executes _shell command_ with sh: the rest of the command list, *;* and
+	all, as written, so the shell reads its quotes. One word in quotes, as
+	in _exec "foot --server"_, loses them first, as in sway.
 
 *exec_always* <shell command>
 	Like *exec*, but the shell command will be executed _again_ after *reload*.
