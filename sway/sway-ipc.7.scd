@@ -103,7 +103,8 @@ was successful. The object may also contain the properties _error_ and _parse\_e
 The _error_ property is a human readable error message while _parse\_error_ is a
 boolean indicating whether the reason the command failed was because the command
 was unknown or not able to be parsed. tidesway, as i3 and tidewm, gives
-_parse\_error_ only when it's true.
+_parse\_error_ only when it's true. As tidewm, tidesway runs each command
+after one that fails, and gives each its result.
 
 *Example Reply:*
 ```
