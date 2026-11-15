@@ -8,6 +8,7 @@
 #include "sway/commands.h"
 #include "sway/tide/cmdline.h"
 #include "sway/tide/names.h"
+#include "sway/tide/outputapply.h"
 #include "sway/tide/workspace.h"
 #include "sway/config.h"
 #include "sway/criteria.h"
@@ -334,6 +335,8 @@ list_t *execute_command(char *_exec, struct sway_seat *seat,
 			argv[i] = do_var_replacement(argv[i]);
 		}
 
+
+		tide_output_command_index(res_list->length); // tide: for a reload's result
 
 		if (!using_criteria) {
 			if (con) {

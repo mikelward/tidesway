@@ -12,6 +12,13 @@ struct cmd_results *output_cmd_power(int argc, char **argv) {
 		return cmd_results_new(CMD_INVALID, "Missing power argument");
 	}
 
+	// tide: the file's is taken but left, as tidewm's: every output starts on
+	if (config->reading) {
+		config->handler_context.leftovers.argc = argc - 1;
+		config->handler_context.leftovers.argv = argv + 1;
+		return NULL;
+	}
+
 	bool current = true;
 	if (strcasecmp(argv[0], "toggle") == 0) {
 		const char *oc_name = config->handler_context.output_config->name;

@@ -7,7 +7,9 @@
  * output off as an idle daemon does, keeping its windows and its place, or
  * on again; * means every enabled output, each toggled by its own power. A
  * disabled output stays off, and the command fails for it alone, as for a
- * name no output has. The config file's power lines are sway's.
+ * name no output has. With other settings, in any order, as nwg-displays
+ * sends them, those go first and the power after. The config file's power
+ * is taken but left (outputapply.h).
  */
 
 #include <json-c/json.h>

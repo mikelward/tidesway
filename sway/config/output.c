@@ -19,6 +19,7 @@
 #include "sway/layers.h"
 #include "sway/lock.h"
 #include "sway/output.h"
+#include "sway/tide/outputapply.h"
 #include "sway/tide/output.h"
 #include "sway/server.h"
 #include "sway/tree/arrange.h"
@@ -489,7 +490,8 @@ static bool output_config_is_disabling(struct output_config *oc) {
 	return oc && (!oc->enabled || oc->power == 0);
 }
 
-static void queue_output_config(struct output_config *oc,
+// tide: not static, for sway/tide/outputapply.c to try a config
+void queue_output_config(struct output_config *oc,
 		struct sway_output *output, struct wlr_output_state *pending) {
 	if (output == root->fallback_output) {
 		return;
@@ -1184,8 +1186,7 @@ bool apply_output_configs(struct output_config **ocs, size_t ocs_len,
 }
 
 void apply_stored_output_configs(void) {
-	apply_output_configs((struct output_config **)config->output_configs->items,
-			config->output_configs->length, false, true);
+	tide_output_apply_stored(); // tide: as tidewm's outputs take their settings
 }
 
 void free_output_config(struct output_config *oc) {
