@@ -250,6 +250,14 @@ Each patch's PR says how far it moves this.
   `back_and_forth` too, and one with no closing quote, or more after it,
   fails. `workspace number NAME` with a NAME that isn't a number names it,
   where sway failed.
+- **Commands as tidewm splits them** (2026-11-15): a command ends at a `;`
+  or `,` outside double quotes, an apostrophe being no quote, and an `exec`
+  takes the rest of the list, `;` and all, as written, as tidewm's do, so
+  tide's `next_attention` binding, a shell `{ ...; }`, runs whole. sway
+  ended `exec` at the first `;` and let `'` quote one. An `exec` whose rest
+  is one quoted word still loses the quotes, as sway's did and tidewm's
+  wouldn't; a `}` closes a config block only as a line's first word, as in
+  tidewm, where sway took one at a line's end.
 - **Activations with the guard off** (2026-11-08): `focus_on_window_activation`
   decides, as in sway, unless a grant names the app. tidewm marks every
   ungranted activation urgent, guard or no guard; here that holds with the

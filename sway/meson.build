@@ -213,6 +213,7 @@ sway_sources = files(
 	'tide/background.c',
 	'tide/border.c',
 	'tide/capture.c',
+	'tide/cmdline.c',
 	'tide/commands.c',
 	'tide/configinfo.c',
 	'tide/dialog.c',

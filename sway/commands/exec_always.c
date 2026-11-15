@@ -8,6 +8,7 @@
 #include "sway/config.h"
 #include "sway/server.h"
 #include "sway/desktop/launcher.h"
+#include "sway/tide/cmdline.h"
 #include "sway/tree/container.h"
 #include "sway/tree/root.h"
 #include "sway/tree/workspace.h"
@@ -37,7 +38,9 @@ struct cmd_results *cmd_exec_process(int argc, char **argv) {
 		}
 	}
 
-	if (argc == 1 && (argv[0][0] == '\'' || argv[0][0] == '"')) {
+	// tide: one quoted word only; an IPC exec's rest is one argument, as
+	// written, whose quotes are the shell's
+	if (argc == 1 && tide_exec_one_quoted(argv[0])) {
 		cmd = strdup(argv[0]);
 		strip_quotes(cmd);
 	} else {
