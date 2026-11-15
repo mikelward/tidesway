@@ -239,5 +239,26 @@ class LastOutputTest(TidewmTest):
         self.assertIn(("spare", True), names)
 
 
+
+
+class NumberedByNameTest(TidewmTest):
+    """`workspace number NAME`, tidewm's words for the workspace named NAME,
+    which is how tide's session goes home as it starts."""
+    CONFIG = ""
+
+    def current(self):
+        return next(w["name"] for w in self.connect().request(GET_WORKSPACES) if w["focused"])
+
+    def test_a_name_thats_no_number_is_gone_to_by_name(self):
+        # As tide's session says it, in one line
+        replies = self.connect().request(RUN_COMMAND, "workspace number in; persist workspace in")
+        self.assertEqual(replies, [{"success": True}, {"success": True}])
+        self.assertEqual(self.current(), "in")
+
+    def test_a_number_is_still_gone_to_by_number(self):
+        self.command(self.connect(), "workspace number 2")
+        self.assertEqual(self.current(), "2")
+
+
 if __name__ == "__main__":
     unittest.main()

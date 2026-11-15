@@ -1040,7 +1040,9 @@ The default colors are:
 *workspace* [--no-auto-back-and-forth] [number] <[num:]name>
 	Switches to the specified workspace. The _num:_ portion of the name is
 	optional and will be used for ordering. If _num:_ is not given and
-	_name_ is a number, then it will be also be used for ordering.
+	_name_ is a number, then it will be also be used for ordering. tide: with
+	_number_, a name that's no number is the workspace of that name, as
+	tidewm's is.
 
 	If the _no-auto-back-and-forth_ option is given, then this command will
 	not perform a back-and-forth operation when the workspace is already

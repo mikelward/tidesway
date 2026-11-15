@@ -194,11 +194,17 @@ struct cmd_results *cmd_workspace(int argc, char **argv) {
 				return cmd_results_new(CMD_INVALID,
 						"Expected workspace number");
 			}
+			/* tide: as tidewm, whose `workspace number N` is the workspace
+			 * named N, a name that's no number is that workspace too, where
+			 * sway fails: tide's session starts on home by `workspace number
+			 * NAME`, so a home named 2 isn't taken for the second */
 			if (!isdigit(argv[1][0])) {
-				return cmd_results_new(CMD_INVALID,
-						"Invalid workspace number '%s'", argv[1]);
-			}
-			if (!(ws = workspace_by_number(argv[1]))) {
+				char *name = join_args(argv + 1, argc - 1);
+				if (!(ws = workspace_by_name(name))) {
+					ws = workspace_create(NULL, name);
+				}
+				free(name);
+			} else if (!(ws = workspace_by_number(argv[1]))) {
 				char *name = join_args(argv + 1, argc - 1);
 				ws = workspace_create(NULL, name);
 				free(name);
