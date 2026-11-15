@@ -66,7 +66,11 @@ It installs a `tidesway` command beside `sway`, started as tidewm is:
 CONFIG, for lines tidewm doesn't know, and runs STARTUP once sway is up.
 While CONFIG isn't there or binds no key at its top level, tidewm's
 built-in keys work, as its `config.def.h` has them: Alt and a number shows
-that workspace, Alt+Shift+Return opens foot, and so on.
+that workspace, Alt+Shift+Return opens foot, and so on. While CONFIG has
+an error, or binds no key that quits, a way to quit (Alt+Shift+q), a
+terminal (Alt+Shift+Return) and a launcher (Alt+p) still work under its
+own keys, so a broken config never leaves the session with no way to fix
+it or leave.
 tide's tidesway session starts it. CONFIG's path can't hold a space or a
 character a shell reads specially, as sway's `include` can't take one.
 

@@ -534,6 +534,23 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 				keyinfo.translated_modifiers, false, locked,
 				shortcuts_inhibited, device_identifier,
 				exact_identifier, keyboard->effective_layout);
+		// tide: then the keys to quit, a terminal and the launcher, while
+		// the config has an error or binds no key that quits. Not over a
+		// binding of the config's, a release one this press armed too
+		struct sway_mode *safety = binding || binding_released ? NULL
+			: tide_keys_safety_mode();
+		if (safety) {
+			get_active_binding(seat, &keyboard->state_keysyms_raw,
+					safety->keysym_bindings, &binding,
+					keyinfo.raw_modifiers, false, locked,
+					shortcuts_inhibited, device_identifier,
+					exact_identifier, keyboard->effective_layout);
+			get_active_binding(seat, &keyboard->state_keysyms_translated,
+					safety->keysym_bindings, &binding,
+					keyinfo.translated_modifiers, false, locked,
+					shortcuts_inhibited, device_identifier,
+					exact_identifier, keyboard->effective_layout);
+		}
 	}
 
 	// Set up (or clear) keyboard repeat for a pressed binding. Since the

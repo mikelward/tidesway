@@ -102,7 +102,13 @@ The following commands may only be used in the configuration file.
 	its own line. The IPC's GET_CONFIG and GET_VERSION show that file, as
 	tidewm's do. While it isn't there, or binds no key at its top level,
 	tidewm's built-in keys work, as its _config.def.h_ has them, but for the
-	lock screen; while it isn't there, so do that file's example rules. With _--named_, the file was named by
+	lock screen; while it isn't there, so do that file's example rules.
+	While it binds keys but has an error, or binds no key that runs *exit*,
+	a way to quit, a terminal and a launcher still work, under its own keys:
+	Alt+Shift+q and Ctrl+Alt+BackSpace quit, Alt+Shift+Return runs
+	xdg-terminal-exec, or foot without it, and Alt+p wmenu-run. A relative
+	*include* in it is from the directory of the file as named, a symlink
+	kept, as tidewm's is. With _--named_, the file was named by
 	*tidesway -c*, and its being missing at startup is an error.
 
 *workspace_layout* default|stacking|tabbed

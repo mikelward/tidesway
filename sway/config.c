@@ -182,6 +182,7 @@ void free_config(struct sway_config *config) {
 	tide_config_included_free(config);
 	tide_user_config_free(config);
 	free_mode(config->tide_builtin_keys);
+	free_mode(config->tide_safety_keys);
 	tide_names_free(config);
 	free(config->floating_scroll_up_cmd);
 	free(config->floating_scroll_down_cmd);
@@ -544,6 +545,7 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 	// tide: tidewm's built-in keys, for while its file binds none
 	if (config->tide_user.path) {
 		config->tide_builtin_keys = tide_keys_builtin();
+		config->tide_safety_keys = tide_keys_safety();
 	}
 
 	// Only really necessary if not explicitly `font` is set in the config.
@@ -598,6 +600,38 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 
 // tide: whether it has no errors; one that's missing, or already
 // included, is skipped, which is none
+/* tide: an included file's path as named, absolute: as it's written if
+ * absolute, else from the directory of the file that includes it, as named
+ * too, so a symlinked file is kept. load_include_configs has already gone
+ * into that directory, so a parent named by a relative path, as by
+ * `sway -c configs/main`, is from there instead. NULL if there's no memory
+ * or no working directory */
+static char *tide_config_named_path(const char *path, const char *parent) {
+	if (path[0] == '/') {
+		return strdup(path);
+	}
+	char *copy = NULL;
+	const char *dir;
+	if (parent != NULL && parent[0] == '/') {
+		if (!(copy = strdup(parent))) {
+			return NULL;
+		}
+		dir = dirname(copy);
+	} else if (!(copy = getcwd(NULL, 0))) {
+		sway_log_errno(SWAY_ERROR, "tide: can't read the working directory for %s", path);
+		return NULL;
+	} else {
+		dir = copy;
+	}
+	size_t size = strlen(dir) + 1 + strlen(path) + 1;
+	char *named = malloc(size);
+	if (named != NULL) {
+		snprintf(named, size, "%s/%s", dir, path);
+	}
+	free(copy);
+	return named;
+}
+
 static bool load_include_config(const char *path, struct sway_config *config,
 		struct swaynag_instance *swaynag) {
 	// save parent config
@@ -630,22 +664,30 @@ static bool load_include_config(const char *path, struct sway_config *config,
 		}
 	}
 
-	config->current_config_path = real_path;
+	/* tide: the file is read, and its own relative includes found, by its
+	 * path as named, not the file a symlink leads to, as tidewm does: a
+	 * config that's a link into a dotfiles checkout still includes the
+	 * tide.conf beside the link. Its real path only tells files apart */
+	char *named = tide_config_named_path(path, parent_config);
+	if (named == NULL) {
+		free(real_path);
+		return false;
+	}
+	config->current_config_path = named;
 	list_add(config->config_chain, real_path);
 	int index = config->config_chain->length - 1;
 
 	tide_config_include_enter(real_path); // tide
-	bool tide_loaded = load_config(real_path, config, swaynag);
+	bool tide_loaded = load_config(named, config, swaynag);
 	tide_config_include_leave(); // tide
+	config->current_config_path = parent_config;
+	free(named);
 	if (!tide_loaded) {
 		free(real_path);
-		config->current_config_path = parent_config;
 		list_del(config->config_chain, index);
 		return false;
 	}
 
-	// restore current_config_path
-	config->current_config_path = parent_config;
 	tide_config_included(config, real_path); // tide: for GET_CONFIG
 	return true;
 }
