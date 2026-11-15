@@ -792,6 +792,9 @@ static void block_error(int line_number, const char *fmt, const char *name) {
 	free(unquoted);
 }
 
+// tide: a block that can't open, whose lines go with it, to its own }
+static char tide_skip[] = "<skip>";
+
 bool read_config(FILE *file, struct sway_config *config,
 		struct swaynag_instance *swaynag) {
 	bool reading_main_config = false;
@@ -848,6 +851,21 @@ bool read_config(FILE *file, struct sway_config *config,
 		if (!*line || line[0] == '#') {
 			continue;
 		}
+		tide_config_block_end(line); // tide: a } with a comment after it
+		// tide: a block that couldn't open takes its lines with it, to its
+		// own }, as tidewm has it, so they aren't the top level's. A block
+		// inside it goes too, to its own }, so that } can't close the mode
+		// around them, where tidewm's first } would
+		if (stack->length && stack->items[0] == tide_skip) {
+			if (strcmp(line, "}") == 0) {
+				list_del(stack, 0);
+				list_del(opened, 0);
+			} else if (line[strlen(line) - 1] == '{') {
+				list_insert(stack, 0, tide_skip);
+				list_insert(opened, 0, (void *)(intptr_t)line_number);
+			}
+			continue;
+		}
 		int brace_detected = 0;
 		if (line[strlen(line) - 1] != '{' && line[strlen(line) - 1] != '}') {
 			brace_detected = detect_brace(file);
@@ -900,17 +918,17 @@ bool read_config(FILE *file, struct sway_config *config,
 			break;
 
 		case CMD_BLOCK:
-			// tide: tidewm's errors for a mode block that can't be one
-			if (block && has_prefix(block, "mode ") && has_prefix(new_block, "mode ")) {
-				block_error(line_number, "%s is still open: modes don't nest", block);
+			// tide: tidewm's errors for a block that can't open, which
+			// takes its lines with it, and for an input block's name
+			if (!tide_config_block_ok(block, new_block, name_error, sizeof(name_error))) {
+				block_error(line_number, "%s", name_error);
 				success = false;
+				list_insert(stack, 0, tide_skip);
+				list_insert(opened, 0, (void *)(intptr_t)line_number);
+				break;
 			} else if (has_prefix(new_block, "input ")
 					&& tide_input_bad_block(new_block + 6, name_error, sizeof(name_error))) {
 				block_error(line_number, "%s", name_error);
-				success = false;
-			} else if (strcmp(new_block, "mode default") == 0
-					|| strcmp(new_block, "mode \"default\"") == 0) {
-				block_error(line_number, "%sdefault is the top level, not a mode to open", "");
 				success = false;
 			}
 			sway_log(SWAY_DEBUG, "Entering block '%s'", new_block);
@@ -950,7 +968,7 @@ bool read_config(FILE *file, struct sway_config *config,
 	// tide: a block a file opens closes in it, as tidewm has it
 	for (int i = stack->length - 1; i >= 0; i--) {
 		char *open = stack->items[i];
-		if (strcmp(open, "<commands>") != 0) {
+		if (strcmp(open, "<commands>") != 0 && open != tide_skip) {
 			block_error((int)(intptr_t)opened->items[i], "%s has no }", open);
 			success = false;
 			free(open);

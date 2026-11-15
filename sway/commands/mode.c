@@ -34,8 +34,10 @@ struct cmd_results *cmd_mode(int argc, char **argv) {
 		}
 	}
 
+	// tide: in the file, a mode is a block, as tidewm has it, not the mode
+	// to start in, as sway had it
 	if (config->reading && argc == 1) {
-		return cmd_results_new(CMD_DEFER, NULL);
+		return cmd_results_new(CMD_FAILURE, "mode needs a name, then {");
 	}
 
 	char *mode_name = *argv;

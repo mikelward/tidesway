@@ -913,12 +913,23 @@ The default colors are:
 	is specified mark will remove _identifier_ if it is already marked.
 
 *mode* <mode>
-	Switches to the specified mode. The default mode is _default_.
+	Switches to the specified mode. The default mode is _default_. In
+	tidesway, as in tidewm, switching to the mode you're in does nothing, and
+	a *reload* goes back to _default_. In the config file, it's an error:
+	a mode is a block there, as below.
 
 *mode* [--pango_markup] <mode> <mode-subcommands...>
 	The only valid _mode-subcommands..._ are *bindsym*, *bindcode*,
 	*bindswitch*, and *set*. If _--pango_markup_ is given, then _mode_ will be
 	interpreted as pango markup.
+
+	In tidesway, as in tidewm, a block *mode* <mode> *{* ... *}* in the
+	config file takes only a name, without _--pango_markup_, that isn't
+	_default_ and has no _;_. One that can't open, and a block a mode can't
+	hold (an *input* or *output* block, say), are errors, and their lines go
+	with them, to their own *}*, so they aren't the top level's; so do
+	blocks inside them, each to its own *}*. A *}* may have a comment after
+	it.
 
 *mouse_warping* output|container|none
 	If _output_ is specified, the mouse will be moved to new outputs as you

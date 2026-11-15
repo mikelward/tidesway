@@ -285,8 +285,13 @@ Each patch's PR says how far it moves this.
   unknown line, a binding's unknown key or flag, and bad `bindsym`,
   `bindswitch`, `set` and `include` lines say what tidewm's do. sway's own
   flags and lines stay: `--border`, `bindswitch --reload` and `bindswitch` in
-  a mode, which tidewm's tests call errors; so does `mode NAME` alone in the
-  file, which starts sway in that mode, and a mode name with a `;`.
+  a mode, which tidewm's tests call errors. A mode in the file is a block, as
+  in tidewm (2026-11-15): `mode NAME` alone there, which started sway in that
+  mode, is an error, as are `mode --pango_markup NAME {` and a block in a
+  mode, and their lines go with them to their own `}`. A block inside one
+  goes too, to its own `}`, where tidewm stops at the first `}`, which can
+  close the mode around them and make the mode's later lines the top
+  level's.
 - **GET_CONFIG shows tidewm's file** (2026-11-15): the config the `tidesway`
   command writes includes tidewm's file by a `tidewm_config` line, tidesway's
   own, so GET_CONFIG's `config`, `path` and `included_configs`, and

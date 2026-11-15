@@ -49,6 +49,15 @@ void tide_user_config_free(struct sway_config *config);
  * loaded_config_file_name, as tidewm's */
 const char *tide_config_loaded_name(struct sway_config *config);
 
+/* Whether new_block, a block opening in block (NULL at the top level), can
+ * open, as tidewm has it: a mode block's name, and no block in a mode. If
+ * not, err says why, in tidewm's words. */
+bool tide_config_block_ok(const char *block, const char *new_block, char *err,
+	size_t size);
+
+// Takes a comment from the end of a line that closes a block: "} # mode"
+void tide_config_block_end(char *line);
+
 // Says at startup what of the config was left out, as tidewm does
 void tide_config_started(struct sway_config *config);
 
