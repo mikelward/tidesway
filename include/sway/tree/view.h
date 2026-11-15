@@ -360,6 +360,10 @@ bool view_is_visible(struct sway_view *view);
 
 void view_set_urgent(struct sway_view *view, bool enable);
 
+/* tide: as view_set_urgent, but the focused window is marked too, as
+ * tidewm's urgent command marks it: urgent wins over focused */
+void view_mark_urgent(struct sway_view *view, bool enable);
+
 bool view_is_urgent(struct sway_view *view);
 
 void view_remove_saved_buffer(struct sway_view *view);

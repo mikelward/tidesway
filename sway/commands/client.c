@@ -2,6 +2,7 @@
 #include "sway/commands.h"
 #include "sway/config.h"
 #include "sway/output.h"
+#include "sway/tide/border.h"
 #include "sway/tree/container.h"
 #include "util.h"
 
@@ -12,8 +13,8 @@ static void container_update_iterator(struct sway_container *con, void *data) {
 static struct cmd_results *handle_command(int argc, char **argv, char *cmd_name,
 		struct border_colors *class, const char *default_indicator) {
 	struct cmd_results *error = NULL;
-	if ((error = checkarg(argc, cmd_name, EXPECTED_AT_LEAST, 3)) ||
-			(error = checkarg(argc, cmd_name, EXPECTED_AT_MOST, 5))) {
+	// tide: checked as tidewm checks them, in its words
+	if ((error = tide_border_check_colors(cmd_name, argc, argv))) {
 		return error;
 	}
 
@@ -48,8 +49,14 @@ static struct cmd_results *handle_command(int argc, char **argv, char *cmd_name,
 	}
 
 	memcpy(class, &colors, sizeof(struct border_colors));
+	// tide: the line is given, so focused_inactive is its own from the
+	// repaint below on, rather than unfocused's, as tidewm's
+	if (class == &config->border_colors.focused_inactive) {
+		config->tide_has_focused_inactive = true;
+	}
 
-	if (config->active) {
+	// tide: not while a reload is checked, as its config may yet fail
+	if (config->active && !config->validating) {
 		root_for_each_container(container_update_iterator, NULL);
 	}
 

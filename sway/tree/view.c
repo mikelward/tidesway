@@ -1283,7 +1283,8 @@ bool view_is_visible(struct sway_view *view) {
 // tide: each mark's order, so a shell can list marks most recent first
 static uint64_t urgent_marks;
 
-void view_set_urgent(struct sway_view *view, bool enable) {
+// tide: even_focused marks the focused window too, as the urgent command does
+static void set_urgent(struct sway_view *view, bool enable, bool even_focused) {
 	if (view_is_urgent(view) == enable) {
 		// tide: marked again, it's the most recent mark
 		if (enable) {
@@ -1294,7 +1295,7 @@ void view_set_urgent(struct sway_view *view, bool enable) {
 	}
 	if (enable) {
 		struct sway_seat *seat = input_manager_current_seat();
-		if (seat_get_focused_container(seat) == view->container) {
+		if (!even_focused && seat_get_focused_container(seat) == view->container) {
 			return;
 		}
 		clock_gettime(CLOCK_MONOTONIC, &view->urgent);
@@ -1307,6 +1308,8 @@ void view_set_urgent(struct sway_view *view, bool enable) {
 			wl_event_source_remove(view->urgent_timer);
 			view->urgent_timer = NULL;
 		}
+		// tide: its border back to its class's, whether or not focus moves
+		container_update_itself_and_parents(view->container);
 	}
 
 	ipc_event_window(view->container, "urgent");
@@ -1314,6 +1317,14 @@ void view_set_urgent(struct sway_view *view, bool enable) {
 	if (!container_is_scratchpad_hidden_or_child(view->container)) {
 		workspace_detect_urgent(view->container->pending.workspace);
 	}
+}
+
+void view_set_urgent(struct sway_view *view, bool enable) {
+	set_urgent(view, enable, false);
+}
+
+void view_mark_urgent(struct sway_view *view, bool enable) {
+	set_urgent(view, enable, true);
 }
 
 bool view_is_urgent(struct sway_view *view) {

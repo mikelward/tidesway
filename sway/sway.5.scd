@@ -662,7 +662,10 @@ runtime.
 	Configures the color of window borders and title bars. The first three
 	colors are required. When omitted _indicator_ will use a sane default and
 	_child_border_ will use the color set for _background_. Colors may be
-	specified in hex, either as _#RRGGBB_ or _#RRGGBBAA_.
+	specified in hex, either as _#RRGGBB_ or _#RRGGBBAA_, the _#_ optional.
+	A line with fewer than three colors or more than five, or with one that
+	isn't a color, fails, naming it, as tidewm's does. A reload that fails
+	leaves every window's colors as they were.
 
 	The available classes are:
 
@@ -671,6 +674,7 @@ runtime.
 
 	*client.focused_inactive*
 		The most recently focused window within a container which is not focused.
+		Without this line, it has *client.unfocused*'s colors, as in tidewm.
 
 	*client.focused_tab_title*
 		A window that has focused descendant container.
@@ -685,8 +689,8 @@ runtime.
 		A window that does not have focus.
 
 	*client.urgent*
-		A window with an urgency hint. *Note*: Native Wayland windows do not
-		support urgency. Urgency only works for Xwayland windows.
+		A window asking for attention, focused or not: one marked urgent, by
+		an urgency hint, an activation request or the *urgent* command.
 
 	The meaning of each color is:
 
@@ -998,7 +1002,9 @@ The default colors are:
 *urgent* enable|disable
 	Marks the window urgent, as the most recent mark, even if it's marked
 	already, or takes its mark away, as tidewm does, for a shell's own marks.
-	Every window may mark itself: sway's _allow_ and _deny_ aren't supported.
+	The focused window can be marked too, and its border is then
+	*client.urgent*'s. Every window may mark itself: sway's _allow_ and
+	_deny_ aren't supported.
 
 *workspace* [--no-auto-back-and-forth] [number] <[num:]name>
 	Switches to the specified workspace. The _num:_ portion of the name is
