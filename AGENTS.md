@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 alwaysApply: true
-last_modified: 2026-11-09
+last_modified: 2026-11-15
 ---
 
 # tidesway
@@ -116,6 +116,11 @@ Shared by every mikelward repo and the user-level agent config; canonical in mik
 
 ## Project
 
+- **Config failures**. A config that fails to load, whole or in part, a
+  line, an include or a file, never leaves the session unusable: a way to
+  quit, a terminal and a launcher always keep a key (tide's SPEC §16), and
+  the failure is shown. Test it with the config tide's session really
+  loads, symlinks and includes as a user has them.
 - **Build**. `meson setup build && ninja -C build` before every commit; sway's
   `werror` stays on. CI also builds with `--fatal-meson-warnings -Dauto_features=enabled
   -Dsd-bus-provider=libsystemd`, as sway's own `.builds/` do.

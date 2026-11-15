@@ -12,6 +12,15 @@ struct sway_mode *tide_keys_builtin(void);
 // Adds tidewm's built-in rules, config.h's, to the config being read
 void tide_keys_builtin_rules(void);
 
+/* A mode of the keys that are always there to fix a config with and to
+ * leave: config.h's quit, terminal and launcher keys */
+struct sway_mode *tide_keys_safety(void);
+
+/* Those keys, while they work: at the top level of a config that binds
+ * keys, while it has an error or binds none that quits; else NULL. A key
+ * press looks in them after the config's own */
+struct sway_mode *tide_keys_safety_mode(void);
+
 // Whether config binds a key at its top level, so the built-in keys are out
 bool tide_keys_bound(struct sway_config *config);
 

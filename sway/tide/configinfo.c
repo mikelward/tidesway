@@ -245,6 +245,9 @@ void tide_config_started(struct sway_config *config) {
 	if (user->text && !tide_keys_bound(config)) {
 		sway_log(SWAY_ERROR, "tidewm: %s binds no key, so config.h's keys work with it",
 			user->path);
+	} else if (tide_keys_safety_mode()) {
+		sway_log(SWAY_ERROR, "tidewm: Alt+Shift+q quits, Alt+Shift+Return opens a "
+			"terminal and Alt+p a launcher, as the config may have lost its own");
 	}
 }
 
