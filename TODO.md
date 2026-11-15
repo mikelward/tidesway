@@ -539,3 +539,9 @@ Each patch's PR says how far it moves this.
   scratchpad too. tidesway leaves it out while the scratchpad is empty, as
   tide never uses it, so a client walking the tree finds only outputs; a
   window moved there brings it back.
+- **Linear scaling by default** (2026-11-15): sway's default `scale_filter`
+  is `smart`, nearest at an integer scale; tidesway's is `linear`, as
+  tidewm always scales, so GET_OUTPUTS says what nwg-displays reads from
+  tidewm. Windows drawn at a lower scale than their output's look softer at
+  an integer scale than on sway; `scale_filter smart` or `nearest` brings
+  sway's back.

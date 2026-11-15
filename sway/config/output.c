@@ -660,7 +660,9 @@ static bool finalize_output_config(struct output_config *oc, struct sway_output 
 	enum scale_filter_mode scale_filter_old = output->scale_filter;
 	enum scale_filter_mode scale_filter_new = oc ? oc->scale_filter : SCALE_FILTER_DEFAULT;
 	switch (scale_filter_new) {
-		case SCALE_FILTER_DEFAULT:
+		case SCALE_FILTER_DEFAULT: // tide: linear, as tidewm scales
+			output->scale_filter = SCALE_FILTER_LINEAR;
+			break;
 		case SCALE_FILTER_SMART:
 			output->scale_filter = ceilf(wlr_output->scale) == wlr_output->scale ?
 				SCALE_FILTER_NEAREST : SCALE_FILTER_LINEAR;

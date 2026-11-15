@@ -140,7 +140,7 @@ struct sway_output *output_create(struct wlr_output *wlr_output) {
 	output->wlr_output = wlr_output;
 	wlr_output->data = output;
 	output->detected_subpixel = wlr_output->subpixel;
-	output->scale_filter = SCALE_FILTER_NEAREST;
+	output->scale_filter = SCALE_FILTER_LINEAR; // tide: tidewm's
 
 	wl_list_insert(&root->all_outputs, &output->link);
 
