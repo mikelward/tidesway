@@ -204,7 +204,7 @@ struct cmd_results *cmd_tidewm_config(int argc, char **argv) {
 		// which goes back to config.h's keys
 		if (named && !config->reloading) {
 			tide_config_file_error(path, "there's no such file");
-			sway_log(SWAY_ERROR, "tidesway: %s: there's no such file", path);
+			sway_log(SWAY_ERROR, "tidewm: %s: there's no such file", path);
 		}
 		// Without the file, config.h's rules apply, as its keys do
 		tide_keys_builtin_rules();
@@ -236,14 +236,14 @@ const char *tide_config_loaded_name(struct sway_config *config) {
 void tide_config_started(struct sway_config *config) {
 	struct tide_user_config *user = &config->tide_user;
 	if (user->path && !user->text && user->named) {
-		sway_log(SWAY_ERROR, "tidesway: not using %s: config.h's keys work instead",
+		sway_log(SWAY_ERROR, "tidewm: not using %s: config.h's keys work instead",
 			user->path);
 	} else if (tide_config_has_errors()) {
-		sway_log(SWAY_ERROR, "tidesway: left out the lines above from the config; "
+		sway_log(SWAY_ERROR, "tidewm: left out the lines above from the config; "
 			"the rest is loaded");
 	}
 	if (user->text && !tide_keys_bound(config)) {
-		sway_log(SWAY_ERROR, "tidesway: %s binds no key, so config.h's keys work with it",
+		sway_log(SWAY_ERROR, "tidewm: %s binds no key, so config.h's keys work with it",
 			user->path);
 	}
 }

@@ -257,7 +257,7 @@ void tide_output_apply_stored(void) {
 			sway_log(SWAY_ERROR, "tidewm: %s", msg);
 		}
 		if (!works(output, ocs[i])) {
-			sway_log(SWAY_ERROR, "tidesway: output %s refuses that too; sway looks for "
+			sway_log(SWAY_ERROR, "tidewm: output %s refuses that too; sway looks for "
 				"what it takes", output->wlr_output->name);
 		}
 	}
