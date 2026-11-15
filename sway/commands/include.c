@@ -10,8 +10,15 @@ struct cmd_results *cmd_include(int argc, char **argv) {
 	// tide: an included file's errors are the config's, so reload fails
 	// on them and keeps the config it had, as tidewm's does
 	bool loaded = load_include_configs(files, config, &config->swaynag_config_errors);
-	free(files);
 
+	if (tide_config_include_looped()) {
+		struct cmd_results *res = cmd_results_new(CMD_FAILURE,
+			"include %s: includes nest over 10 deep, as when a file includes itself",
+			files);
+		free(files);
+		return res;
+	}
+	free(files);
 	return loaded ? cmd_results_new(CMD_SUCCESS, NULL)
 		: cmd_results_new(CMD_FAILURE, "%s", TIDE_INCLUDE_FAILED);
 }

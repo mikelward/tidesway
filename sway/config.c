@@ -603,6 +603,13 @@ static bool load_include_config(const char *path, struct sway_config *config,
 		return true;
 	}
 
+	// tide: a file that includes itself, or one that includes it, is an
+	// error, as in tidewm, rather than skipped
+	if (tide_config_include_loops(real_path)) {
+		free(real_path);
+		return false;
+	}
+
 	// check if config has already been included
 	int j;
 	for (j = 0; j < config->config_chain->length; ++j) {
@@ -620,7 +627,10 @@ static bool load_include_config(const char *path, struct sway_config *config,
 	list_add(config->config_chain, real_path);
 	int index = config->config_chain->length - 1;
 
-	if (!load_config(real_path, config, swaynag)) {
+	tide_config_include_enter(real_path); // tide
+	bool tide_loaded = load_config(real_path, config, swaynag);
+	tide_config_include_leave(); // tide
+	if (!tide_loaded) {
 		free(real_path);
 		config->current_config_path = parent_config;
 		list_del(config->config_chain, index);

@@ -70,7 +70,8 @@ The following commands may only be used in the configuration file.
 	Include files from _paths_. _paths_ can include either a full path or a
 	path relative to the parent config, and expands shell syntax (see
 	*wordexp*(3) for details). The same include file can only be included once;
-	subsequent attempts will be ignored.
+	subsequent attempts will be ignored. In tidesway, as in tidewm, a file
+	that includes itself, or a file that includes it, is an error.
 
 *swaybg_command* <command>
 	Executes custom background _command_. Default is _swaybg_. Refer to

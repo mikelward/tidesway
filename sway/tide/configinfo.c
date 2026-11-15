@@ -328,3 +328,43 @@ void tide_config_strip(char *line) {
 		line[--len] = '\0';
 	}
 }
+
+// The included files being read, innermost last, and whether one looped
+static list_t *reading;
+static bool looped;
+
+void tide_config_include_enter(const char *real_path) {
+	if (!reading && !(reading = create_list())) {
+		sway_log(SWAY_ERROR, "tide: can't allocate the files being read");
+		return;
+	}
+	char *copy = strdup(real_path);
+	if (!copy) {
+		sway_log(SWAY_ERROR, "tide: can't allocate a file being read");
+		return;
+	}
+	list_add(reading, copy);
+}
+
+void tide_config_include_leave(void) {
+	if (reading && reading->length) {
+		free(reading->items[reading->length - 1]);
+		list_del(reading, reading->length - 1);
+	}
+}
+
+bool tide_config_include_loops(const char *real_path) {
+	for (int i = 0; reading && i < reading->length; i++) {
+		if (strcmp(reading->items[i], real_path) == 0) {
+			looped = true;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool tide_config_include_looped(void) {
+	bool was = looped;
+	looped = false;
+	return was;
+}

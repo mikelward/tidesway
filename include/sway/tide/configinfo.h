@@ -63,6 +63,14 @@ void tide_config_strip(char *line);
 // Takes a comment from the end of a line that closes a block: "} # mode"
 void tide_config_block_end(char *line);
 
+/* The files being read, each inside the one before: an include of one of
+ * them loops, which is noted, for the include line to say */
+void tide_config_include_enter(const char *real_path);
+void tide_config_include_leave(void);
+bool tide_config_include_loops(const char *real_path);
+// Whether an include looped since this was last asked
+bool tide_config_include_looped(void);
+
 // Says at startup what of the config was left out, as tidewm does
 void tide_config_started(struct sway_config *config);
 
