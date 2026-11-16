@@ -163,7 +163,7 @@ static void handle_button(struct sway_seat *seat, uint32_t time_msec,
 	seat_pointer_notify_button(seat, time_msec, button, state);
 
 	if (seat->cursor->pressed_button_count == 0) {
-		seatop_begin_default(seat);
+		tide_seatop_begin_default_released(seat); // tide: as tidewm
 	}
 }
 

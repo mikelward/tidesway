@@ -271,6 +271,9 @@ enum wlr_edges find_resize_edge(struct sway_container *cont,
 
 void seatop_begin_default(struct sway_seat *seat);
 
+// tide: the default seatop, the pointer kept where it was until it moves
+void tide_seatop_begin_default_released(struct sway_seat *seat);
+
 void seatop_begin_down(struct sway_seat *seat, struct sway_container *con,
 		double sx, double sy);
 
