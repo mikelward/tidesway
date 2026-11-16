@@ -485,6 +485,8 @@ static void begin_destroy(struct sway_output *output) {
 
 static void handle_destroy(struct wl_listener *listener, void *data) {
 	struct sway_output *output = wl_container_of(listener, output, destroy);
+	// tide: as tidewm says it, for the journal, as wlroots logs only errors
+	sway_log(SWAY_ERROR, "tidewm: output %s is gone", output->wlr_output->name);
 	begin_destroy(output);
 }
 
@@ -581,9 +583,12 @@ void handle_new_output(struct wl_listener *listener, void *data) {
 		return;
 	}
 
+	// tide: as tidewm says it, for the journal, as wlroots logs only errors
+	sway_log(SWAY_ERROR, "tidewm: output %s connected", wlr_output->name);
 	if (!wlr_output_init_render(wlr_output, server->allocator,
 			server->renderer)) {
-		sway_log(SWAY_ERROR, "Failed to init output render");
+		sway_log(SWAY_ERROR, "tidewm: output %s can't be drawn on, so it stays dark",
+			wlr_output->name);
 		return;
 	}
 
