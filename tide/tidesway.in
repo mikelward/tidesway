@@ -1,12 +1,13 @@
 #!/bin/sh
-# tidesway, started as tidewm is: `tidesway [-c CONFIG] [-s STARTUP]`.
+# tidesway, started as tidewm is: `tidesway [-c CONFIG] [-k] [-s STARTUP]`.
 #
 # tidesway's compositor is its `sway`, which reads one config and has no
 # startup command. This gives it tidewm's two, so what starts tidewm (tide's
 # session, tidewm's tests) starts tidesway: it writes a config of
 #
 #   look.conf       tidewm's look and behavior, where sway has a setting
-#   the mouse       tidewm's built-in Alt-drag, unless CONFIG says its own
+#   the mouse       tidewm's built-in Alt-drag, unless CONFIG says its own,
+#                   or -k
 #   tidewm_config CONFIG
 #                   an include by path, so a reload reads CONFIG again,
 #                   which GET_CONFIG shows as tidewm's would, with tidewm's
@@ -16,6 +17,9 @@
 #                   config both read can't hold: tidewm fails on them
 #   exec STARTUP    once sway is up, as tidewm's -s
 #
+# With -k, as tidewm's, only CONFIG's keys and buttons work, never
+# tidewm's built-in ones, as for a greeter, where its terminal key would
+# give anyone a shell. All of this goes
 # under $XDG_RUNTIME_DIR/tidesway/PID, sway's own process ID, so two running
 # at once, one nested in the other, say, each reload their own, and runs
 # sway on it. CONFIG defaults to tidewm's, ~/.config/tidewm/config. -v
@@ -38,6 +42,7 @@ look=${TIDESWAY_LOOK:-@lookdir@/look.conf}
 
 config=
 named=
+only=
 startup=
 while test "$#" -gt 0; do
     case $1 in
@@ -46,11 +51,15 @@ while test "$#" -gt 0; do
             if test "$1" = -c; then config=$2 named="--named "; else startup=$2; fi
             shift 2
             ;;
+        -k)
+            only="--only "
+            shift
+            ;;
         -v)
             exec "$sway" --version
             ;;
         *)
-            fail "unknown argument '$1': usage: tidesway [-c CONFIG] [-s STARTUP] [-v]"
+            fail "unknown argument '$1': usage: tidesway [-c CONFIG] [-k] [-s STARTUP] [-v]"
             ;;
     esac
 done
@@ -94,7 +103,9 @@ printf '%s\n' "${startup:-true}" > "$state/startup.sh" || fail "can't write $sta
 # button's binding: then tidewm's built-in mouse is out, as on tidewm. A
 # config that isn't there says nothing.
 mouse="floating_modifier Mod1 normal"
-if grep -Eq '^[[:space:]]*(floating_modifier([[:space:]]|$)|bind(sym|code)[[:space:]].*(--whole-window|(^|[^[:alnum:]_])button[0-9]))' "$config" 2>/dev/null; then
+if test -n "$only"; then
+    mouse=
+elif grep -Eq '^[[:space:]]*(floating_modifier([[:space:]]|$)|bind(sym|code)[[:space:]].*(--whole-window|(^|[^[:alnum:]_])button[0-9]))' "$config" 2>/dev/null; then
     mouse=
 fi
 
@@ -106,7 +117,7 @@ fi
     # tidewm's file, as an include sway shows in GET_CONFIG as tidewm does,
     # with config.h's keys if it's missing or binds none; --named, one -c
     # named, whose being missing is an error
-    echo "tidewm_config $named$config"
+    echo "tidewm_config $named$only$config"
     echo "include ${config%/*}/tidesway.d/*.conf"
     echo "exec sh $state/startup.sh"
 } > "$state/sway.conf" || fail "can't write $state/sway.conf"

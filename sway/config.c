@@ -544,8 +544,9 @@ bool load_main_config(const char *file, bool is_active, bool validating) {
 		return success;
 	}
 
-	// tide: tidewm's built-in keys, for while its file binds none
-	if (config->tide_user.path) {
+	// tide: tidewm's built-in keys, for while its file binds none; never
+	// under -k, whose file's keys are all there are
+	if (config->tide_user.path && !config->tide_user.only) {
 		config->tide_builtin_keys = tide_keys_builtin();
 		config->tide_safety_keys = tide_keys_safety();
 	}

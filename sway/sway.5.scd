@@ -96,7 +96,7 @@ The following commands may only be used in the configuration file.
 	It can be disabled by setting the command to a single dash:
 	_swaynag\_command -_
 
-*tidewm_config* [--named] <path>
+*tidewm_config* [--named] [--only] <path>
 	tidesway's: includes tidewm's config file, the one the *tidesway*
 	command was given, which the config that command writes for sway has as
 	its own line. The IPC's GET_CONFIG and GET_VERSION show that file, as
@@ -109,7 +109,11 @@ The following commands may only be used in the configuration file.
 	xdg-terminal-exec, or foot without it, and Alt+p wmenu-run. A relative
 	*include* in it is from the directory of the file as named, a symlink
 	kept, as tidewm's is. With _--named_, the file was named by
-	*tidesway -c*, and its being missing at startup is an error.
+	*tidesway -c*, and its being missing at startup is an error. With
+	_--only_, from *tidesway -k*, only the file's keys and buttons work:
+	never tidewm's built-in ones, nor the keys to quit, a terminal and a
+	launcher, whatever the file has, as for a greeter, where a terminal key
+	would give anyone a shell.
 
 *workspace_layout* default|stacking|tabbed
 	Specifies the initial layout for new containers in an empty workspace.
