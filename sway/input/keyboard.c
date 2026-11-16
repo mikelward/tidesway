@@ -459,6 +459,18 @@ static struct wlr_input_method_keyboard_grab_v2 *keyboard_get_im_grab(
 	return input_method->keyboard_grab;
 }
 
+// tide: whether the keyboard is an input method's own virtual keyboard,
+// over which it hands back the keys it doesn't take, as fcitx5 does
+static bool keyboard_is_im_echo(struct sway_keyboard *keyboard) {
+	struct wlr_input_method_v2 *input_method = keyboard->seat_device->
+		sway_seat->im_relay.input_method;
+	struct wlr_virtual_keyboard_v1 *virtual_keyboard =
+		wlr_input_device_get_virtual_keyboard(keyboard->seat_device->input_device->wlr_device);
+	return input_method && virtual_keyboard &&
+		wl_resource_get_client(virtual_keyboard->resource) ==
+		wl_resource_get_client(input_method->resource);
+}
+
 static void handle_key_event(struct sway_keyboard *keyboard,
 		struct wlr_keyboard_key_event *event) {
 	struct sway_seat *seat = keyboard->seat_device->sway_seat;
@@ -485,8 +497,15 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	bool handled = false;
 	// tide: the current mode's, or tidewm's built-in keys
 	struct sway_mode *mode = tide_keys_mode();
-	// Identify active release binding
+	// tide: a key an input method hands back had its bindings when it came
+	// from the real keyboard: it only goes to the client, so the Super of
+	// Super+Return, handed back alone, isn't a Super tap too, and a tap
+	// runs once, as in tidewm
+	bool echo = keyboard_is_im_echo(keyboard);
 	struct sway_binding *binding_released = NULL;
+	struct sway_binding *binding = NULL;
+	if (!echo) {
+	// Identify active release binding
 	get_active_binding(seat, &keyboard->state_keycodes,
 			mode->keycode_bindings, &binding_released,
 			keyinfo.code_modifiers, true, locked,
@@ -517,7 +536,6 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	}
 
 	// Identify and execute active pressed binding
-	struct sway_binding *binding = NULL;
 	if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		get_active_binding(seat, &keyboard->state_keycodes,
 				mode->keycode_bindings, &binding,
@@ -552,6 +570,7 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 					exact_identifier, keyboard->effective_layout);
 		}
 	}
+	} // tide: !echo
 
 	// Set up (or clear) keyboard repeat for a pressed binding. Since the
 	// binding may remove the keyboard, the timer needs to be updated first
@@ -580,17 +599,17 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	// Compositor bindings
 	// tide: not on keys a release binding of the config's is armed on, as
 	// tidewm's: the binding keeps them, and the window sees them
-	if (!handled && !binding_released && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+	if (!echo && !handled && !binding_released && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		handled = keyboard_execute_compositor_binding(
 				keyboard, keyinfo.translated_keysyms,
 				keyinfo.translated_modifiers, keyinfo.translated_keysyms_len);
 	}
-	if (!handled && !binding_released && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+	if (!echo && !handled && !binding_released && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		handled = keyboard_execute_compositor_binding(
 				keyboard, keyinfo.raw_keysyms, keyinfo.raw_modifiers,
 				keyinfo.raw_keysyms_len);
 	}
-	if (!handled) {
+	if (!echo && !handled) {
 		handled = keyboard_execute_pointer_keysyms(keyboard, event->time_msec,
 			keyinfo.translated_keysyms, keyinfo.translated_keysyms_len,
 			event->state);
@@ -611,15 +630,30 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 		}
 	}
 
-	if (!handled) {
-		struct wlr_input_method_keyboard_grab_v2 *kb_grab = keyboard_get_im_grab(keyboard);
-
-		if (kb_grab) {
-			wlr_input_method_keyboard_grab_v2_set_keyboard(kb_grab, keyboard->wlr);
-			wlr_input_method_keyboard_grab_v2_send_key(kb_grab,
-				event->time_msec, event->keycode, event->state);
+	// tide: an input method gets a key's release when it got its press,
+	// whatever else took the release, as a release binding does, so it
+	// never thinks a key is still down; and no release whose press it
+	// didn't get, as one a binding took would only come back
+	struct wlr_input_method_keyboard_grab_v2 *kb_grab = keyboard_get_im_grab(keyboard);
+	if (event->state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+		if (update_shortcut_state(&keyboard->tide_state_im_sent,
+				event->keycode, event->state, keyinfo.keycode, 0)) {
+			if (kb_grab) {
+				wlr_input_method_keyboard_grab_v2_set_keyboard(kb_grab, keyboard->wlr);
+				wlr_input_method_keyboard_grab_v2_send_key(kb_grab,
+					event->time_msec, event->keycode, event->state);
+			}
+			handled = true;
+		} else if (!handled && kb_grab) {
 			handled = true;
 		}
+	} else if (!handled && kb_grab) {
+		update_shortcut_state(&keyboard->tide_state_im_sent,
+			event->keycode, event->state, keyinfo.keycode, 0);
+		wlr_input_method_keyboard_grab_v2_set_keyboard(kb_grab, keyboard->wlr);
+		wlr_input_method_keyboard_grab_v2_send_key(kb_grab,
+			event->time_msec, event->keycode, event->state);
+		handled = true;
 	}
 
 	if (!handled && event->state != WL_KEYBOARD_KEY_STATE_RELEASED) {

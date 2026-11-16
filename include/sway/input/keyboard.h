@@ -65,6 +65,9 @@ struct sway_keyboard {
 	struct sway_shortcut_state state_keysyms_raw;
 	struct sway_shortcut_state state_keycodes;
 	struct sway_shortcut_state state_pressed_sent;
+	// tide: the keys whose press went to an input method's grab, so it
+	// gets their release and no other
+	struct sway_shortcut_state tide_state_im_sent;
 	struct sway_binding *held_binding;
 
 	struct wl_event_source *key_repeat_source;
