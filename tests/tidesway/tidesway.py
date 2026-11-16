@@ -16,3 +16,7 @@ os.environ.setdefault("TIDEWM", os.path.join(ROOT, "tests", "tidewm-harness", "r
 if not os.path.exists(os.path.join(CHECKOUT, "tests", "harness.py")):
     sys.exit(f"tests/tidesway: no tidewm checkout at {CHECKOUT}; set TIDEWM_CHECKOUT")
 sys.path.insert(0, os.path.join(CHECKOUT, "tests"))
+
+# tidewm's own pixel tests' line, so a window's edge is its own color: tide's
+# look.conf gives a window tidewm's 1px border
+NO_BORDER = "default_border none\n"

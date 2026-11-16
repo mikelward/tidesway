@@ -1,12 +1,14 @@
 """X11 windows in their outputs' own pixels, with xwayland_scaling
-disable, as tidewm has them, where tidewm's tests can't say so for
-tidesway: tide's look has no borders, where theirs assume a 1px one, and
-a drag over another window loses its press to Xwayland, as sway moves the
-pointer off the window as the button comes up, in the same burst."""
+disable, as tidewm has them, beyond what tidewm's tests say: each way
+across the monitors and back, and from the scratchpad. With no border,
+so a window's size is its pixels'. And a drag over another window loses
+its press to Xwayland, as sway moves the pointer off the window as the
+button comes up, in the same burst."""
 
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
+from tidesway import NO_BORDER
 import test_xwayland as x11  # noqa: E402  (tidewm's, from the checkout)
 
 
@@ -31,15 +33,7 @@ class OneOutputTest(x11.X11Helpers):
 class TwoOutputTest(x11.X11Helpers):
     """A monitor at 1 beside one at 2, as tidewm's TwoOutputTest"""
     OUTPUTS = 2
-    CONFIG = x11.TwoOutputTest.CONFIG
-
-    def test_a_floating_x11_window_opens_in_the_pixels_of_its_own_monitor(self):
-        self.command(self.connect(), "focus output HEADLESS-2")
-        client = self.wm.open_x11_window("test.float", "Float", report=True)
-        window = self.opened(client)
-        self.assertEqual(window["output"], "HEADLESS-2")
-        rect = self.windows()[window["id"]]["rect"]
-        self.assertEqual((rect["width"], rect["height"]), (50, 50))
+    CONFIG = NO_BORDER + x11.TwoOutputTest.CONFIG
 
     def test_a_fixed_size_x11_window_keeps_its_pixels_on_another_monitor(self):
         client = self.wm.open_x11_window("test.x11", "X11", report=True, fixed_size="400x300")
@@ -98,7 +92,7 @@ class AssignedTest(x11.X11Helpers):
     """A floating X11 window assigned to the monitor at 2, opened with the
     one at 1 focused"""
     OUTPUTS = 2
-    CONFIG = x11.TwoOutputTest.CONFIG + 'assign [class="^test.float$"] output HEADLESS-2\n'
+    CONFIG = NO_BORDER + x11.TwoOutputTest.CONFIG + 'assign [class="^test.float$"] output HEADLESS-2\n'
 
     def test_an_x11_window_opens_in_the_pixels_of_the_monitor_its_assigned(self):
         self.command(self.connect(), "focus output HEADLESS-1")

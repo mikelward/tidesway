@@ -81,12 +81,25 @@ static void asked_size(struct sway_view *view, int *width, int *height, bool *fi
 	}
 }
 
-// Puts con's content at box, its border around it
+/* What con's border takes beside its content, left and right, and above
+ * and below, as container_set_geometry_from_content counts it */
+static void border_of(struct sway_container *con, int *side, int *top, int *bottom) {
+	*side = *top = *bottom = 0;
+	if (con->pending.border != B_CSD && !con->pending.fullscreen_mode) {
+		*side = *bottom = con->pending.border == B_NONE ? 0 : con->pending.border_thickness;
+		*top = con->pending.border == B_NORMAL ? (int)container_titlebar_height() : *side;
+	}
+}
+
+/* Puts con at box, border and all, as tidewm's sizes and places count a
+ * window's border in */
 static void put(struct sway_container *con, double x, double y, double w, double h) {
-	con->pending.content_x = x;
-	con->pending.content_y = y;
-	con->pending.content_width = w;
-	con->pending.content_height = h;
+	int side, top, bottom;
+	border_of(con, &side, &top, &bottom);
+	con->pending.content_x = x + side;
+	con->pending.content_y = y + top;
+	con->pending.content_width = w - 2 * side;
+	con->pending.content_height = h - top - bottom;
 	container_set_geometry_from_content(con);
 }
 
@@ -124,6 +137,13 @@ void tide_dialog_place(struct sway_view *view) {
 	int width, height;
 	bool fixed;
 	asked_size(view, &width, &height, &fixed);
+	// The size it asks is its content's; the rest counts its border in
+	int side, top, bottom;
+	border_of(con, &side, &top, &bottom);
+	if (width > 0 && height > 0) {
+		width += 2 * side;
+		height += top + bottom;
+	}
 	if (pip) {
 		width = output->width / 4;
 		height = output->height / 4;
@@ -136,7 +156,7 @@ void tide_dialog_place(struct sway_view *view) {
 			height = output->height * 4 / 5;
 		}
 	}
-	if (width <= 0 || height <= 0) {
+	if (width <= 2 * side || height <= top + bottom) {
 		return;
 	}
 	struct sway_view *parent = parent_of(view);
@@ -172,7 +192,7 @@ static void center_on(struct sway_container *dialog, struct sway_container *pare
 	struct sway_workspace *ws = parent->pending.workspace;
 	struct wlr_box area;
 	workspace_get_box(ws, &area);
-	double w = dialog->pending.content_width, h = dialog->pending.content_height;
+	double w = dialog->pending.width, h = dialog->pending.height;
 	double x = parent->pending.x + (parent->pending.width - w) / 2.0;
 	double y = parent->pending.y + (parent->pending.height - h) / 2.0;
 	if (x + w > area.x + area.width) {

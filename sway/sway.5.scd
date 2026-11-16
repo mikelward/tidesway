@@ -1345,7 +1345,8 @@ middle of its parent, or of its output's window area without one, as big as
 it asks but no more than 80% of the output, unless its fixed size is bigger,
 and kept in the window area. A browser's picture-in-picture window, titled
 "Picture-in-Picture" or "Picture in picture", floats a quarter of the output
-each way in the window area's bottom right corner, and is sticky. A dialog
+each way in the window area's bottom right corner, and is sticky. These
+sizes count the window's border in, as the content it asks for doesn't. A dialog
 stays above its parent, and follows it to another workspace or output, to
 the middle of it there, unless it's sticky itself.
 

@@ -166,7 +166,9 @@ tidewm's main at `7064216`, on 2026-11-15, with tidewm's shadow as the drag
 zone, which tidesway takes in the same change: of its 856 tests, 846 are in
 `passing.txt`. 29 are new, each passing in three runs: all 28 of
 `test_shadow_drag`, and `test_effects`' click through a tile's shadow away
-from the edge, which takes the place of the one on the edge.
+from the edge, which takes the place of the one on the edge. With tidewm's
+1px border in `look.conf` (2026-11-16), four more pass: `test_borders`' two
+and `test_xwayland`'s two that start from it.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -530,15 +532,15 @@ Each patch's PR says how far it moves this.
   tiles are, so like tiled ones they take the layout's size there, as in tidewm,
   which has no floating splits; a split may hold Wayland windows too, whose
   pixels follow the output's scale.
-- **tide's look keeps no border** (2026-11-15): `look.conf`, which tidesway
-  reads before your config, says `default_border none`, where tidewm's own
-  default is a 1px border and tide's `tidewm/tide.conf` says none itself. So
-  `test_borders`' `test_without_the_line_a_window_has_config_hs_border` and
-  `test_a_reload_with_none_takes_every_border_away`, and two of
-  `test_xwayland`'s, can't pass; `tests/tidesway/test_tide_borders.py` covers
-  the reload from a 1px border. Taking the line out of `look.conf` would let
-  them pass and change nothing for tide, but give a config without the line
-  tidewm's 1px border. Left as is: it's the maintainer's call.
+- **tidewm's 1px border** (2026-11-16): `look.conf` now says tidewm's own
+  default, `default_border pixel 1`, not `none`; tide's `tidewm/tide.conf`
+  says none itself, so tide's session is as it was. A config without the
+  line gets tidewm's border, so `test_borders`' two and `test_xwayland`'s
+  two that start from it pass. A floating window's size as it opens, the
+  80% cap and picture-in-picture's quarter, counts its border in, as
+  tidewm's does. tidesway's own tests that look at pixels say
+  `default_border none`, as tidewm's own do (the maintainer asked for the
+  differences fixed).
 - **No window draws its own decorations in place of a border** (2026-11-15):
   sway gave a floating window that draws its own decorations no border
   (`csd`), and told an xdg-decoration client floating it could draw its own.
