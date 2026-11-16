@@ -25,7 +25,8 @@ void free_sway_variable(struct sway_variable *var) {
 
 struct cmd_results *cmd_set(int argc, char **argv) {
 	struct cmd_results *error = NULL;
-	if ((error = checkarg(argc, "set", EXPECTED_AT_LEAST, 2))) {
+	// tide: a variable set to nothing, as tidewm takes it
+	if ((error = checkarg(argc, "set", EXPECTED_AT_LEAST, 1))) {
 		return error;
 	}
 
@@ -55,6 +56,6 @@ struct cmd_results *cmd_set(int argc, char **argv) {
 		list_add(config->symbols, var);
 		list_qsort(config->symbols, compare_set_qsort);
 	}
-	var->value = join_args(argv + 1, argc - 1);
+	var->value = argc > 1 ? join_args(argv + 1, argc - 1) : strdup("");
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
