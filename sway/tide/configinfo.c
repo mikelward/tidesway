@@ -187,16 +187,27 @@ struct cmd_results *cmd_tidewm_config(int argc, char **argv) {
 	if (user->path || user->depth) {
 		return cmd_results_new(CMD_INVALID, "no setting is called tidewm_config");
 	}
-	bool named = argc > 0 && strcmp(argv[0], "--named") == 0;
-	if (argc != (named ? 2 : 1)) {
-		return cmd_results_new(CMD_INVALID, "tidewm_config needs [--named] FILE");
+	bool named = false, only = false;
+	int i = 0;
+	for (; i < argc - 1; i++) {
+		if (strcmp(argv[i], "--named") == 0) {
+			named = true;
+		} else if (strcmp(argv[i], "--only") == 0) {
+			only = true;
+		} else {
+			break;
+		}
 	}
-	const char *path = argv[named ? 1 : 0];
+	if (i != argc - 1) {
+		return cmd_results_new(CMD_INVALID, "tidewm_config needs [--named] [--only] FILE");
+	}
+	const char *path = argv[i];
 	user->path = strdup(path);
 	if (!user->path) {
 		return cmd_results_new(CMD_FAILURE, "can't allocate the config's path");
 	}
 	user->named = named;
+	user->only = only;
 	user->real = realpath(path, NULL);
 	if (!user->real) {
 		// One -c names that isn't there is an error at startup, as in
@@ -236,13 +247,16 @@ const char *tide_config_loaded_name(struct sway_config *config) {
 void tide_config_started(struct sway_config *config) {
 	struct tide_user_config *user = &config->tide_user;
 	if (user->path && !user->text && user->named) {
-		sway_log(SWAY_ERROR, "tidewm: not using %s: config.h's keys work instead",
-			user->path);
+		sway_log(SWAY_ERROR, "tidewm: not using %s%s", user->path,
+			user->only ? "" : ": config.h's keys work instead");
 	} else if (tide_config_has_errors()) {
 		sway_log(SWAY_ERROR, "tidewm: left out the lines above from the config; "
 			"the rest is loaded");
 	}
-	if (user->text && !tide_keys_bound(config)) {
+	if (user->only) {
+		sway_log(SWAY_ERROR, "tidewm: config.h's keys and buttons are off (-k), so only "
+			"%s's work", user->path);
+	} else if (user->text && !tide_keys_bound(config)) {
 		sway_log(SWAY_ERROR, "tidewm: %s binds no key, so config.h's keys work with it",
 			user->path);
 	} else if (tide_keys_safety_mode()) {

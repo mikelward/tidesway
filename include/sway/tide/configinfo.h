@@ -15,6 +15,10 @@ struct tide_user_config {
 	char *real; // its real path, or NULL if it isn't there
 	char *text; // its text, as loaded; NULL if it isn't there
 	bool named; // named by -c, so its being missing is an error
+	// -k: only the file's keys and buttons, never config.h's, whatever the
+	// file has, as for a greeter, where config.h's terminal key would give
+	// anyone a shell
+	bool only;
 	int depth; // while it loads: above 0 in it or a file it includes
 };
 
