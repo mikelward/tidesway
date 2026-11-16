@@ -1,0 +1,89 @@
+name: layered
+
+# tide's tidewm config with conf's on top, loaded by this tidesway, as
+# tidewm's layered.yml loads them on tidewm: tidewm's tests/test_layered.py
+# at TIDEWM_REF, through tests/tidewm-harness/run. tide's session runs
+# tidesway on that config, so a change to tide's or conf's that tidesway
+# can't take only showed as a login with none of its keys. This catches
+# it, for the configs as they are and as they were a week and a month ago:
+# on each change here, and daily for changes in tide and conf, which don't
+# run it.
+#
+# Not a required check: a break it finds may be another repo's to fix,
+# and shouldn't hold this one's pull requests. A scheduled run that fails
+# mails the repository's owner.
+#
+# Cost and reliability: a few minutes of a free hosted runner per run, a
+# tidesway build included; it fetches tidewm, tide and conf from GitHub
+# and Debian testing's packages, as ci.yml's test job does.
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: layered-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+env:
+  # tidewm's test and harness, as ci.yml pins them
+  TIDEWM_REF: f4d2a24b50ce06f2c6696f023f97199aa37936b7
+
+jobs:
+  layered:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: debian:testing
+    steps:
+      - run: apt-get update
+      - run: >-
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends
+          build-essential meson ninja-build pkgconf libwlroots-0.20-dev libwayland-dev
+          wayland-protocols libinput-dev libudev-dev libxkbcommon-dev libxcb1-dev
+          libxcb-icccm4-dev libjson-c-dev libpcre2-dev libpango1.0-dev libcairo2-dev
+          libgdk-pixbuf-2.0-dev libpixman-1-dev libevdev-dev libdrm-dev
+          python3 ca-certificates git
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - run: meson setup build -Dman-pages=disabled
+      - run: ninja -C build
+      - uses: actions/checkout@v5
+        with:
+          repository: mikelward/tidewm
+          ref: ${{ env.TIDEWM_REF }}
+          path: tidewm
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          repository: mikelward/tide
+          path: layered/tide
+          persist-credentials: false
+          # All of it, so the test can load the config as it was a
+          # week and a month ago.
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: mikelward/conf
+          path: layered/conf
+          persist-credentials: false
+          fetch-depth: 0
+      # The checkouts belong to the runner's user, not the container's
+      # root, so git would refuse to read their history.
+      - run: git config --global --add safe.directory '*'
+      - run: make -C tidewm tests/client
+      - run: python3 -m unittest -v test_layered
+        working-directory: tidewm/tests
+        env:
+          TIDEWM: ${{ github.workspace }}/tests/tidewm-harness/run
+          TIDESWAY: ${{ github.workspace }}/build/sway/sway
+          TIDE_CHECKOUT: ${{ github.workspace }}/layered/tide
+          CONF_CHECKOUT: ${{ github.workspace }}/layered/conf
