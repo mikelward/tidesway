@@ -3,6 +3,7 @@
 #include <float.h>
 #include "sway/config.h"
 #include "sway/input/keyboard.h"
+#include "sway/tide/inputname.h"
 #include "sway/server.h"
 #include "log.h"
 
@@ -285,7 +286,7 @@ static void merge_type_on_existing(struct input_config *type_wildcard) {
 static const char *set_input_type(struct input_config *ic) {
 	struct sway_input_device *input_device;
 	wl_list_for_each(input_device, &server.input->devices, link) {
-		if (strcmp(input_device->identifier, ic->identifier) == 0) {
+		if (tide_input_named(input_device, ic->identifier)) { // tide: or its Hyprland name
 			ic->input_type = input_device_get_type(input_device);
 			break;
 		}

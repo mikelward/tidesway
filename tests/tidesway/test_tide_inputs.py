@@ -51,6 +51,24 @@ class NamesakeTest(KeyboardHelpers):
         self.assertEqual(self.rates(), {name: 30})
 
 
+class NamedOverTypeTest(KeyboardHelpers):
+    """A device's own lines, by its Hyprland name, go over its type's, as
+    they do by sway's identifier: the rest of the type's stand. tide's
+    type:pointer gives every mouse its speed, which a mouse of the settings
+    pages' own kept only until a reload."""
+
+    def test_a_reload_keeps_the_types_lines_under_a_named_blocks(self):
+        self.keyboard()
+        name, = self.rates()
+        for config in (f'input type:keyboard repeat_rate 30\ninput "{name}" repeat_delay 300\n',
+                       f'input "{name}" repeat_delay 300\ninput type:keyboard repeat_rate 30\n'):
+            with self.subTest(config=config):
+                self.wm.write_config(config)
+                self.command(self.connect(), "reload")
+                keyboard, = [d for d in self.connect().request(GET_INPUTS) if d["type"] == "keyboard"]
+                self.assertEqual((keyboard["repeat_rate"], keyboard["repeat_delay"]), (30, 300))
+
+
 class SwaysValuesTest(KeyboardHelpers):
     """Input checked as tidewm checks it still takes what only sway has"""
 
