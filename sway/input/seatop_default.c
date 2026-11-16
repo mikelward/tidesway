@@ -29,7 +29,22 @@ struct seatop_default_event {
 	uint32_t pressed_buttons[SWAY_CURSOR_PRESSED_BUTTONS_CAP];
 	size_t pressed_button_count;
 	struct gesture_tracker gestures;
+	// tide: the pointer kept on what was pressed, past its release, until
+	// it moves, presses again or scrolls
+	bool tide_kept;
 };
+
+static void handle_rebase(struct sway_seat *seat, uint32_t time_msec);
+
+/* tide: a press or scroll after a release, with no move between, goes to
+ * what's under the pointer, not what the pointer was kept on */
+static void tide_unkeep(struct sway_seat *seat, uint32_t time_msec) {
+	struct seatop_default_event *e = seat->seatop_data;
+	if (e->tide_kept) {
+		e->tide_kept = false;
+		handle_rebase(seat, time_msec);
+	}
+}
 
 /*-----------------------------------------\
  * Functions shared by multiple callbacks  /
@@ -574,6 +589,9 @@ static void handle_button_unheld(struct sway_seat *seat, uint32_t time_msec,
 static void handle_button(struct sway_seat *seat, uint32_t time_msec,
 		struct wlr_input_device *device, uint32_t button,
 		enum wl_pointer_button_state state) {
+	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+		tide_unkeep(seat, time_msec);
+	}
 	if (state == WL_POINTER_BUTTON_STATE_RELEASED) {
 		if (!tide_grab_release(seat, button)) {
 			handle_button_unheld(seat, time_msec, device, button, state);
@@ -664,6 +682,7 @@ static void check_focus_follows_mouse(struct sway_seat *seat,
 static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {
 	struct seatop_default_event *e = seat->seatop_data;
 	struct sway_cursor *cursor = seat->cursor;
+	e->tide_kept = false; // tide: it moved
 
 	struct wlr_surface *surface = NULL;
 	double sx, sy;
@@ -798,6 +817,7 @@ static uint32_t wl_axis_to_button(struct wlr_pointer_axis_event *event) {
 
 static void handle_pointer_axis(struct sway_seat *seat,
 		struct wlr_pointer_axis_event *event) {
+	tide_unkeep(seat, event->time_msec);
 	struct sway_input_device *input_device =
 		event->pointer ? event->pointer->base.data : NULL;
 	struct input_config *ic =
@@ -1253,4 +1273,30 @@ void seatop_begin_default(struct sway_seat *seat) {
 
 	uint32_t time_msec = get_current_time_in_msec();
 	seatop_rebase(seat, time_msec);
+}
+
+/* tide: as tidewm does when the last button comes up, the pointer stays on
+ * the surface it pressed until it next moves, so Xwayland, which handles
+ * its input later, hears the press and the release before the pointer
+ * leaves; what's under the pointer is still what it was last over, so the
+ * next motion focuses nothing new by itself. A press or scroll before it
+ * moves goes to what's under it (tide_unkeep) */
+void tide_seatop_begin_default_released(struct sway_seat *seat) {
+	seatop_end(seat);
+
+	struct seatop_default_event *e =
+		calloc(1, sizeof(struct seatop_default_event));
+	sway_assert(e, "Unable to allocate seatop_default_event");
+
+	seat->seatop_impl = &seatop_impl;
+	seat->seatop_data = e;
+
+	struct wlr_surface *surface = NULL;
+	double sx, sy;
+	e->previous_node = node_at_coords(seat, seat->cursor->cursor->x,
+		seat->cursor->cursor->y, &surface, &sx, &sy);
+	if (tide_dragzone_hover(seat, e->previous_node, &surface)) {
+		e->previous_node = seat_get_focus(seat);
+	}
+	e->tide_kept = true;
 }

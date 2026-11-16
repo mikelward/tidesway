@@ -64,12 +64,11 @@ this order, one PR each; each makes more of tidewm's suite pass.
   (tide's SPEC §17, Hyprland's `xwayland:force_zero_scaling`), as tidewm's `x11.h`
   does it: a zxdg_output_manager_v1 only Xwayland sees, giving each output's box
   spread by the largest scale; X11 configures and input points translated to and
-  from those boxes; and the scene showing an X11 buffer one pixel to one. Of
-  tidewm's `test_xwayland`, four can't pass here: two assume tidewm's 1px
-  borders, which tide's look has none of; one reads GET_CONFIG, which the
-  harness's wrapper config can't give; and a drag over another window loses its
-  press to Xwayland (see *Decisions needing review*). tidesway's own
-  `test_tide_x11.py` covers the first two and the drag for tidesway.
+  from those boxes; and the scene showing an X11 buffer one pixel to one. All of
+  tidewm's `test_xwayland` passes (2026-11-16): the two that assume tidewm's
+  1px border now that `look.conf` has it, and the drag out of a window now
+  that the pointer stays on it as its button comes up (*Decisions needing
+  review*).
 - ~~**Input lines in tidewm's words**~~. Done: the input command failing when no
   device matches, an unknown `type:`, `xkb_switch_layout` past the keymap's
   layouts, and XKB's errors as "XKB can't make a keymap of its xkb_ settings".
@@ -168,7 +167,8 @@ zone, which tidesway takes in the same change: of its 856 tests, 846 are in
 `test_shadow_drag`, and `test_effects`' click through a tile's shadow away
 from the edge, which takes the place of the one on the edge. With tidewm's
 1px border in `look.conf` (2026-11-16), four more pass: `test_borders`' two
-and `test_xwayland`'s two that start from it.
+and `test_xwayland`'s two that start from it; and with the pointer kept on
+a window as its button comes up, `test_xwayland`'s drag out of one.
 
 Before any tide patch, tidewm's suite on sway 1.12 as forked (2026-11-08, tidewm main
 at `1f47ac2`): **117 of 664 pass**, 421 fail, 126 error, 0 time out. A test with
@@ -520,12 +520,14 @@ Each patch's PR says how far it moves this.
 - **X11 windows open within their size hints** (2026-11-10): an X11 window
   opens at the size its hints allow, as in tidewm, where sway opened a window
   that asks for a minimum bigger than it is at its own size.
-- **X11 drags in tidewm's tests** (2026-11-10): sway moves the pointer to the
-  window under it as a button comes up, as it always has. Xwayland handles its
-  input later, so when a test presses, drags onto another window and releases
-  in one burst, the press goes nowhere. Input from a person comes spread out in
-  time, so it isn't lost; tidewm's `test_a_drag_out_of_an_x11_window_stays_in_its_pixels`
-  stays failing rather than tidesway's pointer focus changing.
+- **The pointer stays on a window as its button comes up** (2026-11-16):
+  sway moved the pointer to the window under it as the last button came up;
+  tidesway, as tidewm, leaves it on the window pressed until it next moves.
+  Xwayland handles its input later, so a press, a drag onto another window
+  and a release in one burst lost the press; tidewm's
+  `test_a_drag_out_of_an_x11_window_stays_in_its_pixels` passes now. What
+  the pointer was last over is what's under it, so its next move focuses
+  nothing new by itself, as before.
 - **Only floating X11 windows keep their pixels** (2026-11-10): with
   `xwayland_scaling disable`, a floating X11 window keeps its pixel size on an
   output of another scale. Windows in a floating split are laid out within it as

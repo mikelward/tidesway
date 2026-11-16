@@ -1,9 +1,7 @@
 """X11 windows in their outputs' own pixels, with xwayland_scaling
 disable, as tidewm has them, beyond what tidewm's tests say: each way
 across the monitors and back, and from the scratchpad. With no border,
-so a window's size is its pixels'. And a drag over another window loses
-its press to Xwayland, as sway moves the pointer off the window as the
-button comes up, in the same burst."""
+so a window's size is its pixels'."""
 
 import unittest
 
