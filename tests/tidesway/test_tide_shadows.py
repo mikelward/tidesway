@@ -7,6 +7,7 @@ focused tile's is over its neighbors, and the others' are under them."""
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
+from tidesway import NO_BORDER
 import test_tide_look as look
 from harness import GET_OUTPUTS
 from test_tide_dimming import BLUE
@@ -20,7 +21,7 @@ FLOATING = ('for_window [app_id="^test.float$"] floating enable, '
 
 
 def config(mode, more=""):
-    return f"shadows {mode}\nshadow_color {WHITE}\nshadow_blur_radius {BLUR}\n" + more + FLOATING
+    return NO_BORDER + f"shadows {mode}\nshadow_color {WHITE}\nshadow_blur_radius {BLUR}\n" + more + FLOATING
 
 
 class TileShadowHelpers(look.ShadowHelpers):
@@ -164,7 +165,7 @@ class ActiveShadowTest(TileShadowHelpers):
         self.assertUnshadowed(floating)
         self.assertFallsOn(right, left)
         # And with no line, none, as with none before
-        self.assertEqual(self.reload(FLOATING), [{"success": True}])
+        self.assertEqual(self.reload(NO_BORDER + FLOATING), [{"success": True}])
         self.assertUnshadowed(floating)
         self.assertNoneBetween(left, right)
 

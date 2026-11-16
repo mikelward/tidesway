@@ -1,7 +1,7 @@
-# tidewm's suite tests that pass on tidesway's main, one id per line as the
-# suite's results.json names it, sorted. CI's `test` job fails if one of these
 # doesn't pass (tests/tidewm-harness/gate), unless it's in flaky.txt. Add a test
 # in the pull request that makes it pass for good.
+# suite's results.json names it, sorted. CI's `test` job fails if one of these
+# tidewm's suite tests that pass on tidesway's main, one id per line as the
 test_borders.BadBorderTest.test_a_width_past_100_fails
 test_borders.BadBorderTest.test_it_cant_be_in_a_mode
 test_borders.BadBorderTest.test_none_with_a_width_fails
@@ -19,6 +19,8 @@ test_borders.ColorLinesTest.test_every_line_sway_takes_loads
 test_borders.ColorLinesTest.test_it_cant_be_in_a_mode
 test_borders.ColorLinesTest.test_too_few_or_too_many_colors_fail_naming_the_line
 test_borders.ColorLinesTest.test_what_isnt_a_color_fails_naming_it
+test_borders.DefaultBorderTest.test_a_reload_with_none_takes_every_border_away
+test_borders.DefaultBorderTest.test_without_the_line_a_window_has_config_hs_border
 test_borders.DefaultColorTest.test_a_class_without_a_line_keeps_config_hs
 test_borders.DefaultColorTest.test_without_the_lines_the_colors_are_config_hs
 test_borders.InactiveColorTest.test_the_window_focus_would_come_back_to_is_focused_inactive
@@ -870,6 +872,8 @@ test_workspaces.WorkspaceTest.test_workspace_number_names_it_by_number
 test_xwayland.ScaledTest.test_a_click_reaches_a_scaled_x11_window_in_the_layouts_units
 test_xwayland.ScaledTest.test_an_x11_window_is_scaled_by_default
 test_xwayland.TwoOutputTest.test_a_configure_request_is_in_the_pixels_of_the_windows_monitor
+test_xwayland.TwoOutputTest.test_a_fixed_size_x11_window_keeps_its_pixels_on_another_monitor
+test_xwayland.TwoOutputTest.test_a_floating_x11_window_opens_in_the_pixels_of_its_own_monitor
 test_xwayland.UnscaledTest.test_a_click_reaches_an_x11_window_in_its_pixels
 test_xwayland.UnscaledTest.test_an_x11_window_is_its_outputs_pixels
 test_xwayland.UnscaledTest.test_scaling_again_scales_an_x11_window_at_once

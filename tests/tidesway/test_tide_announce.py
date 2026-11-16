@@ -6,6 +6,7 @@ import os
 import subprocess
 
 import tidesway  # noqa: F401  (sets up harness)
+from tidesway import NO_BORDER
 from harness import EVENT_WINDOW, GET_TREE, ROOT, TIMEOUT, TidewmTest
 
 CAPTURE = os.path.join(ROOT, "tests", "capture")
@@ -14,7 +15,7 @@ SUBSURFACE = os.path.join(os.path.dirname(os.path.dirname(os.environ.get(
 
 
 class AnnounceTest(TidewmTest):
-    CONFIG = ""
+    CONFIG = NO_BORDER
 
     def setUp(self):
         super().setUp()

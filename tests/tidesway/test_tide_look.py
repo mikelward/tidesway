@@ -9,6 +9,7 @@ import subprocess
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
+from tidesway import NO_BORDER
 import test_xwayland as x11  # noqa: E402  (tidewm's, from the checkout)
 from harness import EVENT_WINDOW, GET_OUTPUTS, ROOT, RUN_COMMAND, TIMEOUT
 from test_tide_dimming import BLUE, DIMMED, STRENGTH, DimOnScreenHelpers, ppm_pixels
@@ -23,7 +24,7 @@ FLOATING = ('for_window [app_id="^test.float$"] floating enable, '
 
 class LookHelpers(DimOnScreenHelpers):
     """Helpers, with no tests of their own."""
-    CONFIG = f"corner_radius {RADIUS}\n"
+    CONFIG = NO_BORDER + f"corner_radius {RADIUS}\n"
 
     def rect(self, con_id):
         r = self.windows()[con_id]["rect"]
@@ -89,9 +90,9 @@ class RoundedTest(LookHelpers):
     def test_a_reload_takes_the_new_radius(self):
         window = self.open("test.app")
         self.assertPixels(self.cut(window), BACKGROUND)
-        self.assertEqual(self.reload(""), [{"success": True}])
+        self.assertEqual(self.reload(NO_BORDER), [{"success": True}])
         self.assertPixels(self.cut(window) + self.kept(window), BLUE)
-        self.assertEqual(self.reload(f"corner_radius {RADIUS}\n"), [{"success": True}])
+        self.assertEqual(self.reload(NO_BORDER + f"corner_radius {RADIUS}\n"), [{"success": True}])
         self.assertPixels(self.cut(window), BACKGROUND)
         self.assertPixels(self.kept(window), BLUE)
 
@@ -179,7 +180,7 @@ class SubsurfaceTest(LookHelpers):
 
 
 class InputRegionTest(LookHelpers):
-    CONFIG = (f"corner_radius {RADIUS}\n"
+    CONFIG = NO_BORDER + (f"corner_radius {RADIUS}\n"
               'for_window [app_id="^test.sub$"] floating enable, '
               "resize set 300 200, move position 100 100\n")
 
@@ -203,7 +204,7 @@ class InputRegionTest(LookHelpers):
 
 
 class FloatingRoundedTest(LookHelpers):
-    CONFIG = f"corner_radius {RADIUS}\n" + FLOATING
+    CONFIG = NO_BORDER + f"corner_radius {RADIUS}\n" + FLOATING
 
     def test_a_floating_windows_corners_follow_it_as_it_moves_and_resizes(self):
         floating = self.open("test.float")
@@ -226,7 +227,7 @@ class FloatingRoundedTest(LookHelpers):
 
 
 class RoundedDimTest(LookHelpers):
-    CONFIG = (f"corner_radius {RADIUS}\ndim_inactive {STRENGTH}\n" + FLOATING)
+    CONFIG = NO_BORDER + (f"corner_radius {RADIUS}\ndim_inactive {STRENGTH}\n" + FLOATING)
 
     def test_a_floating_windows_corners_show_the_window_behind(self):
         tiled = self.open("test.tiled")
@@ -293,14 +294,14 @@ class X11Helpers(x11.X11Helpers, LookHelpers):
 
 
 class X11RoundedTest(X11Helpers):
-    CONFIG = f"corner_radius {RADIUS}\noutput HEADLESS-1 mode 800x600@50Hz scale 1\n"
+    CONFIG = NO_BORDER + f"corner_radius {RADIUS}\noutput HEADLESS-1 mode 800x600@50Hz scale 1\n"
 
     def test_an_x11_windows_corners_are_cut(self):
         self.assertTopLeft(cut=True)
 
 
 class X11UnscaledTest(X11Helpers):
-    CONFIG = f"corner_radius {RADIUS}\nxwayland_scaling disable\n" + x11.OUTPUT
+    CONFIG = NO_BORDER + f"corner_radius {RADIUS}\nxwayland_scaling disable\n" + x11.OUTPUT
 
     def test_an_x11_window_in_the_outputs_pixels_is_square(self):
         self.assertTopLeft(cut=False)
@@ -337,7 +338,7 @@ class ShadowHelpers(LookHelpers):
 
 
 class ShadowTest(ShadowHelpers):
-    CONFIG = f"shadows enable\nshadow_color {WHITE}\nshadow_blur_radius {BLUR}\n" + FLOATING
+    CONFIG = NO_BORDER + f"shadows enable\nshadow_color {WHITE}\nshadow_blur_radius {BLUR}\n" + FLOATING
 
     def test_a_floating_window_has_a_shadow_and_a_tile_has_none(self):
         left = self.open("test.left")
@@ -395,7 +396,7 @@ class MaximizedShadowTest(ShadowHelpers):
 
 
 class RoundedShadowTest(ShadowHelpers):
-    CONFIG = (f"corner_radius {RADIUS}\nshadows enable\nshadow_color {WHITE}\n"
+    CONFIG = NO_BORDER + (f"corner_radius {RADIUS}\nshadows enable\nshadow_color {WHITE}\n"
               f"shadow_blur_radius {BLUR}\n" + FLOATING)
 
     def test_a_rounded_windows_shadow_follows_its_corners(self):
@@ -414,7 +415,7 @@ class RoundedShadowTest(ShadowHelpers):
 
 
 class ScaledLookTest(LookHelpers):
-    CONFIG = f"corner_radius {RADIUS}\noutput * scale 2\n"
+    CONFIG = NO_BORDER + f"corner_radius {RADIUS}\noutput * scale 2\n"
 
     def pixel(self, x, y):
         """The last of the output's four pixels in the layout's one."""

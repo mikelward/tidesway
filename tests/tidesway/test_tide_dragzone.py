@@ -10,6 +10,7 @@ import subprocess
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
+from tidesway import NO_BORDER
 from harness import EVENT_WINDOW, ROOT, RUN_COMMAND
 from test_split import SplitTest
 
@@ -38,7 +39,7 @@ class ZoneTest(SplitTest):
 
 class FloatingTest(ZoneTest):
     """With no shadows, the zone is the 8 pixels outside the window."""
-    CONFIG = FLOATING
+    CONFIG = NO_BORDER + FLOATING
 
     def test_a_press_just_outside_an_edge_resizes_by_it(self):
         self.open_window(self.ipc, "test.tiled")
@@ -170,7 +171,7 @@ class TwoOutputsTest(ZoneTest):
     """Floating windows share one stack, whichever output each is on, and
     a fullscreen window is over them all."""
     OUTPUTS = 2
-    CONFIG = FLOATING
+    CONFIG = NO_BORDER + FLOATING
 
     def beside(self):
         """A floating window on HEADLESS-1 whose left edge is 6 px short of

@@ -6,6 +6,7 @@ import math
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
+from tidesway import NO_BORDER
 from harness import EVENT_WINDOW, GET_OUTPUTS, GET_TREE, RUN_COMMAND, TidewmTest
 
 
@@ -14,6 +15,8 @@ def edge(start, length, frac):
 
 
 class FlatTreeTest(TidewmTest):
+    CONFIG = NO_BORDER
+
     def setUp(self):
         super().setUp()
         self.ipc = self.connect()
@@ -205,7 +208,7 @@ class TwoOutputsTest(TidewmTest):
 
 class WorkspaceLayoutTest(FlatTreeTest):
     # workspace_layout wraps each new tile in a tabbed container, in sway
-    CONFIG = "workspace_layout tabbed\nnew_window top\n"
+    CONFIG = NO_BORDER + "workspace_layout tabbed\nnew_window top\n"
 
     def test_new_windows_go_in_unwrapped(self):
         cons = [self.open_window(self.ipc, f"test.w{i}")[1] for i in range(3)]
