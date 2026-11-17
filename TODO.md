@@ -82,6 +82,9 @@ this order, one PR each; each makes more of tidewm's suite pass.
   linear scaling; tidewm's socket name and GET_VERSION, an answer to any
   message type, a command list running past a failure, and a tree of outputs
   alone (`sway/tide/outputapply.c`, `outputcheck.c`, `ipc.c`).
+- **Session management**: xdg-session-management-v1, as tidewm's *Plan*
+  has it, with the same state and the draft's `xx_session_manager_v1` name
+  for Chromium. Uses wlroots' own if its MR 5321 has merged by then.
 
 ## Baseline
 
