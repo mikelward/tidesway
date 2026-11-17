@@ -485,7 +485,13 @@ static struct cmd_results *cmd_move_container(bool no_auto_back_and_forth,
 				}
 			}
 		} else {
-			if (strcasecmp(argv[1], "number") == 0) {
+			// tide: what follows number is the name if it isn't one, as in
+			// tidewm; a quoted name arrives here unquoted (execute_command)
+			bool number = strcasecmp(argv[1], "number") == 0;
+			if (number && argc >= 3 && !isdigit(argv[2][0])) {
+				ws_name = join_args(argv + 2, argc - 2);
+				ws = tide_ws_named(ws_name);
+			} else if (number) {
 				// move [window|container] [to] "workspace number x"
 				if (argc < 3) {
 					return cmd_results_new(CMD_INVALID, "%s", expected_syntax);

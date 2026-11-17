@@ -229,6 +229,27 @@ class PersistTest(TidewmTest):
         self.assertEqual(self.workspace_names(), ["1"])
 
 
+class MoveByNameTest(TidewmTest):
+    """move to workspace number takes a name as tidewm's does: what follows
+    number is the name if it isn't one, and a name in double quotes is a
+    name, as tide's Super+Shift+Return sends them, its quotes taken away
+    once"""
+
+    def test_a_window_moves_to_a_workspace_named_after_number(self):
+        ipc = self.connect()
+        ipc.subscribe("window")
+        _, window = self.open_window(ipc, "test.app")
+        con = f"[con_id={window['id']}]"
+        # A name that starts with an apostrophe keeps it, quoted once
+        self.command(self.connect(), "workspace \"'90s\"")
+        for name, said in (("web", "web"), ('"a;b"', "a;b"), ("2", "2"), ("\"'90s\"", "'90s")):
+            with self.subTest(name=name):
+                command = f"{con} move to workspace number {name}; {con} focus"
+                reply = self.connect().request(RUN_COMMAND, command)
+                self.assertEqual(reply, [{"success": True}] * 2, f"{command!r}: {reply}")
+                self.assertEqual(self.windows()[window["id"]]["workspace"], said)
+
+
 class LastOutputTest(TidewmTest):
     def test_a_persistent_workspace_outlasts_every_output_going(self):
         self.command(self.connect(), "persist workspace spare")
