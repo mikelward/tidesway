@@ -332,6 +332,18 @@ void ipc_event_workspace(struct sway_workspace *old,
 	} else {
 		json_object_object_add(obj, "current", NULL);
 	}
+	/* tide: a switch's event says the workspace switched to is focused and
+	 * the one left isn't, as tidewm's does, though the seat may not say so
+	 * until the switch is done: Quickshell takes each from the event alone */
+	if (strcmp(change, "focus") == 0) {
+		json_object *o;
+		if (json_object_object_get_ex(obj, "old", &o) && o) {
+			json_object_object_add(o, "focused", json_object_new_boolean(false));
+		}
+		if (json_object_object_get_ex(obj, "current", &o) && o) {
+			json_object_object_add(o, "focused", json_object_new_boolean(true));
+		}
+	}
 
 	const char *json_string = json_object_to_json_string(obj);
 	ipc_send_event(json_string, IPC_EVENT_WORKSPACE);
