@@ -110,6 +110,31 @@ class PartsTest(TwoOutputHelpers):
         self.assertTrue(self.windows()[con["id"]]["visible"])
 
 
+class SwitchEventTest(TwoOutputHelpers):
+    """A switch's event says the workspace switched to is focused and the
+    one left isn't, as Quickshell takes each from the event alone: tide's
+    shell then knows the focused window, which Super+Z and
+    Super+Shift+Return act on"""
+
+    def test_a_switch_from_another_outputs_focus_says_its_focused(self):
+        for app in ("a", "b"):
+            self.open_window(self.ipc, f"test.{app}")
+        self.command(self.connect(), "focus output right")
+        self.open_window(self.ipc, "test.c")
+        self.command(self.connect(), "workspace number web")
+        self.open_window(self.ipc, "test.d")
+        for command in ("workspace number in", "focus output left", "focus left", "focus right",
+                        "move to workspace number web"):
+            self.connect().request(RUN_COMMAND, command)
+        ipc = self.connect()
+        ipc.subscribe("workspace")
+        self.command(self.connect(), "workspace number web")
+        event = ipc.next_event(EVENT_WORKSPACE, lambda e: e["change"] == "focus")
+        self.assertEqual((event["old"]["name"], event["old"]["focused"],
+                          event["current"]["name"], event["current"]["focused"]),
+                         ("in", False, "web", True))
+
+
 class FocusOutputTest(TwoOutputHelpers):
     def test_focusing_an_output_after_a_switch_stays_on_the_switched_to_workspace(self):
         # The right output's window was focused last there, before the switch
