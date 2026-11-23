@@ -247,6 +247,7 @@ sway_sources = files(
 	'tide/unlock.c',
 	'tide/workspace.c',
 	'tide/x11scale.c',
+	'tide/zoomcycle.c',
 	'tide/xkbenv.c',
 
 	'tree/arrange.c',

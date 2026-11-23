@@ -1162,6 +1162,14 @@ in sway's layouts, until a *layout* command names one of tide's.
 	Swaps the focused window with the master, or with the next window if
 	it's the master.
 
+*zoom* next|prev
+	Bound to a key with modifiers, as tide's Alt+Tab: a tap is *zoom*. Held,
+	each further press moves focus to the next tiled window, or with _prev_
+	the one before, round from the end, and letting go of the modifiers but
+	Shift makes that window the master, unless it is already. Escape while
+	they're held puts focus back and makes no master. Run with no modifiers
+	held, as over the IPC, it's *zoom*.
+
 *movestack* next|prev
 	Swaps the focused window with the next window in the stack, or the
 	previous one. From the end, _next_ goes round to the master's place; from

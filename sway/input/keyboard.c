@@ -11,6 +11,7 @@
 #include "sway/commands.h"
 #include "sway/input/input-manager.h"
 #include "sway/input/keyboard.h"
+#include "sway/tide/zoomcycle.h"
 #include "sway/input/seat.h"
 #include "sway/input/cursor.h"
 #include "sway/ipc-server.h"
@@ -504,7 +505,13 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	bool echo = keyboard_is_im_echo(keyboard);
 	struct sway_binding *binding_released = NULL;
 	struct sway_binding *binding = NULL;
-	if (!echo) {
+	// tide: Escape ends Alt+Tab's cycle with focus back (tide/zoomcycle.c)
+	if (!echo && event->state == WL_KEYBOARD_KEY_STATE_PRESSED
+			&& keyinfo.translated_keysyms_len > 0
+			&& tide_zoomcycle_key(seat, keyinfo.translated_keysyms[0])) {
+		handled = true;
+	}
+	if (!echo && !handled) {
 	// Identify active release binding
 	get_active_binding(seat, &keyboard->state_keycodes,
 			mode->keycode_bindings, &binding_released,
@@ -586,7 +593,10 @@ static void handle_key_event(struct sway_keyboard *keyboard,
 	}
 
 	if (binding) {
+		// tide: the modifiers Alt+Tab's cycle waits on (tide/zoomcycle.c)
+		tide_zoomcycle_press(keyboard->wlr, wlr_keyboard_get_modifiers(keyboard->wlr));
 		seat_execute_command(seat, binding);
+		tide_zoomcycle_press(NULL, 0);
 		handled = true;
 	}
 
@@ -750,8 +760,10 @@ static int handle_keyboard_repeat(void *data) {
 			}
 		}
 
+		tide_zoomcycle_press(keyboard->wlr, wlr_keyboard_get_modifiers(keyboard->wlr)); // tide
 		seat_execute_command(keyboard->seat_device->sway_seat,
 				keyboard->repeat_binding);
+		tide_zoomcycle_press(NULL, 0); // tide
 	}
 	return 0;
 }
@@ -794,6 +806,8 @@ static void handle_modifier_event(struct sway_keyboard *keyboard) {
 
 		uint32_t modifiers = wlr_keyboard_get_modifiers(keyboard->wlr);
 		determine_bar_visibility(modifiers);
+		// tide: Alt+Tab's cycle ends as its modifiers come up
+		tide_zoomcycle_modifiers(keyboard->seat_device->sway_seat, keyboard->wlr, modifiers);
 	}
 
 	if (keyboard->wlr->modifiers.group != keyboard->effective_layout) {
@@ -1225,6 +1239,12 @@ void sway_keyboard_configure(struct sway_keyboard *keyboard) {
 void sway_keyboard_destroy(struct sway_keyboard *keyboard) {
 	if (!keyboard) {
 		return;
+	}
+	// tide: Alt+Tab's, held on it, or on its group: the group's
+	// modifiers would fall as it leaves, and make a master unasked
+	tide_zoomcycle_keyboard_gone(keyboard->wlr);
+	if (keyboard->wlr->group) {
+		tide_zoomcycle_keyboard_gone(&keyboard->wlr->group->keyboard);
 	}
 	if (keyboard->wlr->group) {
 		sway_keyboard_group_remove(keyboard);

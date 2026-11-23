@@ -17,6 +17,7 @@
 #include "sway/input/seat.h"
 #include "sway/tide/commands.h"
 #include "sway/tide/layout.h"
+#include "sway/tide/zoomcycle.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/workspace.h"
@@ -170,8 +171,22 @@ struct cmd_results *cmd_single_width(int argc, char **argv) {
 
 struct cmd_results *cmd_zoom(int argc, char **argv) {
 	struct cmd_results *error = NULL;
-	if ((error = checkarg(argc, "zoom", EXPECTED_EQUAL_TO, 0))) {
+	if ((error = checkarg(argc, "zoom", EXPECTED_AT_MOST, 1))) {
 		return error;
+	}
+	// tidewm's own, tide's Alt+Tab: zoom by choosing the window first, while
+	// the key's modifiers are held (tide/zoomcycle.c)
+	if (argc == 1) {
+		bool next = strcasecmp(argv[0], "next") == 0;
+		if (!next && strcasecmp(argv[0], "prev") != 0) {
+			return cmd_results_new(CMD_INVALID, "Expected zoom [next|prev]");
+		}
+		// With no key held, as over the IPC, it's zoom below, on the
+		// window the criteria name if any
+		if (tide_zoomcycle_pressed()) {
+			tide_zoomcycle_zoom(config->handler_context.seat, next ? 1 : -1);
+			return cmd_results_new(CMD_SUCCESS, NULL);
+		}
 	}
 	struct sway_container *con = config->handler_context.container;
 	struct sway_container *master = con ? tide_zoom(con) : NULL;
