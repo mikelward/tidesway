@@ -79,6 +79,10 @@ void tide_ws_renamed(struct sway_workspace *ws);
 
 // Whether a workspace event from sway's code goes out: the workspace's
 // own, not a part's, as tidewm sends them
+/* Whether ws is the current workspace, or a part of it: what a workspace
+ * event's focused says, as tidewm's */
+bool tide_ws_is_current(struct sway_workspace *ws);
+
 bool tide_ws_event_wanted(struct sway_workspace *old,
 	struct sway_workspace *new, const char *change);
 
