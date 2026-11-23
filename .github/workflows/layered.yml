@@ -34,7 +34,7 @@ concurrency:
 
 env:
   # tidewm's test and harness, as ci.yml pins them
-  TIDEWM_REF: f4d2a24b50ce06f2c6696f023f97199aa37936b7
+  TIDEWM_REF: 218c5ee99f450c2a8b53d0666620ac00bc839439
 
 jobs:
   layered:
