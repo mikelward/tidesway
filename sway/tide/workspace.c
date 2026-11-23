@@ -116,6 +116,13 @@ static struct sway_workspace *representative(struct tide_group *g) {
 	return ws;
 }
 
+bool tide_ws_is_current(struct sway_workspace *ws) {
+	struct sway_seat *seat = input_manager_current_seat();
+	struct sway_workspace *focused = seat ? seat_get_focused_workspace(seat) : NULL;
+	return focused && (focused == ws
+		|| (ws->tide_group && focused->tide_group == ws->tide_group));
+}
+
 // The current workspace, the one the focused output shows
 static struct tide_group *current_group(void) {
 	struct sway_output *output = focused_output();

@@ -135,6 +135,24 @@ class SwitchEventTest(TwoOutputHelpers):
                          ("in", False, "web", True))
 
 
+class EventFocusTest(TidewmTest):
+    """Every workspace event says whether its workspace is the current one,
+    as GET_WORKSPACES and tidewm's events do, though a window in it, not
+    the workspace itself, has the seat's focus: Quickshell takes it from
+    each event, so an urgent window on the current workspace left tide's
+    shell with none, and no focused window"""
+
+    def test_an_urgent_event_on_the_current_workspace_says_its_focused(self):
+        ipc = self.connect()
+        ipc.subscribe("window")
+        _, window = self.open_window(ipc, "test.app")
+        events = self.connect()
+        events.subscribe("workspace")
+        self.command(self.connect(), f"[con_id={window['id']}] urgent enable")
+        event = events.next_event(EVENT_WORKSPACE, lambda e: e["change"] == "urgent")
+        self.assertEqual((event["current"]["name"], event["current"]["focused"]), ("1", True))
+
+
 class FocusOutputTest(TwoOutputHelpers):
     def test_focusing_an_output_after_a_switch_stays_on_the_switched_to_workspace(self):
         # The right output's window was focused last there, before the switch

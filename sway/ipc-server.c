@@ -332,17 +332,20 @@ void ipc_event_workspace(struct sway_workspace *old,
 	} else {
 		json_object_object_add(obj, "current", NULL);
 	}
-	/* tide: a switch's event says the workspace switched to is focused and
-	 * the one left isn't, as tidewm's does, though the seat may not say so
-	 * until the switch is done: Quickshell takes each from the event alone */
-	if (strcmp(change, "focus") == 0) {
-		json_object *o;
-		if (json_object_object_get_ex(obj, "old", &o) && o) {
-			json_object_object_add(o, "focused", json_object_new_boolean(false));
-		}
-		if (json_object_object_get_ex(obj, "current", &o) && o) {
-			json_object_object_add(o, "focused", json_object_new_boolean(true));
-		}
+	/* tide: each workspace says whether it's the current one, as tidewm's
+	 * events and GET_WORKSPACES do, not whether the seat's focus is the
+	 * workspace itself, which it isn't with a window there. A switch's
+	 * says the workspace switched to is, though the seat may not say so
+	 * until the switch is done. Quickshell takes each from the event alone */
+	bool switched = strcmp(change, "focus") == 0;
+	json_object *o;
+	if (old && json_object_object_get_ex(obj, "old", &o) && o) {
+		json_object_object_add(o, "focused",
+			json_object_new_boolean(!switched && tide_ws_is_current(old)));
+	}
+	if (new && json_object_object_get_ex(obj, "current", &o) && o) {
+		json_object_object_add(o, "focused",
+			json_object_new_boolean(switched || tide_ws_is_current(new)));
 	}
 
 	const char *json_string = json_object_to_json_string(obj);
