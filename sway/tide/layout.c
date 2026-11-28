@@ -728,7 +728,7 @@ enum tide_layout tide_cycle(struct sway_workspace *ws, int step) {
 struct sway_container *tide_zoom(struct sway_container *con) {
 	struct sway_workspace *ws = con->pending.workspace;
 	// Nor in the floating layout, as in tidewm, which has no master
-	if (!con->view || !ws || container_is_floating_or_child(con)
+	if (!con->view || !ws || container_is_floating_or_child(con) || !tiles(con)
 			|| tide_workspace_layout(ws) == TIDE_NONE
 			|| tide_workspace_layout(ws) == TIDE_FLOATING) {
 		return NULL;
@@ -738,6 +738,9 @@ struct sway_container *tide_zoom(struct sway_container *con) {
 	struct sway_container *sel = con, *c = NULL;
 	for (int i = 0; i < ws->tiling->length; i++) {
 		struct sway_container *t = ws->tiling->items[i];
+		if (!tiles(t)) {
+			continue;
+		}
 		if (t != sel) {
 			c = t;
 			break;
