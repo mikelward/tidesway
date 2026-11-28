@@ -79,7 +79,7 @@ static void restore(struct sway_container *con) {
 	struct sway_view *view = con->view;
 	view->tide.minimized = false;
 	struct sway_workspace *ws = con->pending.workspace;
-	if (ws && !container_is_floating(con)) {
+	if (ws && !container_is_floating_or_child(con)) {
 		struct sway_container *parent = con->pending.parent;
 		container_detach(con);
 		workspace_add_tiling(ws, con);

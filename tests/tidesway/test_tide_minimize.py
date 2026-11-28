@@ -6,7 +6,7 @@ import select
 import unittest
 
 import tidesway  # noqa: F401  (sets up harness)
-from harness import EVENT_WINDOW, GET_OUTPUTS, TIMEOUT, TidewmTest
+from harness import EVENT_WINDOW, GET_OUTPUTS, GET_TREE, TIMEOUT, TidewmTest
 
 
 class MinimizeKeyboardTest(TidewmTest):
@@ -128,6 +128,70 @@ class RuleMinimizedTest(TidewmTest):
         self.wm.open_window("test.hidden", "test.hidden")
         con = ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "new")["container"]["id"]
         self.assertFalse(self.windows()[con]["visible"])
+
+class ZoomSkipsMinimizedTest(TidewmTest):
+    """zoom skips minimized windows in the tiling list rather than
+    unminimizing them when promoting the next visible window to master."""
+
+    def test_zoom_skips_minimized_windows(self):
+        ipc = self.connect()
+        ipc.subscribe("window")
+        _, a = self.open_window(ipc, "test.a")
+        _, b = self.open_window(ipc, "test.b")
+        _, c = self.open_window(ipc, "test.c")
+        self.command(self.connect(), f"[con_id={b['id']}] minimize enable")
+        ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "minimize")
+        self.command(self.connect(), f"[con_id={a['id']}] focus")
+        self.command(self.connect(), "zoom")
+        windows = self.windows()
+        self.assertFalse(windows[b["id"]]["visible"], "minimized window stays minimized")
+        self.assertTrue(windows[c["id"]]["focused"], "next visible window becomes master and focused")
+
+
+class RestoreFloatingSplitChildTest(TidewmTest):
+    """Restoring a minimized child of a floating split container keeps it
+    in its floating container instead of moving it into tiling."""
+
+    def test_restoring_floating_split_child_keeps_it_floating(self):
+        ipc = self.connect()
+        ipc.subscribe("window")
+        self.command(self.connect(), "layout splith")
+        _, a = self.open_window(ipc, "test.a")
+        self.command(self.connect(), "splitv")
+        _, b = self.open_window(ipc, "test.b")
+        self.command(self.connect(), f"[con_id={a['id']}] focus")
+        self.command(self.connect(), "focus parent")
+        self.command(self.connect(), "floating enable")
+        self.command(self.connect(), f"[con_id={a['id']}] minimize enable")
+        ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "minimize")
+        self.command(self.connect(), f"[con_id={a['id']}] minimize disable")
+        ipc.next_event(EVENT_WINDOW, lambda e: e["change"] == "minimize")
+        tree = self.connect().request(GET_TREE)
+
+        def ids_under(nodes):
+            found = set()
+            for n in nodes:
+                found.add(n["id"])
+                found.update(ids_under(n.get("nodes", [])))
+                found.update(ids_under(n.get("floating_nodes", [])))
+            return found
+
+        def find_ws(node):
+            if node.get("type") == "workspace":
+                if a["id"] in ids_under([node]):
+                    return node
+            for child in node.get("nodes", []) + node.get("floating_nodes", []):
+                hit = find_ws(child)
+                if hit:
+                    return hit
+            return None
+
+        ws = find_ws(tree)
+        self.assertIsNotNone(ws)
+        self.assertIn(a["id"], ids_under(ws.get("floating_nodes", [])), "restored child stays floating")
+        self.assertNotIn(a["id"], ids_under(ws.get("nodes", [])), "restored child is not moved to tiling")
+        self.assertIn(b["id"], ids_under(ws.get("floating_nodes", [])))
+
 
 if __name__ == "__main__":
     unittest.main()
